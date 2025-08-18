@@ -67,7 +67,10 @@ func (a *App) RunDumpManual() error {
 	serverList, serverKeys := _select.SelectOptionList(a.cfg.Servers, "")
 	m.SetList(serverKeys)
 	m.SetTitle("Select server ")
-	m.Run()
+
+	if err := runWithCtx(a.ctx, func() error { m.Run(); return nil }); err != nil {
+		return err
+	}
 
 	serverName := m.GetSelect()
 	serverKey := serverList[serverName]
@@ -76,13 +79,15 @@ func (a *App) RunDumpManual() error {
 	logging.L(a.ctx).Info("Selected server", logging.StringAttr("server", serverKey))
 
 	m.ClearList()
-
 	logging.L(a.ctx).Info("Prepare database list")
 
 	dbList, dbKeys := _select.SelectOptionList(a.cfg.Databases, serverKey)
 	m.SetList(dbKeys)
 	m.SetTitle("Select database ")
-	m.Run()
+
+	if err := runWithCtx(a.ctx, func() error { m.Run(); return nil }); err != nil {
+		return err
+	}
 
 	dbName := m.GetSelect()
 	dbKey := dbList[dbName]
@@ -95,9 +100,7 @@ func (a *App) RunDumpManual() error {
 		Database: dbName,
 		Template: a.cfg.Settings.Template,
 	}
-
 	nameFile := utils.GetTemplateFileName(dataFormat)
-
 	logging.L(a.ctx).Info("Generate template", logging.StringAttr("name", nameFile))
 
 	cmdData := &cmdCfg.ConfigData{
@@ -115,7 +118,6 @@ func (a *App) RunDumpManual() error {
 
 	cmdApp := command.NewApp(&a.cfg.Settings, cmdData)
 	cmdStr, remotePath, err := cmdApp.GetCommand()
-
 	if err != nil {
 		logging.L(a.ctx).Error("error generate command")
 		return fmt.Errorf("error generate command: %w", err)
@@ -133,7 +135,8 @@ func (a *App) RunDumpManual() error {
 		*a.cfg.Settings.SSH.IsPassphrase,
 	)
 
-	if err := conn.Connect(); err != nil {
+	fmt.Println("Trying to connect to server...")
+	if err := runWithCtx(a.ctx, conn.Connect); err != nil {
 		logging.L(a.ctx).Error("Error connecting to server")
 		return err
 	}
@@ -142,31 +145,29 @@ func (a *App) RunDumpManual() error {
 		_ = conn.Close()
 	}(conn)
 
-	logging.L(a.ctx).Info("Run test connection to server")
-
-	if err := conn.TestConnection(); err != nil {
-		logging.L(a.ctx).Error("Error connection to server")
+	logging.L(a.ctx).Info("Trying to test connection to server")
+	if err := runWithCtx(a.ctx, conn.TestConnection); err != nil {
+		logging.L(a.ctx).Error("Error testing connection to server")
 		return err
 	}
-
 	logging.L(a.ctx).Info("The connection is established")
 
 	logging.L(a.ctx).Info("Preparing for backup creation")
-
 	backupApp := backup.NewApp(a.ctx, conn, cmdStr, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DumpLocation)
-	if err := backupApp.Backup(); err != nil {
-		logging.L(a.ctx).Error("Error create backup database")
+
+	if err := runWithCtx(a.ctx, backupApp.Backup); err != nil {
+		logging.L(a.ctx).Error("Error creating backup database")
 		return err
 	}
-
 	logging.L(a.ctx).Info("Backup was successfully created and downloaded")
 
 	if a.cfg.Settings.DirArchived != "" {
 		logging.L(a.ctx).Info("Search for old backups")
-
 		dbNamePrefix := fmt.Sprintf("%s_%s", serverName, dbName)
-		err = utils.ArchivedLocalFile(dbNamePrefix, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DirArchived)
-		if err != nil {
+
+		if err := runWithCtx(a.ctx, func() error {
+			return utils.ArchivedLocalFile(dbNamePrefix, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DirArchived)
+		}); err != nil {
 			logging.L(a.ctx).Error("Error archiving old backups")
 			return err
 		}
@@ -183,4 +184,18 @@ func (a *App) RunDumpAll() error {
 
 func (a *App) RunDumpDB() error {
 	panic("implement me")
+}
+
+func runWithCtx(ctx context.Context, f func() error) error {
+	done := make(chan error, 1)
+	go func() {
+		done <- f()
+	}()
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("operation cancelled")
+	case err := <-done:
+		return err
+	}
 }

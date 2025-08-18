@@ -1,7 +1,9 @@
 package term
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -61,6 +63,9 @@ func (d *Data) Run() {
 	i, _, err := prompt.Run()
 
 	if err != nil {
+		if errors.Is(err, promptui.ErrInterrupt) {
+			os.Exit(0)
+		}
 		fmt.Printf("Prompt failed %v\n", err)
 		return
 	}

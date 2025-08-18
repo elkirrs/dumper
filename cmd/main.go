@@ -8,8 +8,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
+var version = "1.0.0"
 var showVersion bool
 
 func init() {
@@ -20,6 +23,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	sign := make(chan os.Signal, 1)
+	signal.Notify(sign, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sign
+		cancel()
+	}()
+
 	configPath := flag.String("config", "./config.yaml", "The path to the configuration file")
 	dbName := flag.String("db", "", "Name of the backup database")
 	all := flag.Bool("all", false, "Backup of all databases from the configuration")
@@ -28,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Println("dumper version 1.0.0")
+		fmt.Printf("dumper version %s\n", version)
 		return
 	}
 
