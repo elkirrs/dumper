@@ -13,7 +13,10 @@ import (
 	t "dumper/internal/temr"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
+	"errors"
 	"fmt"
+	"strings"
+	"sync"
 )
 
 type Env struct {
@@ -21,6 +24,11 @@ type Env struct {
 	DbName     string
 	All        bool
 	FileLog    string
+}
+
+type DBInfo struct {
+	Server   config.Server
+	Database config.Database
 }
 
 type App struct {
@@ -53,7 +61,7 @@ func (a *App) Run() error {
 
 	if a.env.All == true && a.env.DbName == "" {
 		logging.L(a.ctx).Info("Running the app with the parameters specified (db all)")
-		return a.RunDumpAll()
+		return a.RunDumpDB()
 	}
 
 	logging.L(a.ctx).Info("Running the app in manual mode with db selection")
@@ -95,13 +103,100 @@ func (a *App) RunDumpManual() error {
 
 	logging.L(a.ctx).Info("Selected database", logging.StringAttr("database", dbKey))
 
+	if err := a.runBackup(server, db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *App) RunDumpDB() error {
+	logging.L(a.ctx).Info("Prepare data for create dumps")
+
+	dbList := strings.Split(a.env.DbName, ",")
+	countDBs := len(dbList)
+
+	serversDatabases := make(map[string][]DBInfo)
+
+	for _, dbName := range dbList {
+		database, ok := a.cfg.Databases[dbName]
+		if !ok {
+			fmt.Printf("Database %s not found\n", dbName)
+			logging.L(a.ctx).Warn("Database not found", logging.StringAttr("name", dbName))
+			countDBs--
+			continue
+		}
+
+		server, ok := a.cfg.Servers[database.Server]
+		if !ok {
+			fmt.Printf("Server %s not found\n", database.Server)
+			logging.L(a.ctx).Warn("Server not found", logging.StringAttr("name", database.Server))
+			countDBs--
+			continue
+		}
+
+		serversDatabases[database.Server] = append(serversDatabases[database.Server], DBInfo{
+			Server:   server,
+			Database: database,
+		})
+
+		if countDBs == 0 {
+			logging.L(a.ctx).Error("Database and server no key matches check the configuration file")
+			return errors.New("database and server no key matches check the configuration file")
+		}
+	}
+
+	wg := &sync.WaitGroup{}
+	errCh := make(chan error, len(dbList))
+
+	for _, dbInfoList := range serversDatabases {
+		dbListCopy := dbInfoList
+		wg.Add(1)
+		go func(dbInfos []DBInfo) {
+			defer wg.Done()
+			for _, dbInfo := range dbInfos {
+				select {
+				case <-a.ctx.Done():
+					logging.L(a.ctx).Info("Backup cancelled by context")
+					errCh <- fmt.Errorf("backup cancelled for database %s", dbInfo.Database.Name)
+					return
+				default:
+					err := a.runBackup(dbInfo.Server, dbInfo.Database)
+					if err != nil {
+						logging.L(a.ctx).Warn(
+							"Skip create database",
+							logging.StringAttr("name", dbInfo.Database.Name),
+							logging.ErrAttr(err),
+						)
+						errCh <- err
+					}
+				}
+			}
+		}(dbListCopy)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		if err != nil {
+			return err
+		}
+	}
+
+	logging.L(a.ctx).Info("All requested database backups are done")
+
+	return nil
+}
+
+func (a *App) runBackup(server config.Server, db config.Database) error {
 	dataFormat := utils.TemplateData{
-		Server:   serverName,
-		Database: dbName,
+		Server:   server.GetDisplayName(),
+		Database: db.GetDisplayName(),
 		Template: a.cfg.Settings.Template,
 	}
 	nameFile := utils.GetTemplateFileName(dataFormat)
-	logging.L(a.ctx).Info("Generate template", logging.StringAttr("name", nameFile))
+	logging.L(a.ctx).Info("Generated template", logging.StringAttr("name", nameFile))
 
 	cmdData := &cmdCfg.ConfigData{
 		User:       db.User,
@@ -135,9 +230,13 @@ func (a *App) RunDumpManual() error {
 		*a.cfg.Settings.SSH.IsPassphrase,
 	)
 
-	fmt.Println("Trying to connect to server...")
+	fmt.Printf("Trying to connect to server %s...\n", server.Host)
 	if err := runWithCtx(a.ctx, conn.Connect); err != nil {
-		logging.L(a.ctx).Error("Error connecting to server")
+		logging.L(a.ctx).Error(
+			"Error connecting to server",
+			logging.StringAttr("server", server.Host),
+			logging.ErrAttr(err),
+		)
 		return err
 	}
 
@@ -163,7 +262,7 @@ func (a *App) RunDumpManual() error {
 
 	if a.cfg.Settings.DirArchived != "" {
 		logging.L(a.ctx).Info("Search for old backups")
-		dbNamePrefix := fmt.Sprintf("%s_%s", serverName, dbName)
+		dbNamePrefix := fmt.Sprintf("%s_%s", server.GetDisplayName(), db.GetDisplayName())
 
 		if err := runWithCtx(a.ctx, func() error {
 			return utils.ArchivedLocalFile(dbNamePrefix, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DirArchived)
@@ -176,14 +275,6 @@ func (a *App) RunDumpManual() error {
 	}
 
 	return nil
-}
-
-func (a *App) RunDumpAll() error {
-	panic("implement me")
-}
-
-func (a *App) RunDumpDB() error {
-	panic("implement me")
 }
 
 func runWithCtx(ctx context.Context, f func() error) error {
