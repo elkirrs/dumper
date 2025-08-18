@@ -51,17 +51,17 @@ servers:
     password: "password"
 
 databases:
-  test_demo:
+  demo:
     name: "demo"
-    user: "user"
+    user: "demo_user"
     password: "password"
     server: "test"
     port: "5432"
     driver: "psql"
 
-  test_app:
-    user: "app"
-    password: "pass"
+  app:
+    user: "app_user"
+    password: "pass_user"
     server: "test"
 
 ```
@@ -141,6 +141,11 @@ A list of databases that need to be backed up.
 ```
 ./dumper --config ./cfg.yaml
 ````
+
+#### Backup of a single database or multiple databases
+```
+./dumper --db demo,app
+```
 
 ---
 
