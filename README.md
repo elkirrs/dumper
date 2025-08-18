@@ -4,17 +4,19 @@
 
 ---
 
+![Demo](assets/dumper-proccess.gif)
+
 ## 🚀 Opportunities
 
 - Support **PostgreSQL**, **MySQL** and etc.
 - Connect for DB:
     - with the dump performed directly on the server and download (server).
-- Work with **SSH-ключами** (include passphrase).
+- Work with **SSH-Keys** (include passphrase).
 - Custom dump name templates.
 - Archiving old dumps.
 - Different formats:
     - PostgreSQL: `plain`, `dump`, `tar`
-    - 
+  
 ---
 
 ## 📄 Configuration
