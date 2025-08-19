@@ -61,6 +61,11 @@ func (a *App) Run() error {
 
 	if a.env.All == true && a.env.DbName == "" {
 		logging.L(a.ctx).Info("Running the app with the parameters specified (db all)")
+		var keys []string
+		for key := range a.cfg.Databases {
+			keys = append(keys, key)
+		}
+		a.env.DbName = strings.Join(keys, ",")
 		return a.RunDumpDB()
 	}
 
