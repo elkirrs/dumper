@@ -144,7 +144,12 @@ A list of databases that need to be backed up.
 
 #### Backup of a single database or multiple databases
 ```
-./dumper --db demo,app
+./dumper --config ./cfg.yaml --db demo,app
+```
+
+#### Backup all databases from config
+```
+./dumper --config ./cfg.yaml --all
 ```
 
 ---
@@ -155,7 +160,9 @@ A list of databases that need to be backed up.
 ├── dumps/       # Directory for new dumps
 ├── archived/    # Archive of old dumps
 ├── config.yaml  # Configuration file
-└── dumper       # The executable file of the utility
+├── dumper       # The executable file of the utility
+└── dumper.log   # Log file
+
 ```
 
 ### Checking the receipt by the user:
