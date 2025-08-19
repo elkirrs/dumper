@@ -87,6 +87,8 @@ Apply to all servers and databases, unless redefined locally.
 | `format`            | Dump format: `plain`, `dump`, `tar`.                                                      | required  |
 | `dir_dump`          | Directory for saving dumps                                                                | option    |
 | `dir_archived`      | Archive Directory                                                                         | option    |
+| `logging`           | Create logging                                                                            | option    |
+| `retry_connect`     | attempts reconnect to server (default 5)                                                  | option    |
 
 
 #### Params:
@@ -134,23 +136,13 @@ A list of databases that need to be backed up.
 
 #### Backup with a choice of database from config file
 ```
-./dumper
-````
-
-#### Backup with a choice of database with set config file
-```
 ./dumper --config ./cfg.yaml
 ````
-
-#### Backup of a single database or multiple databases
-```
-./dumper --config ./cfg.yaml --db demo,app
-```
-
-#### Backup all databases from config
-```
-./dumper --config ./cfg.yaml --all
-```
+- Flags:
+    - `--config ./cfg.yaml` — path to config file
+    - `--db demo,app` — backup databases from list
+    - `--all` — backup all databases from config file
+    - `--file-log file.log` — file name log file (if settings.logging == true)
 
 ---
 

@@ -15,8 +15,10 @@ import (
 	"dumper/pkg/utils"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Env struct {
@@ -43,6 +45,19 @@ func NewApp(ctx context.Context, cfg *config.Config, env *Env) *App {
 		cfg: cfg,
 		env: env,
 	}
+}
+
+type ConnectionError struct {
+	Addr string
+	Err  error
+}
+
+func (e *ConnectionError) Error() string {
+	return fmt.Sprintf("connection error to %s: %v", e.Addr, e.Err)
+}
+
+func (e *ConnectionError) Unwrap() error {
+	return e.Err
 }
 
 func (a *App) MustRun() error {
@@ -108,7 +123,29 @@ func (a *App) RunDumpManual() error {
 
 	logging.L(a.ctx).Info("Selected database", logging.StringAttr("database", dbKey))
 
-	if err := a.runBackup(server, db); err != nil {
+	err := withRetry(
+		a.ctx, a.cfg.Settings.RetryConnect,
+		func() error {
+			return a.runBackup(server, db)
+		},
+		func(err error) bool {
+			var connErr *ConnectionError
+			return errors.As(err, &connErr)
+		},
+		func(attempt int, err error) {
+			var connErr *ConnectionError
+			_ = errors.As(err, &connErr)
+			logging.L(a.ctx).Warn(
+				"Connection error, retrying",
+				logging.StringAttr("db", db.Name),
+				logging.StringAttr("addr", connErr.Addr),
+				logging.IntAttr("attempt", attempt),
+				logging.ErrAttr(err),
+			)
+		},
+	)
+
+	if err != nil {
 		return err
 	}
 
@@ -166,14 +203,31 @@ func (a *App) RunDumpDB() error {
 					errCh <- fmt.Errorf("backup cancelled for database %s", dbInfo.Database.Name)
 					return
 				default:
-					err := a.runBackup(dbInfo.Server, dbInfo.Database)
+					err := withRetry(
+						a.ctx, a.cfg.Settings.RetryConnect,
+						func() error {
+							return a.runBackup(dbInfo.Server, dbInfo.Database)
+						},
+						func(err error) bool {
+							var connErr *ConnectionError
+							return errors.As(err, &connErr)
+						},
+						func(attempt int, err error) {
+							var connErr *ConnectionError
+							_ = errors.As(err, &connErr)
+							logging.L(a.ctx).Warn(
+								"Connection error, retrying",
+								logging.StringAttr("db", dbInfo.Database.Name),
+								logging.StringAttr("addr", connErr.Addr),
+								logging.IntAttr("attempt", attempt),
+								logging.ErrAttr(err),
+							)
+						},
+					)
+
 					if err != nil {
-						logging.L(a.ctx).Warn(
-							"Skip create database",
-							logging.StringAttr("name", dbInfo.Database.Name),
-							logging.ErrAttr(err),
-						)
-						errCh <- err
+						errCh <- fmt.Errorf("backup failed for %s: %w", dbInfo.Database.Name, err)
+						return
 					}
 				}
 			}
@@ -242,7 +296,7 @@ func (a *App) runBackup(server config.Server, db config.Database) error {
 			logging.StringAttr("server", server.Host),
 			logging.ErrAttr(err),
 		)
-		return err
+		return &ConnectionError{Addr: server.Host, Err: err}
 	}
 
 	defer func(conn *connect.Connect) {
@@ -252,7 +306,7 @@ func (a *App) runBackup(server config.Server, db config.Database) error {
 	logging.L(a.ctx).Info("Trying to test connection to server")
 	if err := runWithCtx(a.ctx, conn.TestConnection); err != nil {
 		logging.L(a.ctx).Error("Error testing connection to server")
-		return err
+		return &ConnectionError{Addr: server.Host, Err: err}
 	}
 	logging.L(a.ctx).Info("The connection is established")
 
@@ -294,4 +348,62 @@ func runWithCtx(ctx context.Context, f func() error) error {
 	case err := <-done:
 		return err
 	}
+}
+
+func withRetry(
+	ctx context.Context,
+	maxRetries int,
+	fn func() error,
+	shouldRetry func(err error) bool,
+	onRetry func(attempt int, err error),
+) error {
+	var err error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		err = fn()
+		if err == nil {
+			return nil
+		}
+
+		if shouldRetry != nil && shouldRetry(err) {
+			if onRetry != nil {
+				onRetry(attempt, err)
+			}
+
+			if attempt == maxRetries {
+				logging.L(ctx).Error("Failed retrying connection",
+					logging.IntAttr("attempts", maxRetries),
+					logging.ErrAttr(err),
+				)
+				return fmt.Errorf("failed after %d attempts: %w", maxRetries, err)
+			}
+
+			delay := exponentialBackoff(attempt)
+
+			logging.L(ctx).Error("Connection error, retrying after",
+				logging.StringAttr("time", delay.String()),
+				logging.ErrAttr(err),
+			)
+			fmt.Printf("Connection error, retrying after %.2fs\n", delay.Seconds())
+
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("operation cancelled: %w", ctx.Err())
+			case <-time.After(delay):
+				continue
+			}
+		}
+
+		return err
+	}
+	return err
+}
+func exponentialBackoff(attempt int) time.Duration {
+	base := time.Duration(1<<uint(attempt-1)) * time.Second
+	jitterRange := int64(float64(base) * 0.6)
+	jitter := time.Duration(rand.Int63n(jitterRange) - jitterRange/2)
+	delay := base + jitter
+	if delay < 0 {
+		delay = 0
+	}
+	return delay
 }

@@ -29,6 +29,7 @@ type Settings struct {
 	DirDump      string    `yaml:"dir_dump" default:"./"`
 	DirArchived  string    `yaml:"dir_archived" default:"./archived"`
 	Logging      *bool     `yaml:"logging" default:"false"`
+	RetryConnect int       `yaml:"retry_connect" default:"3"`
 }
 
 type Database struct {
