@@ -1,0 +1,36 @@
+version: 2
+project_name: dumper
+
+builds:
+  - id: dumper
+    main: ./cmd/main.go
+    env: [CGO_ENABLED=0]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Tag}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.date={{.Date}}
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: default
+    builds:
+      - dumper
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: elkirrs
+    name: dumper
+
+signs: []
