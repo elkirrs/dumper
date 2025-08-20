@@ -39,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("dumper version %s\n", version)
+		fmt.Printf("dumper version %s \n", version)
 		return
 	}
 
@@ -52,7 +52,7 @@ func main() {
 
 	config, err := conf.Load(*configPath)
 	if err != nil {
-		fmt.Printf("configuration loading error : %v", err)
+		fmt.Printf("configuration loading error : %v \n", err)
 		os.Exit(1)
 	}
 	logger := runLog(&env, *config.Settings.Logging)
@@ -71,7 +71,7 @@ func main() {
 
 	if err := a.MustRun(); err != nil {
 		logging.L(ctx).Error("Failed to run app", logging.ErrAttr(err))
-		fmt.Printf("application run error : %v", err)
+		fmt.Printf("application run error : %v \n", err)
 		os.Exit(1)
 	}
 
