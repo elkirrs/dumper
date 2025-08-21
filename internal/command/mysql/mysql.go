@@ -7,16 +7,33 @@ import (
 	"fmt"
 )
 
-type MSQLGenerator struct{}
+type MySQLGenerator struct{}
 
-func (g MSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
+func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
 	if data.Port == "" {
 		data.Port = "3306"
 	}
-	return fmt.Sprintf("mysqldump -u%s -p%s -h127.0.0.1 -P%s %s",
-		data.User, data.Password, data.Port, data.Name), ""
+
+	ext := "sql"
+
+	baseCmd := fmt.Sprintf("/usr/bin/mysqldump -h 127.0.0.1 -P %s -u %s -p%s %s",
+		data.Port, data.User, data.Password, data.Name)
+
+	if *settings.Archive {
+		baseCmd += " | gzip"
+		ext += ".gz"
+	}
+
+	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
+	remotePath := fmt.Sprintf("./%s", fileName)
+
+	if settings.DumpLocation == "server" {
+		return fmt.Sprintf("%s > %s", baseCmd, remotePath), remotePath
+	}
+
+	return baseCmd, remotePath
 }
 
 func init() {
-	command.Register("mysql", MSQLGenerator{})
+	command.Register("mysql", MySQLGenerator{})
 }

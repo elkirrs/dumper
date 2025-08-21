@@ -33,12 +33,19 @@ type Settings struct {
 }
 
 type Database struct {
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Name     string `yaml:"name,omitempty"`
-	Server   string `yaml:"server" validate:"required"`
-	Key      string `yaml:"key"`
-	Port     string `yaml:"port,omitempty"`
+	User     string  `yaml:"user"`
+	Password string  `yaml:"password"`
+	Name     string  `yaml:"name,omitempty"`
+	Server   string  `yaml:"server" validate:"required"`
+	Key      string  `yaml:"key"`
+	Port     string  `yaml:"port,omitempty"`
+	Driver   string  `yaml:"driver"`
+	Options  Options `yaml:"options"`
+}
+
+type Options struct {
+	AuthSource string `yaml:"auth_source"`
+	SSL        *bool  `yaml:"ssl" default:"false"`
 }
 
 type Server struct {
@@ -86,7 +93,7 @@ func Load(filename string) (*Config, error) {
 	return &config, nil
 }
 
-func (s Server) GetDisplayName() string {
+func (s Server) GetName() string {
 	if s.Name != "" {
 		return s.Name
 	}
@@ -100,7 +107,7 @@ func (s Server) GetPort(port string) string {
 	return port
 }
 
-func (d Database) GetDisplayName() string {
+func (d Database) GetName() string {
 	if d.Name != "" {
 		return d.Name
 	}
@@ -112,4 +119,17 @@ func (d Database) GetPort(port string) string {
 		return d.Port
 	}
 	return port
+}
+
+func (d Database) GetDriver(driver string) string {
+	if d.Driver != "" {
+		return d.Driver
+	}
+	return driver
+}
+func (d Database) GetAuthSource() string {
+	if d.Options.AuthSource != "" {
+		return d.Options.AuthSource
+	}
+	return d.GetName()
 }

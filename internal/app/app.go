@@ -4,6 +4,7 @@ import (
 	"context"
 	"dumper/internal/backup"
 	"dumper/internal/command"
+	_ "dumper/internal/command/mongo"
 	_ "dumper/internal/command/mysql"
 	_ "dumper/internal/command/postgres"
 	"dumper/internal/config"
@@ -250,8 +251,8 @@ func (a *App) RunDumpDB() error {
 
 func (a *App) runBackup(server config.Server, db config.Database) error {
 	dataFormat := utils.TemplateData{
-		Server:   server.GetDisplayName(),
-		Database: db.GetDisplayName(),
+		Server:   server.GetName(),
+		Database: db.GetName(),
 		Template: a.cfg.Settings.Template,
 	}
 	nameFile := utils.GetTemplateFileName(dataFormat)
@@ -260,18 +261,21 @@ func (a *App) runBackup(server config.Server, db config.Database) error {
 	cmdData := &cmdCfg.ConfigData{
 		User:       db.User,
 		Password:   db.Password,
-		Name:       db.GetDisplayName(),
+		Name:       db.GetName(),
 		Port:       db.GetPort(a.cfg.Settings.DBPort),
 		Key:        server.SSHKey,
 		Host:       server.Host,
 		DumpName:   nameFile,
 		DumpFormat: a.cfg.Settings.DumpFormat,
+		Driver:     db.GetDriver(a.cfg.Settings.Driver),
+		Options:    db.Options,
 	}
 
 	logging.L(a.ctx).Info("Prepare command for dump")
 
 	cmdApp := command.NewApp(&a.cfg.Settings, cmdData)
 	cmdStr, remotePath, err := cmdApp.GetCommand()
+
 	if err != nil {
 		logging.L(a.ctx).Error("error generate command")
 		return fmt.Errorf("error generate command: %w", err)
@@ -321,7 +325,7 @@ func (a *App) runBackup(server config.Server, db config.Database) error {
 
 	if a.cfg.Settings.DirArchived != "" {
 		logging.L(a.ctx).Info("Search for old backups")
-		dbNamePrefix := fmt.Sprintf("%s_%s", server.GetDisplayName(), db.GetDisplayName())
+		dbNamePrefix := fmt.Sprintf("%s_%s", server.GetName(), db.GetName())
 
 		if err := runWithCtx(a.ctx, func() error {
 			return utils.ArchivedLocalFile(dbNamePrefix, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DirArchived)

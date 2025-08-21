@@ -1,5 +1,7 @@
 package command_config
 
+import "dumper/internal/config"
+
 type ConfigData struct {
 	User       string
 	Password   string
@@ -9,4 +11,6 @@ type ConfigData struct {
 	Host       string
 	DumpName   string
 	DumpFormat string
+	Driver     string
+	Options    config.Options
 }

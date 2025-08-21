@@ -19,9 +19,9 @@ func NewApp(appCfg *config.Settings, config *cmdCfg.ConfigData) *Settings {
 }
 
 func (s *Settings) GetCommand() (string, string, error) {
-	gen, ok := GetGenerator(s.AppCfg.Driver)
+	gen, ok := GetGenerator(s.Config.Driver)
 	if !ok {
-		return "", "", fmt.Errorf("unsupported driver: %s", s.AppCfg.Driver)
+		return "", "", fmt.Errorf("unsupported driver: %s ", s.Config.Driver)
 	}
 
 	cmd, remotePath := gen.Generate(s.Config, s.AppCfg)

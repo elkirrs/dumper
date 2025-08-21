@@ -6,6 +6,10 @@ All notable changes to this project will be documented here.
 - Support different databases like Mysql, MongoDB and etc.
 - Support connect in server and database
 
+## [1.2.0] - 2025-08-22
+- Add driver Mongo
+- Add driver MySQL
+
 ## [1.1.1] - 2025-08-20
 - Add retry connect to server
 - Add flag --all. Using this flag, you can dump all databases from the configuration.
