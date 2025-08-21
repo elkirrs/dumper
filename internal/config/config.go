@@ -45,7 +45,7 @@ type Database struct {
 
 type Options struct {
 	AuthSource string `yaml:"auth_source"`
-	SSL        *bool  `yaml:"ssl"`
+	SSL        *bool  `yaml:"ssl" default:"false"`
 }
 
 type Server struct {

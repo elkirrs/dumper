@@ -4,6 +4,7 @@ import (
 	"context"
 	"dumper/internal/connect"
 	"dumper/pkg/logging"
+	"dumper/pkg/utils"
 	"fmt"
 	"io"
 	"os"
@@ -68,22 +69,39 @@ func (b *Backup) backupByServer() error {
 		logging.StringAttr("name", b.remotePath),
 	)
 
-	if _, err := b.conn.RunCommand(checkCmd); err == nil {
-		logging.L(b.ctx).Info("Dump already exists on server", logging.StringAttr("name", b.remotePath))
+	if msg, err := b.conn.RunCommand(checkCmd); err == nil {
+		logging.L(b.ctx).Info(
+			"Dump already exists on server",
+			logging.StringAttr("name", b.remotePath),
+			logging.StringAttr("msg", msg),
+		)
 
 		fmt.Println("Dump already exists on server:", b.remotePath)
 		isRemoveDump = false
 	} else {
+		stop := make(chan struct{})
 		dumpCreateTimeNow := time.Now()
 
-		logging.L(b.ctx).Info("Creating dump", logging.StringAttr("name", b.remotePath))
-		fmt.Println("Creating dump:", b.remotePath)
-		if _, err := b.conn.RunCommand(b.backupCmd); err != nil {
-			logging.L(b.ctx).Error("Failed to create dump")
+		logging.L(b.ctx).Info("File dump", logging.StringAttr("name", b.remotePath))
+		fmt.Println("File dump:", b.remotePath)
+
+		go utils.Spinner(stop)
+
+		if msg, err := b.conn.RunCommand(b.backupCmd); err != nil {
+			logging.L(b.ctx).Error(
+				"Failed to create dump",
+				logging.StringAttr("msg", msg),
+				logging.ErrAttr(err),
+			)
 			return fmt.Errorf("failed to create dump: %v", err)
 		}
 
-		dumpCreateTimeSec := fmt.Sprintf("%.2f sec", time.Since(dumpCreateTimeNow).Seconds())
+		close(stop)
+
+		elapsed := time.Since(dumpCreateTimeNow)
+		fmt.Printf("\rDump created successfully in %.2f sec\n", elapsed.Seconds())
+
+		dumpCreateTimeSec := fmt.Sprintf("%.2f sec", elapsed.Seconds())
 		logging.L(b.ctx).Info(
 			"The dump was successfully created",
 			logging.StringAttr("time", dumpCreateTimeSec),
@@ -104,8 +122,11 @@ func (b *Backup) backupByServer() error {
 	if isRemoveDump {
 		logging.L(b.ctx).Info("Removing dump on server")
 		fmt.Println("Removing dump from server:", b.remotePath)
-		if _, err := b.conn.RunCommand(fmt.Sprintf("rm -f %s", b.remotePath)); err != nil {
-			logging.L(b.ctx).Error("Failed to remove dump on server")
+		if msg, err := b.conn.RunCommand(fmt.Sprintf("rm -f %s", b.remotePath)); err != nil {
+			logging.L(b.ctx).Error(
+				"Failed to remove dump on server",
+				logging.StringAttr("msg", msg),
+			)
 			return fmt.Errorf("failed to delete dump on server: %v", err)
 		}
 
@@ -177,7 +198,7 @@ func (b *Backup) downloadFile() error {
 				return err
 			}
 			downloaded += int64(n)
-			printProgress(downloaded, totalSize)
+			utils.Progress(downloaded, totalSize)
 		}
 		if readErr == io.EOF {
 			break
@@ -190,13 +211,4 @@ func (b *Backup) downloadFile() error {
 	fmt.Println("\nDownload complete:", localPath)
 
 	return session.Wait()
-}
-
-func printProgress(done, total int64) {
-	if total == 0 {
-		fmt.Printf("\rDownloaded: %d bytes", done)
-		return
-	}
-	percent := float64(done) / float64(total) * 100
-	fmt.Printf("\rDownloading... %.1f%% (%d/%d bytes)", percent, done, total)
 }
