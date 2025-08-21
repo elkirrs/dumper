@@ -4,7 +4,8 @@ import (
 	"context"
 	"dumper/internal/backup"
 	"dumper/internal/command"
-	_ "dumper/internal/command/mongo"
+	_ "dumper/internal/command/mariadb"
+	_ "dumper/internal/command/mongodb"
 	_ "dumper/internal/command/mysql"
 	_ "dumper/internal/command/postgres"
 	"dumper/internal/config"
@@ -16,7 +17,6 @@ import (
 	"dumper/pkg/utils"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -91,34 +91,42 @@ func (a *App) Run() error {
 
 func (a *App) RunDumpManual() error {
 	logging.L(a.ctx).Info("Prepare server list")
+	var serverName string
 
-	m := t.New()
+	term := t.New()
 	serverList, serverKeys := _select.SelectOptionList(a.cfg.Servers, "")
-	m.SetList(serverKeys)
-	m.SetTitle("Select server ")
 
-	if err := runWithCtx(a.ctx, func() error { m.Run(); return nil }); err != nil {
-		return err
+	if len(a.cfg.Servers) > 1 {
+		term.SetList(serverKeys)
+		term.SetTitle("Select server ")
+
+		if err := runWithCtx(a.ctx, func() error { term.Run(); return nil }); err != nil {
+			return err
+		}
+		serverName = term.GetSelect()
+	} else {
+		serverName = serverKeys[0]
+		fmt.Println("\033[32m" + "\U00002714 " + serverName + "\033[0m")
+
 	}
 
-	serverName := m.GetSelect()
 	serverKey := serverList[serverName]
 	server := a.cfg.Servers[serverKey]
 
 	logging.L(a.ctx).Info("Selected server", logging.StringAttr("server", serverKey))
 
-	m.ClearList()
+	term.ClearList()
 	logging.L(a.ctx).Info("Prepare database list")
 
 	dbList, dbKeys := _select.SelectOptionList(a.cfg.Databases, serverKey)
-	m.SetList(dbKeys)
-	m.SetTitle("Select database ")
+	term.SetList(dbKeys)
+	term.SetTitle("Select database ")
 
-	if err := runWithCtx(a.ctx, func() error { m.Run(); return nil }); err != nil {
+	if err := runWithCtx(a.ctx, func() error { term.Run(); return nil }); err != nil {
 		return err
 	}
 
-	dbName := m.GetSelect()
+	dbName := term.GetSelect()
 	dbKey := dbList[dbName]
 	db := a.cfg.Databases[dbKey]
 
@@ -315,7 +323,16 @@ func (a *App) runBackup(server config.Server, db config.Database) error {
 	logging.L(a.ctx).Info("The connection is established")
 
 	logging.L(a.ctx).Info("Preparing for backup creation")
-	backupApp := backup.NewApp(a.ctx, conn, cmdStr, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DumpLocation)
+
+	backupApp := backup.NewApp(
+		a.ctx,
+		conn,
+		cmdStr,
+		remotePath,
+		a.cfg.Settings.DirDump,
+		a.cfg.Settings.DumpLocation,
+		db.GetRemoveDump(*a.cfg.Settings.RemoveDump),
+	)
 
 	if err := runWithCtx(a.ctx, backupApp.Backup); err != nil {
 		logging.L(a.ctx).Error("Error creating backup database")
@@ -381,7 +398,7 @@ func withRetry(
 				return fmt.Errorf("failed after %d attempts: %w", maxRetries, err)
 			}
 
-			delay := exponentialBackoff(attempt)
+			delay := utils.ExponentialBackoff(attempt)
 
 			logging.L(ctx).Error("Connection error, retrying after",
 				logging.StringAttr("time", delay.String()),
@@ -400,14 +417,4 @@ func withRetry(
 		return err
 	}
 	return err
-}
-func exponentialBackoff(attempt int) time.Duration {
-	base := time.Duration(1<<uint(attempt-1)) * time.Second
-	jitterRange := int64(float64(base) * 0.6)
-	jitter := time.Duration(rand.Int63n(jitterRange) - jitterRange/2)
-	delay := base + jitter
-	if delay < 0 {
-		delay = 0
-	}
-	return delay
 }

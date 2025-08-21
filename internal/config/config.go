@@ -30,22 +30,24 @@ type Settings struct {
 	DirArchived  string    `yaml:"dir_archived" default:"./archived"`
 	Logging      *bool     `yaml:"logging" default:"false"`
 	RetryConnect int       `yaml:"retry_connect" default:"3"`
+	RemoveDump   *bool     `yaml:"remove_dump" default:"true"`
 }
 
 type Database struct {
-	User     string  `yaml:"user"`
-	Password string  `yaml:"password"`
-	Name     string  `yaml:"name,omitempty"`
-	Server   string  `yaml:"server" validate:"required"`
-	Key      string  `yaml:"key"`
-	Port     string  `yaml:"port,omitempty"`
-	Driver   string  `yaml:"driver"`
-	Options  Options `yaml:"options"`
+	User       string  `yaml:"user"`
+	Password   string  `yaml:"password"`
+	Name       string  `yaml:"name,omitempty"`
+	Server     string  `yaml:"server" validate:"required"`
+	Key        string  `yaml:"key"`
+	Port       string  `yaml:"port,omitempty"`
+	Driver     string  `yaml:"driver"`
+	Options    Options `yaml:"options"`
+	RemoveDump *bool   `yaml:"remove_dump"`
 }
 
 type Options struct {
 	AuthSource string `yaml:"auth_source"`
-	SSL        *bool  `yaml:"ssl"`
+	SSL        *bool  `yaml:"ssl" default:"false"`
 }
 
 type Server struct {
@@ -132,4 +134,11 @@ func (d Database) GetAuthSource() string {
 		return d.Options.AuthSource
 	}
 	return d.GetName()
+}
+
+func (d Database) GetRemoveDump(removeDump bool) bool {
+	if d.RemoveDump != nil {
+		return *d.RemoveDump
+	}
+	return removeDump
 }

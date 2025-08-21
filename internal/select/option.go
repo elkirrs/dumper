@@ -2,7 +2,6 @@ package _select
 
 import (
 	"dumper/internal/config"
-	"dumper/pkg/utils"
 	"sort"
 )
 
@@ -38,7 +37,6 @@ func SelectOptionList[T DataOption](options map[string]T, filter string) (map[st
 			display = idx
 		}
 
-		display = utils.CleanPrefix(display)
 		pairs = append(pairs, pair{Display: display, Original: idx})
 	}
 

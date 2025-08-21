@@ -1,7 +1,7 @@
 # 📦 Dumper
 
 **Dumper** — This is a CLI utility for creating backups databases of various types (PostgreSQL, MySQL and etc.) with
-flexible connection and storage settings.
+flexible connection and storage settings. 
 
 ---
 
@@ -9,16 +9,14 @@ flexible connection and storage settings.
 
 ## 🚀 Opportunities
 
+- Multiple database systems can be managed.
 - Support **PostgreSQL**, **MySQL**, **MongoDB** and etc.
 - Connect for DB:
     - with the dump performed directly on the server and download (server).
 - Work with **SSH-Keys** (include passphrase).
 - Custom dump name templates.
 - Archiving old dumps.
-- Different formats:
-    - PostgreSQL: `plain`, `dump`, `tar`
-    - MySQL: `plain`
-    - MongoDB: `bson`
+- Different formats.
 
 ---
 
@@ -44,15 +42,16 @@ settings:
   format: "plain"
   dir_dump: "./dumps"
   dir_archived: "./archived"
+  remove_dump: true
 
 servers:
-  test-server:
+  first-server:
     name: "test server"
     host: "10.234.23.45"
     port: "22"
     user: "user"
     password: "password"
-  mongo-server:
+  second-server:
     name: "mongo"
     host: "172.0.18.54"
     user: "root"
@@ -62,19 +61,21 @@ databases:
     name: "db_name_demo"
     user: "demo_user"
     password: "password"
-    server: "test-server"
+    server: "first-server"
     port: "5432"
     driver: "psql"
     format: "dump"
 
-  app:
-    name: "db_name_app"
-    user: "app_user"
-    password: "pass_user"
-    server: "test-server"
+  mysql_db:
+    name: "mysql_db_dumper"
+    user: "user"
+    password: "password"
     port: 3306
     driver: "mysql"
-  
+    format: "sql"
+    server: "first-server"
+    remove_dump: false
+    
   mongo:
     name: "mongo_db_name"
     user: "root"
@@ -82,10 +83,20 @@ databases:
     port: 27017
     driver: "mongo"
     format: "bson"
-    server: "mongo-server"
+    server: "second-server"
     options:
       auth_source: "admin"
       ssl: true
+    remove_dump: false  
+
+  maria_db:
+    name: "maria_db_dumper"
+    user: "user"
+    password: "password"
+    port: 3306
+    driver: "mysql"
+    format: "sql"
+    server: "first-server"
 
 ```
 
@@ -99,65 +110,74 @@ databases:
 
 Apply to all servers and databases, unless redefined locally.
 
-| Parameter           | Description                                                                               | is       |
-|---------------------|-------------------------------------------------------------------------------------------|----------|
-| `db_port`           | Default database connection port                                                          | option   |
-| `driver`            | The default DB driver: `psql`, `mysql`, `mongo`                                           | required |
-| `ssh.private_key`   | The path to the private SSH key.                                                          | option   |
-| `ssh.passphrase`    | Passphrase for the key (optional).                                                        | option   |
-| `ssh.is_passphrase` | whether to use passphrase from the config                                                 | option   |
-| `template`          | File Name Template: `{%srv%}`, `{%db%}`, `{%datetime%}`, `{%date%}`, `{%time%}`, `{%ts%}` | option   |
-| `archive`           | Archiving old dumps (need `{%srv%}_{%db%}` in template).                                  | option   |
-| `location`          | Dump execution method: `server`                                                           | required |
-| `format`            | The default dump format: `plain`, `dump`, `tar`, `bson`                                   | required |
-| `dir_dump`          | Directory for saving dumps                                                                | option   |
-| `dir_archived`      | Archive Directory                                                                         | option   |
-| `logging`           | Create logging                                                                            | option   |
-| `retry_connect`     | attempts reconnect to server (default 5)                                                  | option   |
+| Parameter           | Description                                              | is       |
+|---------------------|----------------------------------------------------------|----------|
+| `db_port`           | Default database connection port                         | option   |
+| `driver`            | [The DB driver list](#Driver)                            | required |
+| `ssh.private_key`   | The path to the private SSH key.                         | option   |
+| `ssh.passphrase`    | Passphrase for the key (optional).                       | option   |
+| `ssh.is_passphrase` | whether to use passphrase from the config                | option   |
+| `template`          | [File name template](#Template)                          | option   |
+| `archive`           | Archiving old dumps (need `{%srv%}_{%db%}` in template). | option   |
+| `location`          | [Dump execution method](#Location)                       | required |
+| `format`            | [The dump format](#Format)                               | required |
+| `dir_dump`          | Directory for saving dumps                               | option   |
+| `dir_archived`      | Archive Directory                                        | option   |
+| `logging`           | Create logging                                           | option   |
+| `retry_connect`     | attempts reconnect to server (default 5)                 | option   |
+| `remove_dump`       | remove dump file after created (default true)            | option   |
 
 #### Params:
 
-- #### template:
+- #### Driver:
+    - PostgreSQL — `psql`
+    - MySQL — `mysql`
+    - MongoDB — `mongo`
+    - MariaDB — `mariadb`
+- #### Format:
+    - PostgreSQL: `plain`, `dump`, `tar`
+    - MySQL: `plain`
+    - MongoDB: `bson`
+    - MariaDB: `plain`
+- #### Template:
     - `{%srv%}` — Name server
     - `{%db%}` — Name db
     - `{%datetime%}` — Date and time
     - `{%date%}` — Date
     - `{%time%}` — Time
     - `{%ts%}` — Time unix
-- #### location:
+- #### Location:
     - `server` — create dump in server and download
-- #### format:
-    - PostgreSQL: `plain`, `dump`, `tar`
-    - MySQL: `plain`
-    - MongoDB: `bson`
 
 #### 🖥 2. servers
 
 Defines the connections through which databases can be backed up.
 
-| Parameter  | Description                   | is                                |
-|------------|-------------------------------|-----------------------------------|
-| `name`     | Human-readable server name    | option                            |
-| `host`     | The IP address or domain name | required                          |
-| `port`     | Connection port               | required<br/> (if not set global) |
-| `user`     | Username.                     | required                          |
-| `password` | Password (if there is no key) | required<br/> (if not set key)    |
+| Parameter  | Description                     | is                                         |
+|------------|---------------------------------|--------------------------------------------|
+| `name`     | Human-readable server name      | option                                     |
+| `host`     | The IP address or domain name   | required                                   |
+| `port`     | Connection port                 | required<br/> (if not set `settings.port`) |
+| `user`     | Username                        | required                                   |
+| `password` | Password (if there is no key)   | required<br/> (if not set `key`)           |
+| `key`      | Key (if there is no password)   | required<br/> (if not set `password`)      |
 
 #### 🗄 3. databases
 
 A list of databases that need to be backed up.
 
-| Parameter             | Description                                            | is                                |
-|-----------------------|--------------------------------------------------------|-----------------------------------|
-| `name`                | Database name (by default, the key name)               | option                            |
-| `user`                | The database user                                      | required                          |
-| `password`            | DB user's password                                     | required                          |
-| `server`              | The link to the server from the `servers` section      | required                          |
-| `port`                | Connection port (if different from `settings.db_port`) | required<br/> (if not set global) |
-| `driver`              | `psql`, `mongo`, `mysql`                               | required<br/> (if not set global) |
-| `format`              | `plain`, `dump`, `tar`, `bson`                         | required<br/> (if not set global) |
-| `options.auth_source` | Name database for auth                                 | option (if set up driver mongo)   |
-| `options.ssl`         | SSL/TLS                                                | option (if set up driver mongo)   |
+| Parameter              | Description                                         | is                                            |
+|------------------------|-----------------------------------------------------|-----------------------------------------------|
+| `name`                 | Database name (by default, the key name)            | option                                        |
+| `user`                 | The database user                                   | required                                      |
+| `password`             | DB user's password                                  | required                                      |
+| `server`               | The link to the server from the `servers` section   | required                                      |
+| `port`                 | Connection port                                     | required<br/> (if not set `settings.db_port`) |
+| `driver`               | [The DB driver list](#Driver)                       | required<br/> (if not set `settings.driver`)  |
+| `format`               | [The dump format](#Format)                          | required<br/> (if not set `settings.format`)  |
+| `options.auth_source`  | Name database for auth                              | option (if set up driver mongo)               |
+| `options.ssl`          | SSL/TLS                                             | option (if set up driver mongo)               |
+| `remove_dump`          | remove dump file after created (default true)       | option                                        |
 
 ---
 
