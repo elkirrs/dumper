@@ -12,7 +12,10 @@ import (
 	"syscall"
 )
 
-var version = "1.3.0"
+var (
+	version = "dev"
+	date    = "unknown"
+)
 var showVersion bool
 
 func init() {
@@ -39,7 +42,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("dumper version %s \n", version)
+		fmt.Printf("Version: %s \nDate: %s\n", version, date)
 		return
 	}
 
