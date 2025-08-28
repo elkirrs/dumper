@@ -6,8 +6,13 @@ All notable changes to this project will be documented here.
 - Support different databases like Mysql, MongoDB and etc.
 - Support connect in server and database
 
-## [1.2.0] - 2025-08-22
-- Add driver Mongo
+## [1.3.0] - 2025-08-28
+- Add driver MariaDB
+- Add config remove file dump after from server after created
+- View file size before downloading
+
+## [1.2.0] - 2025-08-21
+- Add driver MongoDB
 - Add driver MySQL
 
 ## [1.1.1] - 2025-08-20

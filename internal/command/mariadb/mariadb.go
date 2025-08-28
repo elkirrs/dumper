@@ -1,4 +1,4 @@
-package mysql
+package mariadb
 
 import (
 	"dumper/internal/command"
@@ -7,17 +7,19 @@ import (
 	"fmt"
 )
 
-type MySQLGenerator struct{}
+type MariaDBGenerator struct{}
 
-func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
+func (g MariaDBGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
 	if data.Port == "" {
 		data.Port = "3306"
 	}
 
 	ext := "sql"
 
-	baseCmd := fmt.Sprintf("/usr/bin/mysqldump -h 127.0.0.1 -P %s -u %s -p %s %s",
-		data.Port, data.User, data.Password, data.Name)
+	baseCmd := fmt.Sprintf(
+		"/usr/bin/mariadb-dump -u%s -p%s -h127.0.0.1 -P%s %s",
+		data.User, data.Password, data.Port, data.Name,
+	)
 
 	if *settings.Archive {
 		baseCmd += " | gzip"
@@ -35,5 +37,5 @@ func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Setti
 }
 
 func init() {
-	command.Register("mysql", MySQLGenerator{})
+	command.Register("mariadb", MariaDBGenerator{})
 }
