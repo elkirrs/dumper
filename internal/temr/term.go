@@ -52,6 +52,11 @@ func (d *Data) Run() {
 		return strings.Contains(name, input)
 	}
 
+	if len(items) == 0 {
+		fmt.Printf("No results\n")
+		os.Exit(0)
+	}
+
 	prompt := promptui.Select{
 		Label:     d.Title,
 		Items:     items,

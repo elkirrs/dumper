@@ -5,7 +5,7 @@ flexible connection and storage settings.
 
 ---
 
-![Demo](assets/dumper-proccess.gif)
+![Demo](assets/dumper.gif)
 
 ## 🚀 Opportunities
 
@@ -55,6 +55,12 @@ servers:
     name: "mongo"
     host: "172.0.18.54"
     user: "root"
+  remote-config-server:
+    name: "mongo"
+    host: "43.4.58.64"
+    user: "user"
+    port: 22
+    conf_path: "/var/www/conf.yaml"
 
 databases:
   demo:
@@ -110,7 +116,7 @@ databases:
 
 Apply to all servers and databases, unless redefined locally.
 
-| Parameter           | Description                                              | is       |
+| Parameter           | Description                                              | type     |
 |---------------------|----------------------------------------------------------|----------|
 | `db_port`           | Default database connection port                         | option   |
 | `driver`            | [The DB driver list](#Driver)                            | required |
@@ -153,20 +159,23 @@ Apply to all servers and databases, unless redefined locally.
 
 Defines the connections through which databases can be backed up.
 
-| Parameter  | Description                     | is                                         |
-|------------|---------------------------------|--------------------------------------------|
-| `name`     | Human-readable server name      | option                                     |
-| `host`     | The IP address or domain name   | required                                   |
-| `port`     | Connection port                 | required<br/> (if not set `settings.port`) |
-| `user`     | Username                        | required                                   |
-| `password` | Password (if there is no key)   | required<br/> (if not set `key`)           |
-| `key`      | Key (if there is no password)   | required<br/> (if not set `password`)      |
+| Parameter   | Description                   | type                                       |
+|-------------|-------------------------------|--------------------------------------------|
+| `name`      | Human-readable server name    | option                                     |
+| `host`      | The IP address or domain name | required                                   |
+| `port`      | Connection port               | required<br/> (if not set `settings.port`) |
+| `user`      | Username                      | required                                   |
+| `password`  | Password (if there is no key) | required<br/> (if not set `key`)           |
+| `key`       | Key (if there is no password) | required<br/> (if not set `password`)      |
+| `conf_path` | Path remote config            | option (if set read only remote config)    | 
+
+The configuration file on the remote `servers` must contain the servers and `databases` section.
 
 #### 🗄 3. databases
 
 A list of databases that need to be backed up.
 
-| Parameter              | Description                                         | is                                            |
+| Parameter              | Description                                         | type                                          |
 |------------------------|-----------------------------------------------------|-----------------------------------------------|
 | `name`                 | Database name (by default, the key name)            | option                                        |
 | `user`                 | The database user                                   | required                                      |

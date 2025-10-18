@@ -1,10 +1,11 @@
 # Changelog
 All notable changes to this project will be documented here.
 
-## [Unreleased]
-- Planned features
-- Support different databases like Mysql, MongoDB and etc.
-- Support connect in server and database
+## [1.4.0] - 2025-10-18
+- Add support remote config
+- Update prepare Database and Server
+- Add view error with create dump
+- Add mask user and password for log and error
 
 ## [1.3.0] - 2025-08-28
 - Add driver MariaDB

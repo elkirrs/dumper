@@ -74,7 +74,7 @@ func main() {
 
 	if err := a.MustRun(); err != nil {
 		logging.L(ctx).Error("Failed to run app", logging.ErrAttr(err))
-		fmt.Printf("application run error : %v \n", err)
+		fmt.Printf("\napplication run error : %v \n", err)
 		os.Exit(1)
 	}
 

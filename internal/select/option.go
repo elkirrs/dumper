@@ -53,3 +53,39 @@ func SelectOptionList[T DataOption](options map[string]T, filter string) (map[st
 
 	return result, keys
 }
+
+func OptionDataBaseList(
+	options map[string]config.DBConnect,
+	filter string,
+) (map[string]string, []string) {
+	pairs := make([]pair, 0, len(options))
+
+	for idx, dbConnect := range options {
+		var display string
+
+		if filter != "" && dbConnect.Database.Server != filter {
+			continue
+		}
+
+		display = dbConnect.Database.GetDisplayName(idx)
+
+		if display == "" {
+			display = idx
+		}
+
+		pairs = append(pairs, pair{Display: display, Original: idx})
+	}
+
+	sort.Slice(pairs, func(i, j int) bool {
+		return pairs[i].Display < pairs[j].Display
+	})
+
+	result := make(map[string]string, len(pairs))
+	keys := make([]string, 0, len(pairs))
+	for _, p := range pairs {
+		result[p.Display] = p.Original
+		keys = append(keys, p.Display)
+	}
+
+	return result, keys
+}

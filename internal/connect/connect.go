@@ -1,8 +1,11 @@
 package connect
 
 import (
+	"bytes"
+	"dumper/pkg/utils"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -111,8 +114,42 @@ func (c *Connect) RunCommand(cmd string) (string, error) {
 		_ = session.Close()
 	}(session)
 
-	output, err := session.CombinedOutput(cmd)
-	return string(output), err
+	var stdout, stderr bytes.Buffer
+	session.Stdout = &stdout
+	session.Stderr = &stderr
+
+	checkBashCmd := "command -v bash >/dev/null 2>&1 && echo OK"
+	checkSession, err := c.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to check bash availability: %w", err)
+	}
+	var checkOut bytes.Buffer
+	checkSession.Stdout = &checkOut
+	if err := checkSession.Run(checkBashCmd); err != nil {
+		_ = checkSession.Close()
+		return "", fmt.Errorf("failed to run bash check: %w", err)
+	}
+	_ = checkSession.Close()
+
+	var fullCmd string
+	if strings.Contains(checkOut.String(), "OK") {
+		fullCmd = fmt.Sprintf(`bash -c 'set -o pipefail; %s'`, cmd)
+	} else {
+		fullCmd = fmt.Sprintf(`sh -c '%s; exit ${PIPESTATUS[0]:-0}'`, cmd)
+	}
+
+	err = session.Run(fullCmd)
+	output := stdout.String()
+	errorOutput := stderr.String()
+
+	if err != nil {
+		return output + errorOutput, fmt.Errorf(
+			"command failed: %v\nstderr: %s",
+			err, utils.Mask(errorOutput),
+		)
+	}
+
+	return output, nil
 }
 
 func (c *Connect) TestConnection() error {

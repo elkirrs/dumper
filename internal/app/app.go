@@ -9,6 +9,7 @@ import (
 	_ "dumper/internal/command/mysql"
 	_ "dumper/internal/command/postgres"
 	"dumper/internal/config"
+	"dumper/internal/config/remote"
 	"dumper/internal/connect"
 	cmdCfg "dumper/internal/domain/command-config"
 	_select "dumper/internal/select"
@@ -29,15 +30,15 @@ type Env struct {
 	FileLog    string
 }
 
-type DBInfo struct {
-	Server   config.Server
-	Database config.Database
-}
-
 type App struct {
 	ctx context.Context
 	cfg *config.Config
 	env *Env
+}
+
+type Remote interface {
+	Load() error
+	Config() map[string]config.DBConnect
 }
 
 func NewApp(ctx context.Context, cfg *config.Config, env *Env) *App {
@@ -91,7 +92,9 @@ func (a *App) Run() error {
 
 func (a *App) RunDumpManual() error {
 	logging.L(a.ctx).Info("Prepare server list")
+
 	var serverName string
+	var err error
 
 	term := t.New()
 	serverList, serverKeys := _select.SelectOptionList(a.cfg.Servers, "")
@@ -100,14 +103,14 @@ func (a *App) RunDumpManual() error {
 		term.SetList(serverKeys)
 		term.SetTitle("Select server ")
 
-		if err := runWithCtx(a.ctx, func() error { term.Run(); return nil }); err != nil {
+		if err = runWithCtx(a.ctx, func() error { term.Run(); return nil }); err != nil {
 			return err
 		}
+
 		serverName = term.GetSelect()
 	} else {
 		serverName = serverKeys[0]
 		fmt.Println("\033[32m" + "\U00002714 " + serverName + "\033[0m")
-
 	}
 
 	serverKey := serverList[serverName]
@@ -118,24 +121,37 @@ func (a *App) RunDumpManual() error {
 	term.ClearList()
 	logging.L(a.ctx).Info("Prepare database list")
 
-	dbList, dbKeys := _select.SelectOptionList(a.cfg.Databases, serverKey)
+	var dataDBConnect map[string]config.DBConnect
+
+	if server.ConfigPath != "" {
+		dataDBConnect, err = a.prepareRemoteDatabaseList(server)
+		serverKey = ""
+		if err != nil {
+			return err
+		}
+	} else {
+		dataDBConnect = a.prepareDBConnect()
+	}
+
+	dbList, dbKeys := _select.OptionDataBaseList(dataDBConnect, serverKey)
+
 	term.SetList(dbKeys)
 	term.SetTitle("Select database ")
 
-	if err := runWithCtx(a.ctx, func() error { term.Run(); return nil }); err != nil {
+	if err = runWithCtx(a.ctx, func() error { term.Run(); return nil }); err != nil {
 		return err
 	}
 
 	dbName := term.GetSelect()
 	dbKey := dbList[dbName]
-	db := a.cfg.Databases[dbKey]
+	dbConnect := dataDBConnect[dbKey]
 
 	logging.L(a.ctx).Info("Selected database", logging.StringAttr("database", dbKey))
 
-	err := withRetry(
+	err = withRetry(
 		a.ctx, a.cfg.Settings.RetryConnect,
 		func() error {
-			return a.runBackup(server, db)
+			return a.runBackup(dbConnect)
 		},
 		func(err error) bool {
 			var connErr *ConnectionError
@@ -146,7 +162,7 @@ func (a *App) RunDumpManual() error {
 			_ = errors.As(err, &connErr)
 			logging.L(a.ctx).Warn(
 				"Connection error, retrying",
-				logging.StringAttr("db", db.Name),
+				logging.StringAttr("db", dbConnect.Database.Name),
 				logging.StringAttr("addr", connErr.Addr),
 				logging.IntAttr("attempt", attempt),
 				logging.ErrAttr(err),
@@ -167,7 +183,7 @@ func (a *App) RunDumpDB() error {
 	dbList := strings.Split(a.env.DbName, ",")
 	countDBs := len(dbList)
 
-	serversDatabases := make(map[string][]DBInfo)
+	serversDatabases := make(map[string][]config.DBConnect)
 
 	for _, dbName := range dbList {
 		database, ok := a.cfg.Databases[dbName]
@@ -186,7 +202,7 @@ func (a *App) RunDumpDB() error {
 			continue
 		}
 
-		serversDatabases[database.Server] = append(serversDatabases[database.Server], DBInfo{
+		serversDatabases[database.Server] = append(serversDatabases[database.Server], config.DBConnect{
 			Server:   server,
 			Database: database,
 		})
@@ -203,19 +219,19 @@ func (a *App) RunDumpDB() error {
 	for _, dbInfoList := range serversDatabases {
 		dbListCopy := dbInfoList
 		wg.Add(1)
-		go func(dbInfos []DBInfo) {
+		go func(connectDBs []config.DBConnect) {
 			defer wg.Done()
-			for _, dbInfo := range dbInfos {
+			for _, dbConnect := range connectDBs {
 				select {
 				case <-a.ctx.Done():
 					logging.L(a.ctx).Info("Backup cancelled by context")
-					errCh <- fmt.Errorf("backup cancelled for database %s", dbInfo.Database.Name)
+					errCh <- fmt.Errorf("backup cancelled for database %s", dbConnect.Database.Name)
 					return
 				default:
 					err := withRetry(
 						a.ctx, a.cfg.Settings.RetryConnect,
 						func() error {
-							return a.runBackup(dbInfo.Server, dbInfo.Database)
+							return a.runBackup(dbConnect)
 						},
 						func(err error) bool {
 							var connErr *ConnectionError
@@ -226,7 +242,7 @@ func (a *App) RunDumpDB() error {
 							_ = errors.As(err, &connErr)
 							logging.L(a.ctx).Warn(
 								"Connection error, retrying",
-								logging.StringAttr("db", dbInfo.Database.Name),
+								logging.StringAttr("db", dbConnect.Database.Name),
 								logging.StringAttr("addr", connErr.Addr),
 								logging.IntAttr("attempt", attempt),
 								logging.ErrAttr(err),
@@ -235,7 +251,7 @@ func (a *App) RunDumpDB() error {
 					)
 
 					if err != nil {
-						errCh <- fmt.Errorf("backup failed for %s: %w", dbInfo.Database.Name, err)
+						errCh <- fmt.Errorf("backup failed for %s: %w", dbConnect.Database.Name, err)
 						return
 					}
 				}
@@ -257,7 +273,10 @@ func (a *App) RunDumpDB() error {
 	return nil
 }
 
-func (a *App) runBackup(server config.Server, db config.Database) error {
+func (a *App) runBackup(dbConnect config.DBConnect) error {
+	server := dbConnect.Server
+	db := dbConnect.Database
+
 	dataFormat := utils.TemplateData{
 		Server:   server.GetName(),
 		Database: db.GetName(),
@@ -285,11 +304,12 @@ func (a *App) runBackup(server config.Server, db config.Database) error {
 	cmdStr, remotePath, err := cmdApp.GetCommand()
 
 	if err != nil {
-		logging.L(a.ctx).Error("error generate command")
-		return fmt.Errorf("error generate command: %w", err)
+		logging.L(a.ctx).Error("failed generate command")
+		return fmt.Errorf("failed generate command: %w", err)
 	}
 
 	logging.L(a.ctx).Info("Prepare connection")
+
 	conn := connect.New(
 		server.Host,
 		server.User,
@@ -417,4 +437,68 @@ func withRetry(
 		return err
 	}
 	return err
+}
+
+func (a *App) prepareRemoteDatabaseList(
+	server config.Server,
+) (map[string]config.DBConnect, error) {
+	logging.L(a.ctx).Info("Prepare connection")
+
+	conn := connect.New(
+		server.Host,
+		server.User,
+		server.GetPort(a.cfg.Settings.SrvPost),
+		a.cfg.Settings.SSH.PrivateKey,
+		server.SSHKey,
+		a.cfg.Settings.SSH.Passphrase,
+		server.Password,
+		*a.cfg.Settings.SSH.IsPassphrase,
+	)
+
+	fmt.Printf("Trying to connect to server %s...\n", server.Host)
+	if err := runWithCtx(a.ctx, conn.Connect); err != nil {
+		logging.L(a.ctx).Error(
+			"Error connecting to server",
+			logging.StringAttr("server", server.Host),
+			logging.ErrAttr(err),
+		)
+		return nil, &ConnectionError{Addr: server.Host, Err: err}
+	}
+
+	defer func(conn *connect.Connect) {
+		_ = conn.Close()
+	}(conn)
+
+	logging.L(a.ctx).Info("Trying to test connection to server")
+	if err := runWithCtx(a.ctx, conn.TestConnection); err != nil {
+		logging.L(a.ctx).Error("Error testing connection to server")
+		return nil, &ConnectionError{Addr: server.Host, Err: err}
+	}
+
+	logging.L(a.ctx).Info("The connection is established")
+
+	var rmt Remote
+	rmt = remote.New(a.ctx, conn, server.ConfigPath)
+
+	logging.L(a.ctx).Info("Trying to load remote config")
+	if err := runWithCtx(a.ctx, rmt.Load); err != nil {
+		logging.L(a.ctx).Error("Error load remote config")
+		return nil, &ConnectionError{Addr: server.Host, Err: err}
+	}
+
+	logging.L(a.ctx).Info("Remote config loaded successfully")
+
+	return rmt.Config(), nil
+}
+
+func (a *App) prepareDBConnect() map[string]config.DBConnect {
+	connectDBs := make(map[string]config.DBConnect, len(a.cfg.Databases))
+	for idx, database := range a.cfg.Databases {
+		connectDBs[idx] = config.DBConnect{
+			Server:   a.cfg.Servers[database.Server],
+			Database: database,
+		}
+	}
+
+	return connectDBs
 }

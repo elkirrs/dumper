@@ -51,18 +51,24 @@ type Options struct {
 }
 
 type Server struct {
-	Host     string `yaml:"host" validate:"required"`
-	User     string `yaml:"user" validate:"required"`
-	Name     string `yaml:"name,omitempty"`
-	Port     string `yaml:"port,omitempty"`
-	SSHKey   string `yaml:"key,omitempty"`
-	Password string `yaml:"password,omitempty"`
+	Host       string `yaml:"host" validate:"required"`
+	User       string `yaml:"user" validate:"required"`
+	Name       string `yaml:"name,omitempty"`
+	Port       string `yaml:"port,omitempty"`
+	SSHKey     string `yaml:"key,omitempty"`
+	Password   string `yaml:"password,omitempty"`
+	ConfigPath string `yaml:"conf_path,omitempty"`
 }
 
 type SSHConfig struct {
 	PrivateKey   string `yaml:"private_key"`
 	Passphrase   string `yaml:"passphrase"`
 	IsPassphrase *bool  `yaml:"is_passphrase" validate:"required"`
+}
+
+type DBConnect struct {
+	Database Database
+	Server   Server
 }
 
 func Load(filename string) (*Config, error) {
@@ -141,4 +147,11 @@ func (d Database) GetRemoveDump(removeDump bool) bool {
 		return *d.RemoveDump
 	}
 	return removeDump
+}
+
+func (d Database) GetDisplayName(key string) string {
+	if d.Name != "" {
+		return d.Name
+	}
+	return key
 }
