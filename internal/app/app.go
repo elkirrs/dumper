@@ -9,6 +9,7 @@ import (
 	_ "dumper/internal/command/mssql"
 	_ "dumper/internal/command/mysql"
 	_ "dumper/internal/command/postgres"
+	_ "dumper/internal/command/redis"
 	_ "dumper/internal/command/sqlite"
 	"dumper/internal/config/remote"
 	"dumper/internal/connect"

@@ -104,6 +104,17 @@ databases:
     format: "sql"
     server: "first-server"
 
+  redis_db:
+    name: "redis_db_dumper"
+    user: "user"
+    password: "password"
+    port: 6379
+    driver: "redis"
+    format: "rdb"
+    server: "first-server"
+    options:
+      mode: "sync"
+
 ```
 
 ---
@@ -136,12 +147,14 @@ Apply to all servers and databases, unless redefined locally.
 #### Params:
 
 - #### Driver:
-    - PostgreSQL — `psql`
-    - MySQL — `mysql`
-    - MongoDB — `mongo`
-    - MariaDB — `mariadb`
-    - Microsoft SQL Server — `mssql`
-    - SQLite — `sqlite`
+    - `psql` — PostgreSQL
+    - `mysql` — MySQL
+    - `mongo` — MongoDB
+    - `mariadb` — MariaDB
+    - `mssql` — Microsoft SQL Server
+    - `sqlite` — SQLite
+    - `redis` — Redis 
+
 - #### Format:
     - PostgreSQL: `plain`, `dump`, `tar`
     - MySQL: `sql`
@@ -149,6 +162,8 @@ Apply to all servers and databases, unless redefined locally.
     - MariaDB: `sql`
     - MSSQL: `bac`, `bacpac`
     - SQLite: `sql`
+    - Redis: `rdb`
+
 - #### Template:
     - `{%srv%}` — Name server
     - `{%db%}` — Name db
@@ -156,6 +171,7 @@ Apply to all servers and databases, unless redefined locally.
     - `{%date%}` — Date
     - `{%time%}` — Time
     - `{%ts%}` — Time unix
+
 - #### Location:
     - `server` — create dump in server and download
 
@@ -179,18 +195,19 @@ The configuration file on the remote `servers` must contain the servers and `dat
 
 A list of databases that need to be backed up.
 
-| Parameter              | Description                                       | Type     | Additional info                                  |
-|------------------------|---------------------------------------------------|----------|--------------------------------------------------|
-| `name`                 | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
-| `user`                 | The database user                                 | required |                                                  |
-| `password`             | DB user's password                                | required |                                                  |
-| `server`               | The link to the server from the `servers` section | required |                                                  |
-| `port`                 | Connection port                                   | required | if not set `settings.db_port`                    |
-| `driver`               | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
-| `format`               | [The dump format](#Format)                        | required | if not set `settings.format`                     |
-| `options.auth_source`  | Name database for auth                            | option   | if set up driver mongo                           |
-| `options.ssl`          | SSL/TLS                                           | option   | if set up driver mongo, mssql                    |
-| `remove_dump`          | remove dump file after created (default true)     | option   |                                                  |
+| Parameter             | Description                                       | Type     | Additional info                                  |
+|-----------------------|---------------------------------------------------|----------|--------------------------------------------------|
+| `name`                | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
+| `user`                | The database user                                 | required |                                                  |
+| `password`            | DB user's password                                | required |                                                  |
+| `server`              | The link to the server from the `servers` section | required |                                                  |
+| `port`                | Connection port                                   | required | if not set `settings.db_port`                    |
+| `driver`              | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
+| `format`              | [The dump format](#Format)                        | required | if not set `settings.format`                     |
+| `options.auth_source` | Name database for auth                            | option   | if set up driver mongo                           |
+| `options.ssl`         | SSL/TLS                                           | option   | if set up driver mongo, mssql                    |
+| `options.mode`        | Mode create dump                                  | option   | if set up driver redis                           |
+| `remove_dump`         | remove dump file after created (default true)     | option   |                                                  |
 
 ---
 
