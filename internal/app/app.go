@@ -6,6 +6,7 @@ import (
 	"dumper/internal/command"
 	_ "dumper/internal/command/mariadb"
 	_ "dumper/internal/command/mongodb"
+	_ "dumper/internal/command/mssql"
 	_ "dumper/internal/command/mysql"
 	_ "dumper/internal/command/postgres"
 	"dumper/internal/config"

@@ -140,11 +140,13 @@ Apply to all servers and databases, unless redefined locally.
     - MySQL — `mysql`
     - MongoDB — `mongo`
     - MariaDB — `mariadb`
+    - MSSQL — `Microsoft SQL Server`
 - #### Format:
     - PostgreSQL: `plain`, `dump`, `tar`
     - MySQL: `plain`
     - MongoDB: `bson`
     - MariaDB: `plain`
+    - MSSQL: `bac`, `bacpac`
 - #### Template:
     - `{%srv%}` — Name server
     - `{%db%}` — Name db
@@ -185,7 +187,7 @@ A list of databases that need to be backed up.
 | `driver`               | [The DB driver list](#Driver)                       | required<br/> (if not set `settings.driver`)  |
 | `format`               | [The dump format](#Format)                          | required<br/> (if not set `settings.format`)  |
 | `options.auth_source`  | Name database for auth                              | option (if set up driver mongo)               |
-| `options.ssl`          | SSL/TLS                                             | option (if set up driver mongo)               |
+| `options.ssl`          | SSL/TLS                                             | option (if set up driver mongo, mssql)        |
 | `remove_dump`          | remove dump file after created (default true)       | option                                        |
 
 ---
