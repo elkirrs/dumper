@@ -118,7 +118,7 @@ func (a *App) RunDumpManual() error {
 	}
 
 	serverKey := serverList[serverName]
-	server := a.cfg.Servers[serverKey]
+	srv := a.cfg.Servers[serverKey]
 
 	logging.L(a.ctx).Info("Selected server", logging.StringAttr("server", serverKey))
 
@@ -127,8 +127,8 @@ func (a *App) RunDumpManual() error {
 
 	var dataDBConnect map[string]dbConnect.DBConnect
 
-	if server.ConfigPath != "" {
-		dataDBConnect, err = a.prepareRemoteDatabaseList(server)
+	if srv.ConfigPath != "" {
+		dataDBConnect, err = a.prepareRemoteDatabaseList(srv)
 		serverKey = ""
 		if err != nil {
 			return err
@@ -148,14 +148,14 @@ func (a *App) RunDumpManual() error {
 
 	dbName := term.GetSelect()
 	dbKey := dbList[dbName]
-	dbConnect := dataDBConnect[dbKey]
+	dbConn := dataDBConnect[dbKey]
 
 	logging.L(a.ctx).Info("Selected database", logging.StringAttr("database", dbKey))
 
 	err = withRetry(
 		a.ctx, a.cfg.Settings.RetryConnect,
 		func() error {
-			return a.runBackup(dbConnect)
+			return a.runBackup(dbConn)
 		},
 		func(err error) bool {
 			var connErr *ConnectionError
@@ -166,7 +166,7 @@ func (a *App) RunDumpManual() error {
 			_ = errors.As(err, &connErr)
 			logging.L(a.ctx).Warn(
 				"Connection error, retrying",
-				logging.StringAttr("db", dbConnect.Database.Name),
+				logging.StringAttr("db", dbConn.Database.Name),
 				logging.StringAttr("addr", connErr.Addr),
 				logging.IntAttr("attempt", attempt),
 				logging.ErrAttr(err),
@@ -198,7 +198,7 @@ func (a *App) RunDumpDB() error {
 			continue
 		}
 
-		server, ok := a.cfg.Servers[database.Server]
+		srv, ok := a.cfg.Servers[database.Server]
 		if !ok {
 			fmt.Printf("Server %s not found\n", database.Server)
 			logging.L(a.ctx).Warn("Server not found", logging.StringAttr("name", database.Server))
@@ -207,7 +207,7 @@ func (a *App) RunDumpDB() error {
 		}
 
 		serversDatabases[database.Server] = append(serversDatabases[database.Server], dbConnect.DBConnect{
-			Server:   server,
+			Server:   srv,
 			Database: database,
 		})
 
@@ -225,17 +225,17 @@ func (a *App) RunDumpDB() error {
 		wg.Add(1)
 		go func(connectDBs []dbConnect.DBConnect) {
 			defer wg.Done()
-			for _, dbConnect := range connectDBs {
+			for _, dbConn := range connectDBs {
 				select {
 				case <-a.ctx.Done():
 					logging.L(a.ctx).Info("Backup cancelled by context")
-					errCh <- fmt.Errorf("backup cancelled for database %s", dbConnect.Database.Name)
+					errCh <- fmt.Errorf("backup cancelled for database %s", dbConn.Database.Name)
 					return
 				default:
 					err := withRetry(
 						a.ctx, a.cfg.Settings.RetryConnect,
 						func() error {
-							return a.runBackup(dbConnect)
+							return a.runBackup(dbConn)
 						},
 						func(err error) bool {
 							var connErr *ConnectionError
@@ -246,7 +246,7 @@ func (a *App) RunDumpDB() error {
 							_ = errors.As(err, &connErr)
 							logging.L(a.ctx).Warn(
 								"Connection error, retrying",
-								logging.StringAttr("db", dbConnect.Database.Name),
+								logging.StringAttr("db", dbConn.Database.Name),
 								logging.StringAttr("addr", connErr.Addr),
 								logging.IntAttr("attempt", attempt),
 								logging.ErrAttr(err),
@@ -255,7 +255,7 @@ func (a *App) RunDumpDB() error {
 					)
 
 					if err != nil {
-						errCh <- fmt.Errorf("backup failed for %s: %w", dbConnect.Database.Name, err)
+						errCh <- fmt.Errorf("backup failed for %s: %w", dbConn.Database.Name, err)
 						return
 					}
 				}
@@ -278,11 +278,11 @@ func (a *App) RunDumpDB() error {
 }
 
 func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
-	server := dbConnect.Server
+	srv := dbConnect.Server
 	db := dbConnect.Database
 
 	dataFormat := utils.TemplateData{
-		Server:   server.GetName(),
+		Server:   srv.GetName(),
 		Database: db.GetName(),
 		Template: a.cfg.Settings.Template,
 	}
@@ -294,8 +294,8 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 		Password:   db.Password,
 		Name:       db.GetName(),
 		Port:       db.GetPort(a.cfg.Settings.DBPort),
-		Key:        server.SSHKey,
-		Host:       server.Host,
+		Key:        srv.SSHKey,
+		Host:       srv.Host,
 		DumpName:   nameFile,
 		DumpFormat: a.cfg.Settings.DumpFormat,
 		Driver:     db.GetDriver(a.cfg.Settings.Driver),
@@ -315,24 +315,24 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 	logging.L(a.ctx).Info("Prepare connection")
 
 	conn := connect.New(
-		server.Host,
-		server.User,
-		server.GetPort(a.cfg.Settings.SrvPost),
+		srv.Host,
+		srv.User,
+		srv.GetPort(a.cfg.Settings.SrvPost),
 		a.cfg.Settings.SSH.PrivateKey,
-		server.SSHKey,
+		srv.SSHKey,
 		a.cfg.Settings.SSH.Passphrase,
-		server.Password,
+		srv.Password,
 		*a.cfg.Settings.SSH.IsPassphrase,
 	)
 
-	fmt.Printf("Trying to connect to server %s...\n", server.Host)
+	fmt.Printf("Trying to connect to server %s...\n", srv.Host)
 	if err := runWithCtx(a.ctx, conn.Connect); err != nil {
 		logging.L(a.ctx).Error(
 			"Error connecting to server",
-			logging.StringAttr("server", server.Host),
+			logging.StringAttr("server", srv.Host),
 			logging.ErrAttr(err),
 		)
-		return &ConnectionError{Addr: server.Host, Err: err}
+		return &ConnectionError{Addr: srv.Host, Err: err}
 	}
 
 	defer func(conn *connect.Connect) {
@@ -342,7 +342,7 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 	logging.L(a.ctx).Info("Trying to test connection to server")
 	if err := runWithCtx(a.ctx, conn.TestConnection); err != nil {
 		logging.L(a.ctx).Error("Error testing connection to server")
-		return &ConnectionError{Addr: server.Host, Err: err}
+		return &ConnectionError{Addr: srv.Host, Err: err}
 	}
 	logging.L(a.ctx).Info("The connection is established")
 
@@ -366,7 +366,7 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 
 	if a.cfg.Settings.DirArchived != "" {
 		logging.L(a.ctx).Info("Search for old backups")
-		dbNamePrefix := fmt.Sprintf("%s_%s", server.GetName(), db.GetName())
+		dbNamePrefix := fmt.Sprintf("%s_%s", srv.GetName(), db.GetName())
 
 		if err := runWithCtx(a.ctx, func() error {
 			return utils.ArchivedLocalFile(dbNamePrefix, remotePath, a.cfg.Settings.DirDump, a.cfg.Settings.DirArchived)
