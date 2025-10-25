@@ -140,13 +140,15 @@ Apply to all servers and databases, unless redefined locally.
     - MySQL — `mysql`
     - MongoDB — `mongo`
     - MariaDB — `mariadb`
-    - MSSQL — `Microsoft SQL Server`
+    - Microsoft SQL Server — `mssql`
+    - SQLite — `sqlite`
 - #### Format:
     - PostgreSQL: `plain`, `dump`, `tar`
-    - MySQL: `plain`
+    - MySQL: `sql`
     - MongoDB: `bson`
-    - MariaDB: `plain`
+    - MariaDB: `sql`
     - MSSQL: `bac`, `bacpac`
+    - SQLite: `sql`
 - #### Template:
     - `{%srv%}` — Name server
     - `{%db%}` — Name db
@@ -177,18 +179,18 @@ The configuration file on the remote `servers` must contain the servers and `dat
 
 A list of databases that need to be backed up.
 
-| Parameter              | Description                                         | type                                          |
-|------------------------|-----------------------------------------------------|-----------------------------------------------|
-| `name`                 | Database name (by default, the key name)            | option                                        |
-| `user`                 | The database user                                   | required                                      |
-| `password`             | DB user's password                                  | required                                      |
-| `server`               | The link to the server from the `servers` section   | required                                      |
-| `port`                 | Connection port                                     | required<br/> (if not set `settings.db_port`) |
-| `driver`               | [The DB driver list](#Driver)                       | required<br/> (if not set `settings.driver`)  |
-| `format`               | [The dump format](#Format)                          | required<br/> (if not set `settings.format`)  |
-| `options.auth_source`  | Name database for auth                              | option (if set up driver mongo)               |
-| `options.ssl`          | SSL/TLS                                             | option (if set up driver mongo, mssql)        |
-| `remove_dump`          | remove dump file after created (default true)       | option                                        |
+| Parameter              | Description                                       | Type     | Additional info                                  |
+|------------------------|---------------------------------------------------|----------|--------------------------------------------------|
+| `name`                 | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
+| `user`                 | The database user                                 | required |                                                  |
+| `password`             | DB user's password                                | required |                                                  |
+| `server`               | The link to the server from the `servers` section | required |                                                  |
+| `port`                 | Connection port                                   | required | if not set `settings.db_port`                    |
+| `driver`               | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
+| `format`               | [The dump format](#Format)                        | required | if not set `settings.format`                     |
+| `options.auth_source`  | Name database for auth                            | option   | if set up driver mongo                           |
+| `options.ssl`          | SSL/TLS                                           | option   | if set up driver mongo, mssql                    |
+| `remove_dump`          | remove dump file after created (default true)     | option   |                                                  |
 
 ---
 
