@@ -1,6 +1,8 @@
 package command_config
 
-import "dumper/internal/config"
+import (
+	"dumper/internal/domain/config/option"
+)
 
 type ConfigData struct {
 	User       string
@@ -12,5 +14,5 @@ type ConfigData struct {
 	DumpName   string
 	DumpFormat string
 	Driver     string
-	Options    config.Options
+	Options    option.Options
 }

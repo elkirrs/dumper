@@ -2,14 +2,14 @@ package mysql
 
 import (
 	"dumper/internal/command"
-	"dumper/internal/config"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type MySQLGenerator struct{}
 
-func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
+func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
 	if data.Port == "" {
 		data.Port = "3306"
 	}

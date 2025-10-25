@@ -1,12 +1,12 @@
 package command
 
 import (
-	"dumper/internal/config"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/setting"
 )
 
 type CmdGenerator interface {
-	Generate(*cmdCfg.ConfigData, *config.Settings) (cmd string, remotePath string)
+	Generate(*cmdCfg.ConfigData, *setting.Settings) (cmd string, remotePath string)
 }
 
 var generators = map[string]CmdGenerator{}

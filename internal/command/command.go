@@ -1,17 +1,17 @@
 package command
 
 import (
-	"dumper/internal/config"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type Settings struct {
 	Config *cmdCfg.ConfigData
-	AppCfg *config.Settings
+	AppCfg *setting.Settings
 }
 
-func NewApp(appCfg *config.Settings, config *cmdCfg.ConfigData) *Settings {
+func NewApp(appCfg *setting.Settings, config *cmdCfg.ConfigData) *Settings {
 	return &Settings{
 		Config: config,
 		AppCfg: appCfg,

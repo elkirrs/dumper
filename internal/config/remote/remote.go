@@ -2,8 +2,10 @@ package remote
 
 import (
 	"context"
-	"dumper/internal/config"
 	"dumper/internal/connect"
+	"dumper/internal/domain/config/database"
+	dbConnect "dumper/internal/domain/config/db-connect"
+	"dumper/internal/domain/config/server"
 	"dumper/pkg/logging"
 	"fmt"
 
@@ -16,12 +18,12 @@ type RCfg struct {
 	ctx        context.Context
 	conn       *connect.Connect
 	cfgPath    string
-	connectDBs map[string]config.DBConnect
+	connectDBs map[string]dbConnect.DBConnect
 }
 
 type Config struct {
-	Databases map[string]config.Database
-	Servers   map[string]config.Server
+	Databases map[string]database.Database
+	Servers   map[string]server.Server
 }
 
 func New(
@@ -82,7 +84,7 @@ func (r *RCfg) Load() error {
 	return nil
 }
 
-func (r *RCfg) Config() map[string]config.DBConnect {
+func (r *RCfg) Config() map[string]dbConnect.DBConnect {
 	return r.connectDBs
 }
 
@@ -115,12 +117,12 @@ func (r *RCfg) loadFromString(strYml string) error {
 		return fmt.Errorf("config validation failed: %w", err)
 	}
 
-	data := make(map[string]config.DBConnect, len(cfg.Databases))
+	data := make(map[string]dbConnect.DBConnect, len(cfg.Databases))
 
-	for idx, database := range cfg.Databases {
-		data[idx] = config.DBConnect{
-			Database: database,
-			Server:   cfg.Servers[database.Server],
+	for idx, db := range cfg.Databases {
+		data[idx] = dbConnect.DBConnect{
+			Database: db,
+			Server:   cfg.Servers[db.Server],
 		}
 	}
 

@@ -24,7 +24,16 @@ type Connect struct {
 	client           *ssh.Client
 }
 
-func New(server, username, port, sshLocalKeyPath, sshServerKeyPath, passphrase, password string, isPassphrase bool) *Connect {
+func New(
+	server,
+	username,
+	port,
+	sshLocalKeyPath,
+	sshServerKeyPath,
+	passphrase,
+	password string,
+	isPassphrase bool,
+) *Connect {
 	return &Connect{
 		Server:           server,
 		Username:         username,

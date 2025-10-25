@@ -2,14 +2,14 @@ package mssql
 
 import (
 	"dumper/internal/command"
-	"dumper/internal/config"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type MSSQLGenerator struct{}
 
-func (g MSSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
+func (g MSSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
 
 	var baseCmd, remotePath string
 

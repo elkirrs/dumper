@@ -2,14 +2,14 @@ package mongodb
 
 import (
 	"dumper/internal/command"
-	"dumper/internal/config"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type MongoGenerator struct{}
 
-func (g MongoGenerator) Generate(data *cmdCfg.ConfigData, settings *config.Settings) (string, string) {
+func (g MongoGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
 	if data.Port == "" {
 		data.Port = "27017"
 	}

@@ -9,10 +9,13 @@ import (
 	_ "dumper/internal/command/mssql"
 	_ "dumper/internal/command/mysql"
 	_ "dumper/internal/command/postgres"
-	"dumper/internal/config"
+	_ "dumper/internal/command/sqlite"
 	"dumper/internal/config/remote"
 	"dumper/internal/connect"
 	cmdCfg "dumper/internal/domain/command-config"
+	cfg "dumper/internal/domain/config"
+	dbConnect "dumper/internal/domain/config/db-connect"
+	"dumper/internal/domain/config/server"
 	_select "dumper/internal/select"
 	t "dumper/internal/temr"
 	"dumper/pkg/logging"
@@ -33,16 +36,16 @@ type Env struct {
 
 type App struct {
 	ctx context.Context
-	cfg *config.Config
+	cfg *cfg.Config
 	env *Env
 }
 
 type Remote interface {
 	Load() error
-	Config() map[string]config.DBConnect
+	Config() map[string]dbConnect.DBConnect
 }
 
-func NewApp(ctx context.Context, cfg *config.Config, env *Env) *App {
+func NewApp(ctx context.Context, cfg *cfg.Config, env *Env) *App {
 	return &App{
 		ctx: ctx,
 		cfg: cfg,
@@ -122,7 +125,7 @@ func (a *App) RunDumpManual() error {
 	term.ClearList()
 	logging.L(a.ctx).Info("Prepare database list")
 
-	var dataDBConnect map[string]config.DBConnect
+	var dataDBConnect map[string]dbConnect.DBConnect
 
 	if server.ConfigPath != "" {
 		dataDBConnect, err = a.prepareRemoteDatabaseList(server)
@@ -184,7 +187,7 @@ func (a *App) RunDumpDB() error {
 	dbList := strings.Split(a.env.DbName, ",")
 	countDBs := len(dbList)
 
-	serversDatabases := make(map[string][]config.DBConnect)
+	serversDatabases := make(map[string][]dbConnect.DBConnect)
 
 	for _, dbName := range dbList {
 		database, ok := a.cfg.Databases[dbName]
@@ -203,7 +206,7 @@ func (a *App) RunDumpDB() error {
 			continue
 		}
 
-		serversDatabases[database.Server] = append(serversDatabases[database.Server], config.DBConnect{
+		serversDatabases[database.Server] = append(serversDatabases[database.Server], dbConnect.DBConnect{
 			Server:   server,
 			Database: database,
 		})
@@ -220,7 +223,7 @@ func (a *App) RunDumpDB() error {
 	for _, dbInfoList := range serversDatabases {
 		dbListCopy := dbInfoList
 		wg.Add(1)
-		go func(connectDBs []config.DBConnect) {
+		go func(connectDBs []dbConnect.DBConnect) {
 			defer wg.Done()
 			for _, dbConnect := range connectDBs {
 				select {
@@ -274,7 +277,7 @@ func (a *App) RunDumpDB() error {
 	return nil
 }
 
-func (a *App) runBackup(dbConnect config.DBConnect) error {
+func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 	server := dbConnect.Server
 	db := dbConnect.Database
 
@@ -441,8 +444,8 @@ func withRetry(
 }
 
 func (a *App) prepareRemoteDatabaseList(
-	server config.Server,
-) (map[string]config.DBConnect, error) {
+	server server.Server,
+) (map[string]dbConnect.DBConnect, error) {
 	logging.L(a.ctx).Info("Prepare connection")
 
 	conn := connect.New(
@@ -492,10 +495,10 @@ func (a *App) prepareRemoteDatabaseList(
 	return rmt.Config(), nil
 }
 
-func (a *App) prepareDBConnect() map[string]config.DBConnect {
-	connectDBs := make(map[string]config.DBConnect, len(a.cfg.Databases))
+func (a *App) prepareDBConnect() map[string]dbConnect.DBConnect {
+	connectDBs := make(map[string]dbConnect.DBConnect, len(a.cfg.Databases))
 	for idx, database := range a.cfg.Databases {
-		connectDBs[idx] = config.DBConnect{
+		connectDBs[idx] = dbConnect.DBConnect{
 			Server:   a.cfg.Servers[database.Server],
 			Database: database,
 		}

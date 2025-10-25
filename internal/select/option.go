@@ -1,12 +1,14 @@
 package _select
 
 import (
-	"dumper/internal/config"
+	"dumper/internal/domain/config/database"
+	dbConnect "dumper/internal/domain/config/db-connect"
+	"dumper/internal/domain/config/server"
 	"sort"
 )
 
 type DataOption interface {
-	config.Database | config.Server
+	database.Database | server.Server
 }
 
 type pair struct {
@@ -14,20 +16,23 @@ type pair struct {
 	Original string
 }
 
-func SelectOptionList[T DataOption](options map[string]T, filter string) (map[string]string, []string) {
+func SelectOptionList[T DataOption](
+	options map[string]T,
+	filter string,
+) (map[string]string, []string) {
 	pairs := make([]pair, 0, len(options))
 
 	for idx, item := range options {
 		var display string
 
 		switch v := any(item).(type) {
-		case config.Database:
+		case database.Database:
 			if filter != "" && v.Server != filter {
 				continue
 			}
 			display = v.Name
 
-		case config.Server:
+		case server.Server:
 			display = v.Name
 		default:
 			continue
@@ -55,19 +60,19 @@ func SelectOptionList[T DataOption](options map[string]T, filter string) (map[st
 }
 
 func OptionDataBaseList(
-	options map[string]config.DBConnect,
+	options map[string]dbConnect.DBConnect,
 	filter string,
 ) (map[string]string, []string) {
 	pairs := make([]pair, 0, len(options))
 
-	for idx, dbConnect := range options {
+	for idx, dbConn := range options {
 		var display string
 
-		if filter != "" && dbConnect.Database.Server != filter {
+		if filter != "" && dbConn.Database.Server != filter {
 			continue
 		}
 
-		display = dbConnect.Database.GetDisplayName(idx)
+		display = dbConn.Database.GetDisplayName(idx)
 
 		if display == "" {
 			display = idx

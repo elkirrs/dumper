@@ -58,6 +58,7 @@ func main() {
 		fmt.Printf("configuration loading error : %v \n", err)
 		os.Exit(1)
 	}
+
 	logger := runLog(&env, *config.Settings.Logging)
 
 	defer func(logger *logging.Logs) {
