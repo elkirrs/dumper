@@ -22,11 +22,11 @@ func TestPSQLGenerator_Generate(t *testing.T) {
 		wantRemote string
 	}{
 		{
-			name: "default port, format plain, archive=false, dumpLocation=client",
+			name: "format=plain, archive=false, dumpLocation=client",
 			data: &command_config.ConfigData{
 				User:       "root",
 				Password:   "pass",
-				Port:       "",
+				Port:       "5432",
 				Name:       "mydb",
 				DumpName:   "backup",
 				DumpFormat: "plain",
