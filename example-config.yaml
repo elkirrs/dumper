@@ -1,0 +1,208 @@
+settings:
+  # Global port for all databases
+  db_port: "5432"
+  # Global key for connecting to the server
+  server_key: "path_key"
+  # Global port for connecting to the server
+  server_port: "22"
+  # Global Database Selection Driver (psql | mysql | mongo | mssql | redis | mariadb)
+  driver: "psql"
+  # Connecting to the server via ssh
+  ssh:
+    private_key: "/User/.ssh/id_rsa"
+    passphrase: "123456"
+    is_passphrase: true
+  # Dump name template
+  template: "{%srv%}_{%db%}_{%datetime%}"
+  # Option to archive old dumps (available only if {%srv%}_{%db%} is present in the dump names)
+  archive: true
+  # server, local-ssh, local-direct
+  location: "server"
+  # plain, dump, tar
+  format: "plain"
+  # directory by save dump
+  dir_dump: "./dumps"
+  # directory by archived dump
+  dir_archived: "./archived"
+  logging: true
+  retry_connect: 5
+  remove_dump: true
+
+servers:
+  srv-conf-remote:
+    name: "Load remote config"
+    host: "10.23.55.181"
+    user: "root"
+    port: 22
+    conf_path: "/var/www/conf.yaml"
+
+  srv-psql:
+    name: 'Server Postgres'
+    host: '172.16.204.99'
+    user: 'root'
+    port: 22
+
+  srv-mysql:
+    name: 'Server MySQL'
+    host: '203.0.113.77'
+    user: 'root'
+    port: 22
+
+  srv-mongo:
+    name: 'Server Mongo DB'
+    host: '54.217.33.10'
+    user: 'root'
+    port: 22
+
+  srv-redis:
+    name: 'Server Redis'
+    host: '172.31.88.200'
+    user: 'root'
+    port: 22
+
+  srv-sqlite:
+    name: 'Server SQLite3'
+    host: '100.64.12.55'
+    user: 'root'
+    port: 22
+
+  srv-mssql:
+    name: 'Server Microsoft SQL Server'
+    host: '198.51.100.42'
+    user: 'root'
+    port: 22
+
+databases:
+# Config PSQL databases
+  db-psql:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 5432
+    driver: 'psql'
+    server: 'srv-psql'
+    format: 'plain'
+
+  db-psql-custom:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 5432
+    driver: 'psql'
+    server: 'srv-psql'
+    format: 'dump'
+
+  db-psql-tar:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 5432
+    driver: 'psql'
+    server: 'srv-psql'
+    format: 'tar'
+
+# Config MySQL databases
+  db-mysql:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 3306
+    driver: 'mysql'
+    server: 'srv-mysql'
+    format: 'sql'
+
+# Config Mongo databases
+  db-mongo:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 27017
+    driver: 'mongo'
+    server: 'srv-mongo'
+    format: 'bson'
+    options:
+      auth_source: "admin"
+      ssl: false
+
+  db-mongo-ssl:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 27017
+    driver: 'mongo'
+    server: 'srv-mongo'
+    format: 'bson'
+    options:
+      auth_source: "admin"
+      ssl: true
+
+  db-mongo-without-options:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 27017
+    driver: 'mongo'
+    server: 'srv-mongo'
+    format: 'bson'
+
+# Config Redis databases
+  db-redis:
+    name: 'redis-db'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 6379
+    driver: 'redis'
+    server: 'srv-redis'
+    format: 'fbk'
+    options:
+      mode: 'sync'
+
+  db-redis-save:
+    name: 'redis-db'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 6379
+    driver: 'redis'
+    server: 'srv-redis'
+    format: 'fbk'
+    options:
+      mode: 'save'
+
+# Config SQLite3 databases
+  db-sqlite:
+    name: 'mydb'
+    user: ''
+    password: ''
+    port: ''
+    driver: 'sqlite'
+    server: 'srv-sqlite'
+    format: 'sql'
+    options:
+      path: '/root/mydb.db'
+
+# Config MSSQL databases
+  db-mssql-bac:
+    name: 'MyDB'
+    user: 'sa'
+    password: 'myPassword1'
+    driver: 'mssql'
+    server: 'srv-mssql'
+    format: 'bac'
+
+  db-mssql-bacpac:
+    name: 'MyDB'
+    user: 'sa'
+    password: 'myPassword1'
+    driver: 'mssql'
+    server: 'srv-mssql'
+    format: 'bacpac'
+
+  db-mssql-bacpac-ssl:
+    name: 'MyDB'
+    user: 'sa'
+    password: 'myPassword1'
+    driver: 'mssql'
+    server: 'srv-mssql'
+    format: 'bacpac'
+    options:
+      ssl: true
