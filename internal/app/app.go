@@ -298,7 +298,7 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 		Key:        srv.SSHKey,
 		Host:       srv.Host,
 		DumpName:   nameFile,
-		DumpFormat: a.cfg.Settings.DumpFormat,
+		DumpFormat: db.GetFormat(a.cfg.Settings.DumpFormat),
 		Driver:     db.GetDriver(a.cfg.Settings.Driver),
 		Options:    db.Options,
 	}

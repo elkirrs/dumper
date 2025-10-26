@@ -10,10 +10,6 @@ import (
 type PSQLGenerator struct{}
 
 func (g PSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
-	if data.Port == "" {
-		data.Port = "5432"
-	}
-
 	formatFlag := "-Fp" // plain SQL
 	ext := "sql"
 
@@ -38,6 +34,7 @@ func (g PSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Setti
 	remotePath := fmt.Sprintf("./%s", fileName)
 
 	if settings.DumpLocation == "server" {
+		fmt.Println(fmt.Sprintf("%s > %s", baseCmd, remotePath))
 		return fmt.Sprintf("%s > %s", baseCmd, remotePath), remotePath
 	}
 

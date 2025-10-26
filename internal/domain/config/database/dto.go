@@ -10,6 +10,7 @@ type Database struct {
 	Key        string         `yaml:"key"`
 	Port       string         `yaml:"port,omitempty"`
 	Driver     string         `yaml:"driver"`
+	Format     string         `yaml:"format" validate:"required"`
 	Options    option.Options `yaml:"options"`
 	RemoveDump *bool          `yaml:"remove_dump"`
 }
@@ -53,4 +54,11 @@ func (d Database) GetDisplayName(key string) string {
 		return d.Name
 	}
 	return key
+}
+
+func (d Database) GetFormat(format string) string {
+	if d.Format != "" {
+		return d.Format
+	}
+	return format
 }
