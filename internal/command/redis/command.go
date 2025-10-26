@@ -18,8 +18,8 @@ func (g RedisGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Sett
 	host := "127.0.0.1"
 
 	baseCmd := fmt.Sprintf(
-		"redis-cli -h %s -p %s -a %s --rdb %s",
-		host, data.Port, data.Password, remotePath,
+		"redis-cli -h %s -p %s -a %s --rdb",
+		host, data.Port, data.Password,
 	)
 
 	if data.Options.Mode == "save" {
@@ -31,9 +31,10 @@ func (g RedisGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Sett
 	}
 
 	if *settings.Archive {
-		baseCmd = fmt.Sprintf("%s | gzip", baseCmd)
-		ext += ".gz"
 		remotePath += ".gz"
+		baseCmd = fmt.Sprintf("%s - | gzip > %s", baseCmd, remotePath)
+	} else {
+		baseCmd = fmt.Sprintf("%s %s", baseCmd, remotePath)
 	}
 
 	if settings.DumpLocation == "server" {

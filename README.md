@@ -195,19 +195,27 @@ The configuration file on the remote `servers` must contain the servers and `dat
 
 A list of databases that need to be backed up.
 
-| Parameter             | Description                                       | Type     | Additional info                                  |
-|-----------------------|---------------------------------------------------|----------|--------------------------------------------------|
-| `name`                | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
-| `user`                | The database user                                 | required |                                                  |
-| `password`            | DB user's password                                | required |                                                  |
-| `server`              | The link to the server from the `servers` section | required |                                                  |
-| `port`                | Connection port                                   | required | if not set `settings.db_port`                    |
-| `driver`              | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
-| `format`              | [The dump format](#Format)                        | required | if not set `settings.format`                     |
-| `options.auth_source` | Name database for auth                            | option   | if set up driver mongo                           |
-| `options.ssl`         | SSL/TLS                                           | option   | if set up driver mongo, mssql                    |
-| `options.mode`        | Mode create dump                                  | option   | if set up driver redis                           |
-| `remove_dump`         | remove dump file after created (default true)     | option   |                                                  |
+| Parameter      | Description                                       | Type     | Additional info                                  |
+|----------------|---------------------------------------------------|----------|--------------------------------------------------|
+| `name`         | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
+| `user`         | The database user                                 | required |                                                  |
+| `password`     | DB user's password                                | required |                                                  |
+| `server`       | The link to the server from the `servers` section | required |                                                  |
+| `port`         | Connection port                                   | required | if not set `settings.db_port`                    |
+| `driver`       | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
+| `format`       | [The dump format](#Format)                        | required | if not set `settings.format`                     |
+| `options.*`    | Additional option for another databases           | option   | [Option list](#Options)                          |
+| `remove_dump`  | remove dump file after created (default true)     | option   |                                                  |
+
+#### Options
+
+| Parameter             | Description            | Type     | Additional info               |
+|-----------------------|------------------------|----------|-------------------------------|
+| `options.auth_source` | Name database for auth | option   | if set up driver mongo        |
+| `options.ssl`         | SSL/TLS                | option   | if set up driver mongo, mssql |
+| `options.mode`        | Mode create dump       | option   | if set up driver redis        |
+| `options.role`        | Role for create dump   | option   | if set up driver firebird     |
+| `options.path`        | Path database SQLite   | option   | if set up driver sqlite       |
 
 ---
 

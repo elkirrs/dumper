@@ -10,13 +10,9 @@ import (
 type MySQLGenerator struct{}
 
 func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
-	if data.Port == "" {
-		data.Port = "3306"
-	}
-
 	ext := "sql"
 
-	baseCmd := fmt.Sprintf("/usr/bin/mysqldump -h 127.0.0.1 -P %s -u %s -p %s %s",
+	baseCmd := fmt.Sprintf("/usr/bin/mysqldump -h 127.0.0.1 -P %s -u %s -p%s %s",
 		data.Port, data.User, data.Password, data.Name)
 
 	if *settings.Archive {

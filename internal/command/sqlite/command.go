@@ -15,14 +15,13 @@ func (g SQLiteGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Set
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("./%s", fileName)
 
-	baseCmd := fmt.Sprintf("sqlite3 %s \".output %s\" \".dump\"",
-		data.Name, remotePath,
-	)
+	baseCmd := fmt.Sprintf("sqlite3 %s .dump", data.Options.Path)
 
 	if *settings.Archive {
-		baseCmd = fmt.Sprintf("%s | gzip", baseCmd)
-		ext += ".gz"
 		remotePath += ".gz"
+		baseCmd = fmt.Sprintf("%s | gzip > %s", baseCmd, remotePath)
+	} else {
+		baseCmd = fmt.Sprintf("%s > %s", baseCmd, remotePath)
 	}
 
 	if settings.DumpLocation == "server" {
