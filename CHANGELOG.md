@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.5.0] - 2025-10-26
+- Add support MSSQL, SQLite, Redis
+- Fix bags
+
 ## [1.4.0] - 2025-10-18
 - Add support remote config
 - Update prepare Database and Server
