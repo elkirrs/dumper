@@ -1,7 +1,7 @@
 package mariadb
 
 import (
-	"dumper/internal/command"
+	command "dumper/internal/command/database"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/setting"
 	"fmt"

@@ -1,4 +1,4 @@
-package config
+package local_config
 
 import (
 	"dumper/internal/domain/config"

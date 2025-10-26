@@ -1,4 +1,4 @@
-package remote
+package remote_config
 
 import (
 	"context"

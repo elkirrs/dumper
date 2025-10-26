@@ -27,6 +27,9 @@ settings:
   logging: true
   retry_connect: 5
   remove_dump: true
+  encrypt:
+    type: "aes"
+    password: "123456"
 
 servers:
   srv-conf-remote:
@@ -91,6 +94,9 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'dump'
+    encrypt:
+      type: "aes"
+      password: "123456"
 
   db-psql-tar:
     name: 'mydb'
@@ -100,6 +106,9 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'tar'
+    encrypt:
+      type: "aes"
+      password: "123456"
 
 # Config MySQL databases
   db-mysql:
@@ -135,6 +144,9 @@ databases:
     options:
       auth_source: "admin"
       ssl: true
+    encrypt:
+      type: "aes"
+      password: "123456"
 
   db-mongo-without-options:
     name: 'mydb'

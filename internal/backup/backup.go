@@ -2,7 +2,11 @@ package backup
 
 import (
 	"context"
+	"dumper/internal/command/encrypt"
 	"dumper/internal/connect"
+	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config"
+	enc "dumper/internal/domain/encrypt"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
 	"fmt"
@@ -16,37 +20,42 @@ import (
 )
 
 type Backup struct {
-	ctx          context.Context
-	conn         *connect.Connect
-	backupCmd    string
-	remotePath   string
-	localDir     string
-	dumpLocation string
-	removeDump   bool
+	ctx        context.Context
+	cfg        *config.Config
+	conn       *connect.Connect
+	dbData     *cmdCfg.ConfigData
+	backupCmd  string
+	remotePath string
+	removeDump bool
+}
+
+type FileRemoveList struct {
+	Name     string
+	IsRemove bool
 }
 
 func NewApp(
 	ctx context.Context,
+	cfg *config.Config,
 	conn *connect.Connect,
-	backupCmd,
-	remotePath,
-	localDir,
-	dumpLocation string,
+	dbData *cmdCfg.ConfigData,
+	backupCmd string,
+	remotePath string,
 	removeDump bool,
 ) *Backup {
 	return &Backup{
-		ctx:          ctx,
-		conn:         conn,
-		backupCmd:    backupCmd,
-		remotePath:   remotePath,
-		localDir:     localDir,
-		dumpLocation: dumpLocation,
-		removeDump:   removeDump,
+		ctx:        ctx,
+		cfg:        cfg,
+		conn:       conn,
+		dbData:     dbData,
+		backupCmd:  backupCmd,
+		remotePath: remotePath,
+		removeDump: removeDump,
 	}
 }
 
 func (b *Backup) Backup() error {
-	switch b.dumpLocation {
+	switch b.cfg.Settings.DumpLocation {
 	case "server":
 		return b.backupByServer()
 	case "local-ssh":
@@ -56,9 +65,9 @@ func (b *Backup) Backup() error {
 	default:
 		logging.L(b.ctx).Error(
 			"Unsupported backup dump location",
-			logging.StringAttr("location", b.dumpLocation),
+			logging.StringAttr("location", b.cfg.Settings.DumpLocation),
 		)
-		return fmt.Errorf("unsupported backup dump location: %s", b.dumpLocation)
+		return fmt.Errorf("unsupported backup dump location: %s", b.cfg.Settings.DumpLocation)
 	}
 }
 
@@ -119,30 +128,70 @@ func (b *Backup) backupByServer() error {
 		)
 	}
 
+	var fileList []*FileRemoveList
+	fileList = append(fileList, &FileRemoveList{Name: b.remotePath, IsRemove: isRemoveDump})
+
+	if b.cfg.Settings.Encrypt.Type != "" {
+		encOpts := enc.Options{
+			FilePath: b.remotePath,
+			Password: b.dbData.Encrypt.Password,
+			Type:     b.dbData.Encrypt.Type,
+			Crypt:    "encrypt",
+		}
+		encryptApp := encrypt.NewApp(&encOpts)
+		encryptCmd, _ := encryptApp.Generate()
+
+		if msg, err := b.conn.RunCommand(encryptCmd.CMD); err != nil {
+			logging.L(b.ctx).Error(
+				"Failed to encrypt dump",
+				logging.StringAttr("msg", msg),
+				logging.ErrAttr(err),
+			)
+			return fmt.Errorf("failed to encrypt dump on server: %v, msg: %s", err, msg)
+		}
+
+		logging.L(b.ctx).Info("File dump encrypted successfully")
+		fmt.Println("File dump encrypted successfully")
+
+		b.remotePath = encryptCmd.Name
+		fileList = append(fileList, &FileRemoveList{Name: encryptCmd.Name, IsRemove: true})
+	}
+
 	logging.L(b.ctx).Info("Downloading dump", logging.StringAttr("name", b.remotePath))
 	dumpDownloadTimeNow := time.Now()
 	if err := b.downloadFile(); err != nil {
-		logging.L(b.ctx).Error("Failed to download dump")
+		logging.L(b.ctx).Error(
+			"Failed to download dump",
+			logging.ErrAttr(err),
+		)
 		return fmt.Errorf("failed to download dump: %v", err)
 	}
 
 	dumpDownloadTimeSec := fmt.Sprintf("%.2f sec", time.Since(dumpDownloadTimeNow).Seconds())
 
-	logging.L(b.ctx).Info("The dump was successfully downloaded", logging.StringAttr("time", dumpDownloadTimeSec))
+	logging.L(b.ctx).Info(
+		"The dump was successfully downloaded",
+		logging.StringAttr("time", dumpDownloadTimeSec),
+	)
 
-	if isRemoveDump {
+	for _, file := range fileList {
+
+		if !file.IsRemove {
+			continue
+		}
+
 		logging.L(b.ctx).Info("Removing dump on server")
-		fmt.Println("Removing dump from server:", b.remotePath)
-		if msg, err := b.conn.RunCommand(fmt.Sprintf("rm -f %s", b.remotePath)); err != nil {
+		fmt.Println("Removing dump from server:", file.Name)
+		if msg, err := b.conn.RunCommand(fmt.Sprintf("rm -f %s", file.Name)); err != nil {
 			logging.L(b.ctx).Error(
 				"Failed to remove dump on server",
 				logging.StringAttr("msg", msg),
 			)
 			return fmt.Errorf("failed to delete dump on server: %v", err)
 		}
-
-		logging.L(b.ctx).Info("The dump was successfully deleted on server")
 	}
+
+	logging.L(b.ctx).Info("The dump was successfully deleted on server")
 
 	return nil
 }
@@ -156,7 +205,7 @@ func (b *Backup) backupLocalDirect() error {
 }
 
 func (b *Backup) downloadFile() error {
-	localPath := filepath.Join(b.localDir, filepath.Base(b.remotePath))
+	localPath := filepath.Join(b.cfg.Settings.DirDump, filepath.Base(b.remotePath))
 
 	var totalSize int64
 

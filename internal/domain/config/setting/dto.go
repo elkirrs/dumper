@@ -1,6 +1,9 @@
 package setting
 
-import sshConfig "dumper/internal/domain/config/ssh-config"
+import (
+	"dumper/internal/domain/config/encrypt"
+	sshConfig "dumper/internal/domain/config/ssh-config"
+)
 
 type Settings struct {
 	SSH          sshConfig.SSHConfig `yaml:"ssh"`
@@ -17,4 +20,5 @@ type Settings struct {
 	Logging      *bool               `yaml:"logging" default:"false"`
 	RetryConnect int                 `yaml:"retry_connect" default:"3"`
 	RemoveDump   *bool               `yaml:"remove_dump" default:"true"`
+	Encrypt      encrypt.Encrypt     `yaml:"encrypt"`
 }

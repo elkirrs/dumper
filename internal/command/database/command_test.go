@@ -1,4 +1,4 @@
-package command
+package database
 
 import (
 	"dumper/internal/domain/command-config"

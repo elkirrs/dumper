@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"dumper/internal/app"
-	conf "dumper/internal/config"
+	conf "dumper/internal/config/local"
+	"dumper/internal/decrypt"
 	"dumper/pkg/logging"
 	"flag"
 	"fmt"
@@ -38,8 +39,29 @@ func main() {
 	dbName := flag.String("db", "", "Name of the backup database")
 	all := flag.Bool("all", false, "Backup of all databases from the configuration")
 	fileLog := flag.String("file-log", "dumper.log", "Log files from the configuration")
+	dec := flag.Bool("dec", false, "Decrypt")
+	decFile := flag.String("input", "", "Decrypt path backup file")
+	pass := flag.String("pass", "", "Password to decrypt backup file")
+	crypt := flag.String("crypt", "", "Type encrypt [aes]")
+
+	flag.Usage = func() {
+		_, _ = fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "Options:\n")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
+
+	if *dec {
+		decApp := decrypt.NewApp(*decFile, *pass, *crypt)
+		err := decApp.Decrypt()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println("Decrypt success")
+		return
+	}
 
 	if showVersion {
 		fmt.Printf("Version: %s \nDate: %s\n", version, date)

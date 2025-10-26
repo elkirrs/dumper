@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"dumper/internal/command"
+	command "dumper/internal/command/database"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/setting"
 	"fmt"
@@ -34,7 +34,6 @@ func (g PSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Setti
 	remotePath := fmt.Sprintf("./%s", fileName)
 
 	if settings.DumpLocation == "server" {
-		fmt.Println(fmt.Sprintf("%s > %s", baseCmd, remotePath))
 		return fmt.Sprintf("%s > %s", baseCmd, remotePath), remotePath
 	}
 

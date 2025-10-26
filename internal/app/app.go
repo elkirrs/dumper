@@ -3,19 +3,20 @@ package app
 import (
 	"context"
 	"dumper/internal/backup"
-	"dumper/internal/command"
-	_ "dumper/internal/command/mariadb"
-	_ "dumper/internal/command/mongodb"
-	_ "dumper/internal/command/mssql"
-	_ "dumper/internal/command/mysql"
-	_ "dumper/internal/command/postgres"
-	_ "dumper/internal/command/redis"
-	_ "dumper/internal/command/sqlite"
-	"dumper/internal/config/remote"
+	command "dumper/internal/command/database"
+	_ "dumper/internal/command/database/mariadb"
+	_ "dumper/internal/command/database/mongodb"
+	_ "dumper/internal/command/database/mssql"
+	_ "dumper/internal/command/database/mysql"
+	_ "dumper/internal/command/database/postgres"
+	_ "dumper/internal/command/database/redis"
+	_ "dumper/internal/command/database/sqlite"
+	remote "dumper/internal/config/remote"
 	"dumper/internal/connect"
 	cmdCfg "dumper/internal/domain/command-config"
 	cfg "dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
+	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/server"
 	_select "dumper/internal/select"
 	t "dumper/internal/temr"
@@ -290,7 +291,7 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 	nameFile := utils.GetTemplateFileName(dataFormat)
 	logging.L(a.ctx).Info("Generated template", logging.StringAttr("name", nameFile))
 
-	cmdData := &cmdCfg.ConfigData{
+	dbData := &cmdCfg.ConfigData{
 		User:       db.User,
 		Password:   db.Password,
 		Name:       db.GetName(),
@@ -301,11 +302,15 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 		DumpFormat: db.GetFormat(a.cfg.Settings.DumpFormat),
 		Driver:     db.GetDriver(a.cfg.Settings.Driver),
 		Options:    db.Options,
+		Encrypt: encrypt.Encrypt{
+			Type:     db.GetEncryptType(a.cfg.Settings.Encrypt.Type),
+			Password: db.GetEncryptPass(a.cfg.Settings.Encrypt.Password),
+		},
 	}
 
 	logging.L(a.ctx).Info("Prepare command for dump")
 
-	cmdApp := command.NewApp(&a.cfg.Settings, cmdData)
+	cmdApp := command.NewApp(&a.cfg.Settings, dbData)
 	cmdStr, remotePath, err := cmdApp.GetCommand()
 
 	if err != nil {
@@ -351,11 +356,11 @@ func (a *App) runBackup(dbConnect dbConnect.DBConnect) error {
 
 	backupApp := backup.NewApp(
 		a.ctx,
+		a.cfg,
 		conn,
+		dbData,
 		cmdStr,
 		remotePath,
-		a.cfg.Settings.DirDump,
-		a.cfg.Settings.DumpLocation,
 		db.GetRemoveDump(*a.cfg.Settings.RemoveDump),
 	)
 
