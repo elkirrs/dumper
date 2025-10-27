@@ -1,6 +1,6 @@
 package encrypt
 
 type Encrypt struct {
-	Type     string
-	Password string
+	Type     string `yaml:"type"`
+	Password string `yaml:"password"`
 }

@@ -117,6 +117,8 @@ databases:
 
 ```
 
+The file example you can find in repository
+
 ---
 
 ### 📑 Configuration Description
@@ -143,6 +145,8 @@ Apply to all servers and databases, unless redefined locally.
 | `logging`           | Create logging                                           | option   |
 | `retry_connect`     | attempts reconnect to server (default 5)                 | option   |
 | `remove_dump`       | remove dump file after created (default true)            | option   |
+| `encrypt.type`      | Type encrypting (only aes)                               | option   |
+| `encrypt.password`  | Password for encrypting (only aes)                       | option   |
 
 #### Params:
 
@@ -175,6 +179,9 @@ Apply to all servers and databases, unless redefined locally.
 - #### Location:
     - `server` — create dump in server and download
 
+- #### Encrypt:
+    - `aes` — type encrypting
+
 #### 🖥 2. servers
 
 Defines the connections through which databases can be backed up.
@@ -195,17 +202,19 @@ The configuration file on the remote `servers` must contain the servers and `dat
 
 A list of databases that need to be backed up.
 
-| Parameter      | Description                                       | Type     | Additional info                                  |
-|----------------|---------------------------------------------------|----------|--------------------------------------------------|
-| `name`         | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
-| `user`         | The database user                                 | required |                                                  |
-| `password`     | DB user's password                                | required |                                                  |
-| `server`       | The link to the server from the `servers` section | required |                                                  |
-| `port`         | Connection port                                   | required | if not set `settings.db_port`                    |
-| `driver`       | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
-| `format`       | [The dump format](#Format)                        | required | if not set `settings.format`                     |
-| `options.*`    | Additional option for another databases           | option   | [Option list](#Options)                          |
-| `remove_dump`  | remove dump file after created (default true)     | option   |                                                  |
+| Parameter          | Description                                       | Type     | Additional info                                  |
+|--------------------|---------------------------------------------------|----------|--------------------------------------------------|
+| `name`             | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
+| `user`             | The database user                                 | required |                                                  |
+| `password`         | DB user's password                                | required |                                                  |
+| `server`           | The link to the server from the `servers` section | required |                                                  |
+| `port`             | Connection port                                   | required | if not set `settings.db_port`                    |
+| `driver`           | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
+| `format`           | [The dump format](#Format)                        | required | if not set `settings.format`                     |
+| `options.*`        | Additional option for another databases           | option   | [Option list](#Options)                          |
+| `remove_dump`      | remove dump file after created (default true)     | option   |                                                  |
+| `encrypt.type`     | Type encrypting (only aes)                        | option   |                                                  |
+| `encrypt.password` | Password for encrypting (only aes)                | option   |                                                  |
 
 #### Options
 
@@ -218,6 +227,57 @@ A list of databases that need to be backed up.
 | `options.path`        | Path database SQLite   | option   | if set up driver sqlite       |
 
 ---
+
+#### 🔐 4. encrypt
+If the file need to encrypt your database backup,
+you can use encryption (the encryption utility must be
+installed in the environment where the database backup
+is performed)
+
+In global  (encrypt for all databases)
+```yaml
+settings:
+  encrypt:
+    type: "aes" 
+    password: "123456"
+
+  servers:
+  # several servers
+  databases:
+  # several databases
+```
+
+Or only for a specific purpose
+
+```yaml
+settings:
+  # several settings
+  servers:
+  # several servers
+  databases:
+    db-psql:
+        name: 'mydb'
+        user: 'myuser'
+        password: 'mypassword'
+        port: 5432
+        driver: 'psql'
+        server: 'srv-psql'
+        format: 'plan'
+        encrypt:
+          type: "aes"
+          password: "123456"
+```
+
+The file can be decrypted either via dumper or an encryption utility.
+
+#### Decrypt
+```
+./dumper --dec --input dump.sql.gz.enc --key 1234566 --crypt aes
+```
+or
+```
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.sql.gz -k 123456
+```
 
 ### ▶ Launch examples
 

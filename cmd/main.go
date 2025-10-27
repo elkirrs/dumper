@@ -41,8 +41,8 @@ func main() {
 	fileLog := flag.String("file-log", "dumper.log", "Log files from the configuration")
 	dec := flag.Bool("dec", false, "Decrypt")
 	decFile := flag.String("input", "", "Decrypt path backup file")
-	pass := flag.String("pass", "", "Password to decrypt backup file")
 	crypt := flag.String("crypt", "", "Type encrypt [aes]")
+	pass := flag.String("pass", "", "Password to decrypt backup file [required if crypt aes]")
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])

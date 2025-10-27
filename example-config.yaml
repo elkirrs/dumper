@@ -27,9 +27,9 @@ settings:
   logging: true
   retry_connect: 5
   remove_dump: true
-  encrypt:
-    type: "aes"
-    password: "123456"
+#  encrypt:
+#    type: "aes"
+#    password: "123456"
 
 servers:
   srv-conf-remote:

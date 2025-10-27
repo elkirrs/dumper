@@ -34,8 +34,8 @@ func (e *Encrypt) Decrypt() error {
 		return errors.New("-dec option is required")
 	}
 
-	if e.Password == "" {
-		return errors.New("-pass option is required")
+	if e.Password == "" && e.Crypt == "aes" {
+		return errors.New("--pass option is required")
 	}
 
 	if e.Crypt == "" {
