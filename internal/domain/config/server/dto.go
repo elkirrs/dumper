@@ -1,6 +1,7 @@
 package server
 
 type Server struct {
+	Title      string `yaml:"title,omitempty"`
 	Host       string `yaml:"host" validate:"required"`
 	User       string `yaml:"user" validate:"required"`
 	Name       string `yaml:"name,omitempty"`
@@ -22,4 +23,16 @@ func (s Server) GetPort(port string) string {
 		return s.Port
 	}
 	return port
+}
+
+func (s Server) GetTitle() string {
+	if s.Title != "" {
+		return s.Title
+	}
+
+	if s.Name != "" {
+		return s.Name
+	}
+
+	return s.Host
 }

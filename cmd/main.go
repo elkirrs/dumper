@@ -39,7 +39,7 @@ func main() {
 	dbName := flag.String("db", "", "Name of the backup database")
 	all := flag.Bool("all", false, "Backup of all databases from the configuration")
 	fileLog := flag.String("file-log", "dumper.log", "Log files from the configuration")
-	dec := flag.Bool("dec", false, "Decrypt")
+	dec := flag.Bool("dec", false, "Decrypt process")
 	decFile := flag.String("input", "", "Decrypt path backup file")
 	crypt := flag.String("crypt", "", "Type encrypt [aes]")
 	pass := flag.String("pass", "", "Password to decrypt backup file [required if crypt aes]")

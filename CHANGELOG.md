@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.6.0] - 2025-10-28
+- Add support encrypt aes (openssl) for dump files 
+- Add Server and Database titles config
+
 ## [1.5.0] - 2025-10-26
 - Add support MSSQL, SQLite, Redis
 - Fix bags

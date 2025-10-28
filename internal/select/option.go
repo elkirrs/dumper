@@ -30,10 +30,10 @@ func SelectOptionList[T DataOption](
 			if filter != "" && v.Server != filter {
 				continue
 			}
-			display = v.Name
+			display = v.GetTitle()
 
 		case server.Server:
-			display = v.Name
+			display = v.GetTitle()
 		default:
 			continue
 		}
@@ -72,7 +72,7 @@ func OptionDataBaseList(
 			continue
 		}
 
-		display = dbConn.Database.GetDisplayName(idx)
+		display = dbConn.Database.GetTitle()
 
 		if display == "" {
 			display = idx

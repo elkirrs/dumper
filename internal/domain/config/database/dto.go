@@ -6,6 +6,7 @@ import (
 )
 
 type Database struct {
+	Title      string          `yaml:"title,omitempty"`
 	User       string          `yaml:"user"`
 	Password   string          `yaml:"password"`
 	Name       string          `yaml:"name,omitempty"`
@@ -79,4 +80,16 @@ func (d Database) GetEncryptPass(pass string) string {
 		return d.Encrypt.Password
 	}
 	return pass
+}
+
+func (d Database) GetTitle() string {
+	if d.Title != "" {
+		return d.Title
+	}
+
+	if d.Name != "" {
+		return d.Name
+	}
+
+	return d.User
 }

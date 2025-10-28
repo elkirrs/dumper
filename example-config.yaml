@@ -1,83 +1,91 @@
 settings:
   # Global port for all databases
-  db_port: "5432"
+  db_port: '5432'
   # Global key for connecting to the server
-  server_key: "path_key"
+  server_key: 'path_key'
   # Global port for connecting to the server
-  server_port: "22"
+  server_port: '22'
   # Global Database Selection Driver (psql | mysql | mongo | mssql | redis | mariadb)
-  driver: "psql"
+  driver: 'psql'
   # Connecting to the server via ssh
   ssh:
-    private_key: "/User/.ssh/id_rsa"
-    passphrase: "123456"
+    private_key: '/User/.ssh/id_rsa'
+    passphrase: '123456'
     is_passphrase: true
   # Dump name template
-  template: "{%srv%}_{%db%}_{%datetime%}"
+  template: '{%srv%}_{%db%}_{%datetime%}'
   # Option to archive old dumps (available only if {%srv%}_{%db%} is present in the dump names)
   archive: true
   # server, local-ssh, local-direct
-  location: "server"
+  location: 'server'
   # plain, dump, tar
-  format: "plain"
+  format: 'plain'
   # directory by save dump
-  dir_dump: "./dumps"
+  dir_dump: './dumps'
   # directory by archived dump
-  dir_archived: "./archived"
+  dir_archived: './archived'
   logging: true
   retry_connect: 5
   remove_dump: true
 #  encrypt:
-#    type: "aes"
-#    password: "123456"
+#    type: 'aes'
+#    password: '123456'
 
 servers:
   srv-conf-remote:
-    name: "Load remote config"
-    host: "10.23.55.181"
-    user: "root"
+    title: 'Load remote config'
+    name: 'conf-remote'
+    host: '10.23.55.181'
+    user: 'root'
     port: 22
-    conf_path: "/var/www/conf.yaml"
+    conf_path: '/var/www/conf.yaml'
 
   srv-psql:
-    name: 'Server Postgres'
+    title: 'Server Postgres'
+    name: 'psql'
     host: '172.16.204.99'
     user: 'root'
     port: 22
 
   srv-mysql:
-    name: 'Server MySQL'
+    title: 'Server MySQL'
+    name: 'mysql'
     host: '203.0.113.77'
     user: 'root'
     port: 22
 
   srv-mongo:
-    name: 'Server Mongo DB'
+    title: 'Server Mongo DB'
+    name: 'mongo'
     host: '54.217.33.10'
     user: 'root'
     port: 22
 
   srv-redis:
-    name: 'Server Redis'
+    title: 'Server Redis'
+    name: 'redis'
     host: '172.31.88.200'
     user: 'root'
     port: 22
 
   srv-sqlite:
-    name: 'Server SQLite3'
+    title: 'Server SQLite3'
+    name: 'sqlite'
     host: '100.64.12.55'
     user: 'root'
     port: 22
 
   srv-mssql:
-    name: 'Server Microsoft SQL Server'
+    title: 'Server Microsoft SQL Server'
+    name: 'mssql'
     host: '198.51.100.42'
     user: 'root'
     port: 22
 
 databases:
-# Config PSQL databases
+  # Config PSQL databases
   db-psql:
+    title: 'My DB PSQL #1'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -85,8 +93,12 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'plain'
+    encrypt:
+      type: 'aes'
+      password: '123456'
 
   db-psql-custom:
+    title: 'My DB PSQL #2'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -94,11 +106,9 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'dump'
-    encrypt:
-      type: "aes"
-      password: "123456"
 
   db-psql-tar:
+    title: 'My DB PSQL #3'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -106,12 +116,10 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'tar'
-    encrypt:
-      type: "aes"
-      password: "123456"
-
-# Config MySQL databases
+  
+  # Config MySQL databases
   db-mysql:
+    title: 'My DB MySQL #1'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -120,8 +128,19 @@ databases:
     server: 'srv-mysql'
     format: 'sql'
 
-# Config Mongo databases
+  db-mysql-s:
+    title: 'My DB MySQL #2'
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 3306
+    driver: 'mysql'
+    server: 'srv-mysql'
+    format: 'sql'
+  
+  # Config Mongo databases
   db-mongo:
+    title: 'My DB MongoDB #1'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -130,10 +149,11 @@ databases:
     server: 'srv-mongo'
     format: 'bson'
     options:
-      auth_source: "admin"
+      auth_source: 'admin'
       ssl: false
 
   db-mongo-ssl:
+    title: 'My DB MongoDB #2'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -142,13 +162,11 @@ databases:
     server: 'srv-mongo'
     format: 'bson'
     options:
-      auth_source: "admin"
+      auth_source: 'admin'
       ssl: true
-    encrypt:
-      type: "aes"
-      password: "123456"
 
   db-mongo-without-options:
+    title: 'My DB MongoDB #3'
     name: 'mydb'
     user: 'myuser'
     password: 'mypassword'
@@ -156,9 +174,10 @@ databases:
     driver: 'mongo'
     server: 'srv-mongo'
     format: 'bson'
-
-# Config Redis databases
+  
+  # Config Redis databases
   db-redis:
+    title: 'My DB Redis #1'
     name: 'redis-db'
     user: 'myuser'
     password: 'mypassword'
@@ -170,6 +189,7 @@ databases:
       mode: 'sync'
 
   db-redis-save:
+    title: 'My DB Redis #2'
     name: 'redis-db'
     user: 'myuser'
     password: 'mypassword'
@@ -179,9 +199,10 @@ databases:
     format: 'fbk'
     options:
       mode: 'save'
-
-# Config SQLite3 databases
+  
+  # Config SQLite3 databases
   db-sqlite:
+    title: 'My DB SQLite #1'
     name: 'mydb'
     user: ''
     password: ''
@@ -191,9 +212,10 @@ databases:
     format: 'sql'
     options:
       path: '/root/mydb.db'
-
-# Config MSSQL databases
+  
+  # Config MSSQL databases
   db-mssql-bac:
+    title: 'My DB MSSQL #1'
     name: 'MyDB'
     user: 'sa'
     password: 'myPassword1'
@@ -202,6 +224,7 @@ databases:
     format: 'bac'
 
   db-mssql-bacpac:
+    title: 'My DB MSSQL #2'
     name: 'MyDB'
     user: 'sa'
     password: 'myPassword1'
@@ -210,6 +233,7 @@ databases:
     format: 'bacpac'
 
   db-mssql-bacpac-ssl:
+    title: 'My DB MSSQL #3'
     name: 'MyDB'
     user: 'sa'
     password: 'myPassword1'

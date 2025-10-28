@@ -16,6 +16,7 @@ flexible connection and storage settings.
 - Work with **SSH-Keys** (include passphrase).
 - Custom dump name templates.
 - Archiving old dumps.
+- Encrypting
 - Different formats.
 
 ---
@@ -180,7 +181,7 @@ Apply to all servers and databases, unless redefined locally.
     - `server` — create dump in server and download
 
 - #### Encrypt:
-    - `aes` — type encrypting
+    - `aes` — type encrypting (openssl)
 
 #### 🖥 2. servers
 
@@ -188,7 +189,8 @@ Defines the connections through which databases can be backed up.
 
 | Parameter   | Description                   | type                                       |
 |-------------|-------------------------------|--------------------------------------------|
-| `name`      | Human-readable server name    | option                                     |
+| `title`     | Human-readable server name    | option                                     |
+| `name`      | Server name                   | option                                     |
 | `host`      | The IP address or domain name | required                                   |
 | `port`      | Connection port               | required<br/> (if not set `settings.port`) |
 | `user`      | Username                      | required                                   |
@@ -204,6 +206,7 @@ A list of databases that need to be backed up.
 
 | Parameter          | Description                                       | Type     | Additional info                                  |
 |--------------------|---------------------------------------------------|----------|--------------------------------------------------|
+| `title`            | Human-readable database name                      | option   |                                                  |
 | `name`             | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
 | `user`             | The database user                                 | required |                                                  |
 | `password`         | DB user's password                                | required |                                                  |
@@ -272,7 +275,7 @@ The file can be decrypted either via dumper or an encryption utility.
 
 #### Decrypt
 ```
-./dumper --dec --input dump.sql.gz.enc --key 1234566 --crypt aes
+./dumper --dec --input dump.sql.gz.enc --pass 1234566 --crypt aes
 ```
 or
 ```
@@ -287,11 +290,18 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.s
 ./dumper --config ./cfg.yaml
 ````
 
-- Flags:
-    - `--config ./cfg.yaml` — path to config file
-    - `--db demo,app` — backup databases from list
-    - `--all` — backup all databases from config file
-    - `--file-log file.log` — file name log file (if settings.logging == true)
+#### Flag list
+
+| Flag         | Example           | Description                                      | 
+|--------------|-------------------|--------------------------------------------------|
+| `--config`   | ./cfg.yaml        | path to config file                              |
+| `--db`       | demo,app          | backup databases from list                       |
+| `--all`      |                   | backup all databases from config file            |
+| `--file-log` | file.log          | file name log file (if settings.logging == true) |
+| `--dec`      |                   | decrypt process                                  |
+| `--input`    | ./dump.sql.gz.enc | path to encrypt file                             |
+| `--crypt`    | aes               | type encrypting [ aes ]                          |
+| `--pass`     | 123456            | password for decrypt (only for aes)              |
 
 ---
 
