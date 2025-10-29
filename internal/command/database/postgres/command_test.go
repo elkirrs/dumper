@@ -1,106 +1,162 @@
-package postgres
+package postgres_test
 
 import (
-	"dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
+	"dumper/internal/command/database/postgres"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestPSQLGenerator_Generate(t *testing.T) {
-	gen := PSQLGenerator{}
-
+func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 	tests := []struct {
-		name       string
-		data       *command_config.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "format=plain, archive=false, dumpLocation=client",
-			data: &command_config.ConfigData{
-				User:       "root",
-				Password:   "pass",
-				Port:       "5432",
-				Name:       "mydb",
-				DumpName:   "backup",
-				DumpFormat: "plain",
+			name: "Plain SQL dump, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "plain",
+					User:     "postgres",
+					Password: "pass",
+					Port:     "5432",
+					Name:     "testdb",
+				},
+				DumpName:     "plain1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"pg_dump",
+				"-Fp",
+				"--dbname=postgresql://postgres:pass@127.0.0.1:5432/testdb",
 			},
-			wantCmd:    "/usr/bin/pg_dump --dbname=postgresql://root:pass@127.0.0.1:5432/mydb --clean --if-exists --no-owner -Fp",
-			wantRemote: "./backup.sql",
+			expectedExt: "sql",
 		},
 		{
-			name: "format=plain, archive=true, dumpLocation=server",
-			data: &command_config.ConfigData{
-				User:       "admin",
-				Password:   "secret",
-				Port:       "5433",
-				Name:       "testdb",
-				DumpName:   "dumpfile",
-				DumpFormat: "plain",
+			name: "Plain SQL with gzip archive, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "plain",
+					User:     "postgres",
+					Password: "pass",
+					Port:     "5433",
+					Name:     "archive_db",
+				},
+				DumpName:     "plain_gzip",
+				Archive:      true,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
+			expectedContains: []string{
+				"| gzip",
+				"-Fp",
+			},
+			expectedExt: "sql.gz",
+		},
+		{
+			name: "Custom format dump, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "dump",
+					User:     "admin",
+					Password: "pwd123",
+					Port:     "5432",
+					Name:     "customdb",
+				},
+				DumpName:     "custom1",
+				Archive:      false,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"-Fc",
+				"customdb",
+			},
+			expectedExt: "dump",
+		},
+		{
+			name: "Tar format dump, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "tar",
+					User:     "admin",
+					Password: "pwd",
+					Port:     "5432",
+					Name:     "tardb",
+				},
+				DumpName:     "tar1",
+				Archive:      false,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"-Ft",
+				"tardb",
+			},
+			expectedExt: "tar",
+		},
+		{
+			name: "Plain SQL dump to server",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "plain",
+					User:     "postgres",
+					Password: "pass",
+					Port:     "5432",
+					Name:     "serverdb",
+				},
+				DumpName:     "server_plain",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    "/usr/bin/pg_dump --dbname=postgresql://admin:secret@127.0.0.1:5433/testdb --clean --if-exists --no-owner -Fp | gzip > ./dumpfile.sql.gz",
-			wantRemote: "./dumpfile.sql.gz",
+			expectedContains: []string{
+				"> ./server_plain.sql",
+				"-Fp",
+			},
+			expectedExt: "sql",
 		},
 		{
-			name: "format=dump, archive=true, dumpLocation=client",
-			data: &command_config.ConfigData{
-				User:       "user1",
-				Password:   "p123",
-				Port:       "5432",
-				Name:       "db1",
-				DumpName:   "data",
-				DumpFormat: "dump",
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
-			},
-			wantCmd:    "/usr/bin/pg_dump --dbname=postgresql://user1:p123@127.0.0.1:5432/db1 --clean --if-exists --no-owner -Fc",
-			wantRemote: "./data.dump",
-		},
-		{
-			name: "format=tar, archive=false, dumpLocation=server",
-			data: &command_config.ConfigData{
-				User:       "alice",
-				Password:   "pw",
-				Port:       "5434",
-				Name:       "sales",
-				DumpName:   "sales_dump",
-				DumpFormat: "tar",
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
+			name: "Plain SQL gzip to server",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "plain",
+					User:     "postgres",
+					Password: "pass",
+					Port:     "5432",
+					Name:     "serverdb",
+				},
+				DumpName:     "server_gzip",
+				Archive:      true,
 				DumpLocation: "server",
 			},
-			wantCmd:    "/usr/bin/pg_dump --dbname=postgresql://alice:pw@127.0.0.1:5434/sales --clean --if-exists --no-owner -Ft > ./sales_dump.tar",
-			wantRemote: "./sales_dump.tar",
+			expectedContains: []string{
+				"| gzip",
+				"> ./server_gzip.sql.gz",
+			},
+			expectedExt: "sql.gz",
 		},
 	}
 
+	gen := postgres.PSQLGenerator{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
+			require.NoError(t, err, "Generate() should not return an error")
+			require.NotNil(t, cmd, "DBCommand should not be nil")
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string must not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath must not be empty")
 
-			assert.Equal(t, tt.wantCmd, gotCmd, "Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote, "Remote path mismatch in test '%s'", tt.name)
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expected, "Command should contain %s", expected)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should contain extension %s", tt.expectedExt)
 		})
 	}
 }

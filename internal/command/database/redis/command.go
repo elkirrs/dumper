@@ -1,15 +1,14 @@
 package redis
 
 import (
-	command "dumper/internal/command/database"
+	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type RedisGenerator struct{}
 
-func (g RedisGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
+func (g RedisGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "rdb"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
@@ -19,31 +18,33 @@ func (g RedisGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Sett
 
 	baseCmd := fmt.Sprintf(
 		"redis-cli -h %s -p %s -a %s --rdb",
-		host, data.Port, data.Password,
+		host, data.Database.Port, data.Database.Password,
 	)
 
-	if data.Options.Mode == "save" {
+	if data.Database.Options.Mode == "save" {
 		saveCmd := fmt.Sprintf(
 			"redis-cli -h %s -p %s -a %s SAVE && ",
-			host, data.Port, data.Password,
+			host, data.Database.Port, data.Database.Password,
 		)
 		baseCmd = saveCmd + baseCmd
 	}
 
-	if *settings.Archive {
+	if data.Archive {
 		remotePath += ".gz"
 		baseCmd = fmt.Sprintf("%s - | gzip > %s", baseCmd, remotePath)
 	} else {
 		baseCmd = fmt.Sprintf("%s %s", baseCmd, remotePath)
 	}
 
-	if settings.DumpLocation == "server" {
-		return baseCmd, remotePath
+	if data.DumpLocation == "server" {
+		return &commandDomain.DBCommand{
+			Command:  baseCmd,
+			DumpPath: remotePath,
+		}, nil
 	}
 
-	return baseCmd, remotePath
-}
-
-func init() {
-	command.Register("redis", RedisGenerator{})
+	return &commandDomain.DBCommand{
+		Command:  baseCmd,
+		DumpPath: remotePath,
+	}, nil
 }

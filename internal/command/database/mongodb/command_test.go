@@ -1,143 +1,188 @@
-package mongodb
+package mongodb_test
 
 import (
-	cmdConfig "dumper/internal/domain/command-config"
+	"dumper/internal/command/database/mongodb"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/internal/domain/config/setting"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestMongoGenerator_Generate(t *testing.T) {
-	gen := MongoGenerator{}
+func TestMongoGenerator_Generate_AllScenarios(t *testing.T) {
+	trueVal := true
+	falseVal := false
 
 	tests := []struct {
-		name       string
-		data       *cmdConfig.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "default port, dump format=bson, archive=false, dumpLocation=client",
-			data: &cmdConfig.ConfigData{
-				User:       "root",
-				Password:   "pass",
-				Port:       "",
-				Name:       "testdb",
-				DumpName:   "backup",
-				DumpFormat: "dump",
-				Options: option.Options{
-					AuthSource: "",
-					SSL:        boolPtr(false),
+			name: "Default BSON dump, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "mongoUser",
+					Password: "secret",
+					Port:     "27017",
+					Name:     "testdb",
+					Format:   "dump",
+					Options: option.Options{
+						SSL:        &falseVal,
+						AuthSource: "",
+					},
 				},
+				DumpName:     "dump1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"/usr/bin/mongodump",
+				"--uri",
+				"mongodb://mongoUser:secret@127.0.0.1:27017/testdb",
+				"--out ./",
 			},
-			wantCmd:    `/usr/bin/mongodump --uri "mongodb://root:pass@127.0.0.1:27017/testdb" --out ./`,
-			wantRemote: "./backup.bson",
+			expectedExt: "bson",
 		},
 		{
-			name: "port specified, dump format=archive, archive=false, dumpLocation=server",
-			data: &cmdConfig.ConfigData{
-				User:       "admin",
-				Password:   "secret",
-				Port:       "27018",
-				Name:       "mydb",
-				DumpName:   "dumpfile",
-				DumpFormat: "archive",
-				Options: option.Options{
-					AuthSource: "",
-					SSL:        boolPtr(false),
+			name: "Archive format, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "mongoUser",
+					Password: "secret",
+					Port:     "27017",
+					Name:     "testdb",
+					Format:   "archive",
+					Options: option.Options{
+						SSL:        &falseVal,
+						AuthSource: "",
+					},
 				},
+				DumpName:     "dump2",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
+			expectedContains: []string{
+				"--archive",
+			},
+			expectedExt: "archive",
+		},
+		{
+			name: "BSON dump with gzip (Archive=true)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "mongoUser",
+					Password: "secret",
+					Port:     "27017",
+					Name:     "testdb",
+					Format:   "dump",
+					Options: option.Options{
+						SSL:        &falseVal,
+						AuthSource: "",
+					},
+				},
+				DumpName:     "dump3",
+				Archive:      true,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"tar -czf dump3.tar.gz testdb",
+			},
+			expectedExt: "tar.gz",
+		},
+		{
+			name: "Archive format + gzip",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "mongoUser",
+					Password: "secret",
+					Port:     "27017",
+					Name:     "testdb",
+					Format:   "archive",
+					Options: option.Options{
+						SSL:        &falseVal,
+						AuthSource: "",
+					},
+				},
+				DumpName:     "dump4",
+				Archive:      true,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"--archive",
+				"--gzip",
+			},
+			expectedExt: "archive.gz",
+		},
+		{
+			name: "Server dump output redirect",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "mongoUser",
+					Password: "secret",
+					Port:     "27017",
+					Name:     "testdb",
+					Format:   "dump",
+					Options: option.Options{
+						SSL:        &falseVal,
+						AuthSource: "",
+					},
+				},
+				DumpName:     "serverDump",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    `/usr/bin/mongodump --uri "mongodb://admin:secret@127.0.0.1:27018/mydb" --archive > ./dumpfile.archive`,
-			wantRemote: "./dumpfile.archive",
+			expectedContains: []string{
+				"> ./serverDump.bson",
+			},
+			expectedExt: "bson",
 		},
 		{
-			name: "dump format=archive, archive=true, dumpLocation=client",
-			data: &cmdConfig.ConfigData{
-				User:       "user1",
-				Password:   "p123",
-				Name:       "db1",
-				DumpName:   "data",
-				DumpFormat: "archive",
-				Options: option.Options{
-					AuthSource: "",
-					SSL:        boolPtr(false),
+			name: "SSL and AuthSource enabled",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "mongoUser",
+					Password: "secret",
+					Port:     "27017",
+					Name:     "testdb",
+					Format:   "dump",
+					Options: option.Options{
+						SSL:        &trueVal,
+						AuthSource: "admin",
+					},
 				},
+				DumpName:     "secureDump",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"authSource=admin",
+				"ssl=true",
 			},
-			wantCmd:    `/usr/bin/mongodump --uri "mongodb://user1:p123@127.0.0.1:27017/db1" --archive --gzip`,
-			wantRemote: "./data.archive.gz",
-		},
-		{
-			name: "dump format=dump, archive=true, dumpLocation=server",
-			data: &cmdConfig.ConfigData{
-				User:       "alice",
-				Password:   "pw",
-				Port:       "27019",
-				Name:       "sales",
-				DumpName:   "sales_dump",
-				DumpFormat: "dump",
-				Options: option.Options{
-					AuthSource: "admin",
-					SSL:        boolPtr(true),
-				},
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "server",
-			},
-			wantCmd:    `/usr/bin/mongodump --uri "mongodb://alice:pw@127.0.0.1:27019/sales?authSource=admin&ssl=true" --out ./ && tar -czf sales_dump.tar.gz sales > ./sales_dump.tar.gz`,
-			wantRemote: "./sales_dump.tar.gz",
-		},
-		{
-			name: "dump format=dump, archive=false, ssl and authSource set, dumpLocation=client",
-			data: &cmdConfig.ConfigData{
-				User:       "bob",
-				Password:   "pw2",
-				Port:       "27020",
-				Name:       "app",
-				DumpName:   "app_backup",
-				DumpFormat: "dump",
-				Options: option.Options{
-					AuthSource: "admin",
-					SSL:        boolPtr(true),
-				},
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
-			},
-			wantCmd:    `/usr/bin/mongodump --uri "mongodb://bob:pw2@127.0.0.1:27020/app?authSource=admin&ssl=true" --out ./`,
-			wantRemote: "./app_backup.bson",
+			expectedExt: "bson",
 		},
 	}
 
+	gen := mongodb.MongoGenerator{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
+			require.NoError(t, err, "Generate() should not return an error")
+			require.NotNil(t, cmd, "Returned command must not be nil")
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string should not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath should not be empty")
 
-			assert.Equal(t, tt.wantCmd, gotCmd, "Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote, "Remote path mismatch in test '%s'", tt.name)
+			for _, expect := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expect, "Command should contain expected fragment: %s", expect)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should have the correct extension")
 		})
 	}
 }

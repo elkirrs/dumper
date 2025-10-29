@@ -1,106 +1,200 @@
-package mssql
+package mssql_test
 
 import (
-	"dumper/internal/domain/command-config"
+	"dumper/internal/command/database/mssql"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/internal/domain/config/setting"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestMSSQLGenerator_Generate(t *testing.T) {
-	gen := MSSQLGenerator{}
+func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
+	trueVal := true
+	falseVal := false
 
 	tests := []struct {
-		name       string
-		data       *command_config.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectErr        bool
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "bac, archive=false, dumpLocation=client",
-			data: &command_config.ConfigData{
-				Name:       "testdb",
-				User:       "sa",
-				Password:   "pass",
-				DumpName:   "backup",
-				DumpFormat: "bac",
+			name: "Generate .bak backup (no archive)",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "localhost"},
+				Database: cmdCfg.Database{
+					Format:   "bac",
+					User:     "sa",
+					Password: "Passw0rd!",
+					Name:     "MyDB",
+					Options:  option.Options{SSL: &falseVal},
+				},
+				DumpName:     "backup1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"sqlcmd",
+				"BACKUP DATABASE [MyDB]",
+				"TO DISK='./backup1.bak'",
 			},
-			wantCmd:    "sqlcmd -S testdb -U sa -P pass -Q \"BACKUP DATABASE [testdb] TO DISK='./backup.bak' WITH FORMAT, INIT\"",
-			wantRemote: "./backup.bak",
+			expectedExt: ".bak",
 		},
 		{
-			name: "bac, archive=true, dumpLocation=client",
-			data: &command_config.ConfigData{
-				Name:       "testdb",
-				User:       "sa",
-				Password:   "pass",
-				DumpName:   "backup",
-				DumpFormat: "bac",
+			name: "Generate .bacpac export without SSL",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "localhost"},
+				Database: cmdCfg.Database{
+					Format:   "bacpac",
+					User:     "sa",
+					Password: "Passw0rd!",
+					Name:     "MyDB",
+					Options:  option.Options{SSL: &falseVal},
+				},
+				DumpName:     "export1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"sqlpackage",
+				"/Action:Export",
+				"/SourceServerName:localhost",
+				"/TargetFile:./export1.bacpac",
 			},
-			wantCmd:    "sqlcmd -S testdb -U sa -P pass -Q \"BACKUP DATABASE [testdb] TO DISK='./backup.bak' WITH FORMAT, INIT\" && powershell Compress-Archive -Path './backup.bak' -DestinationPath './backup.bak.gz'",
-			wantRemote: "./backup.bak.gz",
+			expectedExt: ".bacpac",
 		},
 		{
-			name: "bacpac, SSL=false, archive=false",
-			data: &command_config.ConfigData{
-				Host:       "localhost",
-				Name:       "db1",
-				User:       "admin",
-				Password:   "pw",
-				DumpName:   "db1dump",
-				DumpFormat: "bacpac",
-				Options:    option.Options{SSL: new(bool)}, // false
+			name: "Generate .bacpac export with SSL enabled",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "mssql-server"},
+				Database: cmdCfg.Database{
+					Format:   "bacpac",
+					User:     "admin",
+					Password: "pwd123",
+					Name:     "ProdDB",
+					Options:  option.Options{SSL: &trueVal},
+				},
+				DumpName:     "exportSSL",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"sqlpackage",
+				"/SourceTrustServerCertificate:True",
 			},
-			wantCmd:    "sqlpackage /Action:Export /SourceServerName:localhost /SourceDatabaseName:db1 /SourceUser:admin /SourcePassword:pw /TargetFile:./db1dump.bacpac",
-			wantRemote: "./db1dump.bacpac",
+			expectedExt: ".bacpac",
 		},
 		{
-			name: "bacpac, SSL=true, archive=true",
-			data: &command_config.ConfigData{
-				Host:       "localhost",
-				Name:       "db2",
-				User:       "sa",
-				Password:   "secret",
-				DumpName:   "db2dump",
-				DumpFormat: "bacpac",
-				Options:    option.Options{SSL: boolPtr(true)},
+			name: "Generate .bak and compress archive",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "localhost"},
+				Database: cmdCfg.Database{
+					Format:   "bac",
+					User:     "sa",
+					Password: "Passw0rd!",
+					Name:     "MyDB",
+					Options:  option.Options{SSL: &falseVal},
+				},
+				DumpName:     "backup2",
+				Archive:      true,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
+			expectedContains: []string{
+				"powershell Compress-Archive",
+				"backup2.bak",
+				"backup2.bak.gz",
+			},
+			expectedExt: ".bak.gz",
+		},
+		{
+			name: "Generate .bacpac and compress archive",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "localhost"},
+				Database: cmdCfg.Database{
+					Format:   "bacpac",
+					User:     "sa",
+					Password: "Passw0rd!",
+					Name:     "MyDB",
+					Options:  option.Options{SSL: &falseVal},
+				},
+				DumpName:     "export2",
+				Archive:      true,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"powershell Compress-Archive",
+				"export2.bacpac.gz",
+			},
+			expectedExt: ".bacpac.gz",
+		},
+		{
+			name: "Server dump (no compression)",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "server123"},
+				Database: cmdCfg.Database{
+					Format:   "bac",
+					User:     "sa",
+					Password: "1234",
+					Name:     "DB1",
+					Options:  option.Options{SSL: &falseVal},
+				},
+				DumpName:     "dumpServer",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    "sqlpackage /Action:Export /SourceServerName:localhost /SourceDatabaseName:db2 /SourceUser:sa /SourcePassword:secret /TargetFile:./db2dump.bacpac /SourceTrustServerCertificate:True && powershell Compress-Archive -Path './db2dump.bacpac' -DestinationPath './db2dump.bacpac.gz'",
-			wantRemote: "./db2dump.bacpac.gz",
+			expectedContains: []string{
+				"sqlcmd",
+				"TO DISK='./dumpServer.bak'",
+			},
+			expectedExt: ".bak",
+		},
+		{
+			name: "Unsupported database format",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "localhost"},
+				Database: cmdCfg.Database{
+					Format:   "unknown",
+					User:     "sa",
+					Password: "pass",
+					Name:     "DBX",
+					Options:  option.Options{SSL: &falseVal},
+				},
+				DumpName:     "badDump",
+				Archive:      false,
+				DumpLocation: "local",
+			},
+			expectErr: true,
 		},
 	}
 
+	gen := mssql.MSQLGenerator{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			if tt.expectErr {
+				require.Error(t, err, "Expected an error for unsupported format")
+				assert.Nil(t, cmd)
+				return
+			}
 
-			assert.Equal(t, tt.wantCmd, gotCmd, "Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote, "Remote path mismatch in test '%s'", tt.name)
+			require.NoError(t, err)
+			require.NotNil(t, cmd)
+
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string should not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath should not be empty")
+
+			for _, expect := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expect, "Expected command to contain: %s", expect)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should end with expected extension")
 		})
 	}
 }

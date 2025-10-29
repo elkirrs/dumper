@@ -1,27 +1,25 @@
 package mariadb
 
 import (
-	command "dumper/internal/command/database"
+	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
-type MariaDBGenerator struct{}
+type MariaDbGenerator struct{}
 
-func (g MariaDBGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
-	if data.Port == "" {
-		data.Port = "3306"
-	}
-
+func (g MariaDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
 	baseCmd := fmt.Sprintf(
 		"/usr/bin/mariadb-dump -u%s -p%s -h127.0.0.1 -P%s %s",
-		data.User, data.Password, data.Port, data.Name,
+		data.Database.User,
+		data.Database.Password,
+		data.Database.Port,
+		data.Database.Name,
 	)
 
-	if *settings.Archive {
+	if data.Archive {
 		baseCmd += " | gzip"
 		ext += ".gz"
 	}
@@ -29,13 +27,15 @@ func (g MariaDBGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Se
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("./%s", fileName)
 
-	if settings.DumpLocation == "server" {
-		return fmt.Sprintf("%s > %s", baseCmd, remotePath), remotePath
+	if data.DumpLocation == "server" {
+		return &commandDomain.DBCommand{
+			Command:  fmt.Sprintf("%s > %s", baseCmd, remotePath),
+			DumpPath: remotePath,
+		}, nil
 	}
 
-	return baseCmd, remotePath
-}
-
-func init() {
-	command.Register("mariadb", MariaDBGenerator{})
+	return &commandDomain.DBCommand{
+		Command:  baseCmd,
+		DumpPath: remotePath,
+	}, nil
 }

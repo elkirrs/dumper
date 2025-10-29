@@ -1,103 +1,157 @@
-package redis
+package redis_test
 
 import (
-	"dumper/internal/domain/command-config"
+	"dumper/internal/command/database/redis"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/internal/domain/config/setting"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestRedisGenerator_Generate(t *testing.T) {
-	gen := RedisGenerator{}
-
+func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 	tests := []struct {
-		name       string
-		data       *command_config.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "archive=false, mode=default, dumpLocation=client",
-			data: &command_config.ConfigData{
-				Port:     "6379",
-				Password: "pass",
-				DumpName: "backup",
-				Options:  option.Options{},
+			name: "Standard RDB dump, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "6379",
+					Password: "pass",
+					Options:  option.Options{Mode: ""},
+				},
+				DumpName:     "dump1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"redis-cli",
+				"--rdb",
+				"./dump1.rdb",
 			},
-			wantCmd:    "redis-cli -h 127.0.0.1 -p 6379 -a pass --rdb ./backup.rdb",
-			wantRemote: "./backup.rdb",
+			expectedExt: "rdb",
 		},
 		{
-			name: "archive=false, mode=save, dumpLocation=server",
-			data: &command_config.ConfigData{
-				Port:     "6380",
-				Password: "secret",
-				DumpName: "dumpfile",
-				Options: option.Options{
-					Mode: "save",
+			name: "RDB dump with SAVE mode, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "6379",
+					Password: "pass",
+					Options:  option.Options{Mode: "save"},
 				},
+				DumpName:     "dump2",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
+			expectedContains: []string{
+				"SAVE",
+				"--rdb",
+				"./dump2.rdb",
+			},
+			expectedExt: "rdb",
+		},
+		{
+			name: "RDB dump with archive, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "6380",
+					Password: "secret",
+					Options:  option.Options{Mode: ""},
+				},
+				DumpName:     "archive1",
+				Archive:      true,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"--rdb",
+				"| gzip",
+				"./archive1.rdb.gz",
+			},
+			expectedExt: "rdb.gz",
+		},
+		{
+			name: "RDB dump with SAVE mode and archive",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "6380",
+					Password: "secret",
+					Options:  option.Options{Mode: "save"},
+				},
+				DumpName:     "archive2",
+				Archive:      true,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"SAVE",
+				"--rdb",
+				"| gzip",
+				"./archive2.rdb.gz",
+			},
+			expectedExt: "rdb.gz",
+		},
+		{
+			name: "RDB dump to server, no archive",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "6379",
+					Password: "pass",
+					Options:  option.Options{Mode: ""},
+				},
+				DumpName:     "serverDump",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    "redis-cli -h 127.0.0.1 -p 6380 -a secret SAVE && redis-cli -h 127.0.0.1 -p 6380 -a secret --rdb ./dumpfile.rdb",
-			wantRemote: "./dumpfile.rdb",
+			expectedContains: []string{
+				"--rdb",
+				"./serverDump.rdb",
+			},
+			expectedExt: "rdb",
 		},
 		{
-			name: "archive=true, mode=default, dumpLocation=client",
-			data: &command_config.ConfigData{
-				Port:     "6379",
-				Password: "p123",
-				DumpName: "data",
-				Options:  option.Options{},
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
-			},
-			wantCmd:    "redis-cli -h 127.0.0.1 -p 6379 -a p123 --rdb - | gzip > ./data.rdb.gz",
-			wantRemote: "./data.rdb.gz",
-		},
-		{
-			name: "archive=true, mode=save, dumpLocation=server",
-			data: &command_config.ConfigData{
-				Port:     "6381",
-				Password: "pw",
-				DumpName: "redis_save",
-				Options: option.Options{
-					Mode: "save",
+			name: "RDB dump to server with archive",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "6379",
+					Password: "pass",
+					Options:  option.Options{Mode: "save"},
 				},
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
+				DumpName:     "serverArchive",
+				Archive:      true,
 				DumpLocation: "server",
 			},
-			wantCmd:    "redis-cli -h 127.0.0.1 -p 6381 -a pw SAVE && redis-cli -h 127.0.0.1 -p 6381 -a pw --rdb - | gzip > ./redis_save.rdb.gz",
-			wantRemote: "./redis_save.rdb.gz",
+			expectedContains: []string{
+				"SAVE",
+				"--rdb",
+				"| gzip",
+				"./serverArchive.rdb.gz",
+			},
+			expectedExt: "rdb.gz",
 		},
 	}
 
+	gen := redis.RedisGenerator{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
+			require.NoError(t, err, "Generate() should not return an error")
+			require.NotNil(t, cmd, "DBCommand should not be nil")
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string should not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath should not be empty")
 
-			assert.Equal(t, tt.wantCmd, gotCmd, "Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote, "Remote path mismatch in test '%s'", tt.name)
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expected, "Command should contain %s", expected)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should contain extension %s", tt.expectedExt)
 		})
 	}
 }

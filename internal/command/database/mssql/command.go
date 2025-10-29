@@ -1,74 +1,85 @@
 package mssql
 
 import (
-	command "dumper/internal/command/database"
+	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
-type MSSQLGenerator struct{}
+type MSQLGenerator struct{}
 
-func (g MSSQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
+func (g MSQLGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 
-	var baseCmd, remotePath string
+	var baseCmd *commandDomain.DBCommand
 
-	switch data.DumpFormat {
+	switch data.Database.Format {
 	case "bac":
-		baseCmd, remotePath = genFormatBak(data)
+		baseCmd = genFormatBak(data)
 	case "bacpac":
-		baseCmd, remotePath = genFormatBacpac(data)
+		baseCmd = genFormatBacpac(data)
+	default:
+		return nil, fmt.Errorf("unsupported database format: %s", data.Database.Format)
 	}
 
-	if *settings.Archive {
-		baseCmd = fmt.Sprintf(
+	if data.Archive {
+		baseCmd.Command = fmt.Sprintf(
 			"%s && powershell Compress-Archive -Path '%s' -DestinationPath '%s.gz'",
-			baseCmd, remotePath, remotePath,
+			baseCmd.Command, baseCmd.DumpPath, baseCmd.DumpPath,
 		)
-		remotePath += ".gz"
+		baseCmd.DumpPath += ".gz"
 	}
 
-	if settings.DumpLocation == "server" {
-		return baseCmd, remotePath
+	if data.DumpLocation == "server" {
+		return baseCmd, nil
 	}
 
-	return baseCmd, remotePath
-}
-
-func init() {
-	command.Register("mssql", MSSQLGenerator{})
+	return baseCmd, nil
 }
 
 func genFormatBak(
-	data *cmdCfg.ConfigData,
-) (string, string) {
+	data *cmdCfg.Config,
+) *commandDomain.DBCommand {
 	ext := "bak"
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("./%s", fileName)
 
 	baseCmd := fmt.Sprintf(
 		"sqlcmd -S %s -U %s -P %s -Q \"BACKUP DATABASE [%s] TO DISK='%s' WITH FORMAT, INIT\"",
-		data.Name, data.User, data.Password, data.Name, remotePath,
+		data.Server.Host,
+		data.Database.User,
+		data.Database.Password,
+		data.Database.Name,
+		remotePath,
 	)
 
-	return baseCmd, remotePath
+	return &commandDomain.DBCommand{
+		Command:  baseCmd,
+		DumpPath: remotePath,
+	}
 }
 
 func genFormatBacpac(
-	data *cmdCfg.ConfigData,
-) (string, string) {
+	data *cmdCfg.Config,
+) *commandDomain.DBCommand {
 	ext := "bacpac"
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("./%s", fileName)
 
 	baseCmd := fmt.Sprintf(
 		"sqlpackage /Action:Export /SourceServerName:%s /SourceDatabaseName:%s /SourceUser:%s /SourcePassword:%s /TargetFile:%s",
-		data.Host, data.Name, data.User, data.Password, remotePath,
+		data.Server.Host,
+		data.Database.Name,
+		data.Database.User,
+		data.Database.Password,
+		remotePath,
 	)
 
-	if *data.Options.SSL {
+	if *data.Database.Options.SSL {
 		baseCmd += " /SourceTrustServerCertificate:True"
 	}
 
-	return baseCmd, remotePath
+	return &commandDomain.DBCommand{
+		Command:  baseCmd,
+		DumpPath: remotePath,
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"dumper/internal/app"
 	conf "dumper/internal/config/local"
 	"dumper/internal/decrypt"
+	appDomain "dumper/internal/domain/app"
 	"dumper/pkg/logging"
 	"flag"
 	"fmt"
@@ -68,7 +69,7 @@ func main() {
 		return
 	}
 
-	env := app.Env{
+	env := appDomain.Env{
 		ConfigFile: *configPath,
 		DbName:     *dbName,
 		All:        *all,
@@ -105,7 +106,10 @@ func main() {
 	os.Exit(0)
 }
 
-func runLog(e *app.Env, isLogging bool) *logging.Logs {
+func runLog(
+	e *appDomain.Env,
+	isLogging bool,
+) *logging.Logs {
 	var opts []logging.LoggerOption
 
 	opts = []logging.LoggerOption{

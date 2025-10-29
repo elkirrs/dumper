@@ -2,66 +2,138 @@ package backup
 
 import (
 	"context"
-	"dumper/internal/command/encrypt"
+	backupLocalDirect "dumper/internal/backup/local-direct"
+	backupLocalSSH "dumper/internal/backup/local-ssh"
+	backupByServer "dumper/internal/backup/server"
+	command "dumper/internal/command/database"
 	"dumper/internal/connect"
-	cmdCfg "dumper/internal/domain/command-config"
+	connecterror "dumper/internal/connect/connect-error"
+	commandConfig "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config"
-	enc "dumper/internal/domain/encrypt"
+	dbConnect "dumper/internal/domain/config/db-connect"
+	encryptConfigDomain "dumper/internal/domain/config/encrypt"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
-
-	"golang.org/x/crypto/ssh"
 )
 
 type Backup struct {
-	ctx        context.Context
-	cfg        *config.Config
-	conn       *connect.Connect
-	dbData     *cmdCfg.ConfigData
-	backupCmd  string
-	remotePath string
-	removeDump bool
-}
-
-type FileRemoveList struct {
-	Name     string
-	IsRemove bool
+	ctx       context.Context
+	cfg       *config.Config
+	conn      *connect.Connect
+	dbConnect dbConnect.DBConnect
+	cmdConfig *commandConfig.Config
 }
 
 func NewApp(
 	ctx context.Context,
 	cfg *config.Config,
-	conn *connect.Connect,
-	dbData *cmdCfg.ConfigData,
-	backupCmd string,
-	remotePath string,
-	removeDump bool,
+	dbConnect dbConnect.DBConnect,
 ) *Backup {
 	return &Backup{
-		ctx:        ctx,
-		cfg:        cfg,
-		conn:       conn,
-		dbData:     dbData,
-		backupCmd:  backupCmd,
-		remotePath: remotePath,
-		removeDump: removeDump,
+		ctx:       ctx,
+		cfg:       cfg,
+		dbConnect: dbConnect,
 	}
 }
 
-func (b *Backup) Backup() error {
+func (b *Backup) Run() error {
+
+	b.prepareBackupConfig()
+
+	logging.L(b.ctx).Info("Prepare command for dump")
+
+	cmdApp := command.NewApp(b.cmdConfig)
+	cmdDB, err := cmdApp.GetCommand()
+
+	if err != nil {
+		logging.L(b.ctx).Error("failed generate command")
+		return fmt.Errorf("failed generate command: %w", err)
+	}
+
+	b.cmdConfig.Command = cmdDB.Command
+	b.cmdConfig.DumpName = cmdDB.DumpPath
+
+	logging.L(b.ctx).Info("Prepare connection")
+
+	conn := connect.New(
+		b.dbConnect.Server.Host,
+		b.dbConnect.Server.User,
+		b.dbConnect.Server.GetPort(b.cfg.Settings.SrvPost),
+		b.cfg.Settings.SSH.PrivateKey,
+		b.dbConnect.Server.SSHKey,
+		b.cfg.Settings.SSH.Passphrase,
+		b.dbConnect.Server.Password,
+		*b.cfg.Settings.SSH.IsPassphrase,
+	)
+	b.conn = conn
+
+	fmt.Printf("Trying to connect to server %s...\n", b.dbConnect.Server.Host)
+	if err := utils.RunWithCtx(b.ctx, conn.Connect); err != nil {
+		logging.L(b.ctx).Error(
+			"Error connecting to server",
+			logging.StringAttr("server", b.dbConnect.Server.Host),
+			logging.ErrAttr(err),
+		)
+		return &connecterror.ConnectError{
+			Addr: b.dbConnect.Server.Host,
+			Err:  err,
+		}
+	}
+
+	defer func(conn *connect.Connect) {
+		_ = conn.Close()
+	}(conn)
+
+	logging.L(b.ctx).Info("Trying to test connection to server")
+	if err := utils.RunWithCtx(b.ctx, conn.TestConnection); err != nil {
+		logging.L(b.ctx).Error("Error testing connection to server")
+		return &connecterror.ConnectError{
+			Addr: b.dbConnect.Server.Host,
+			Err:  err,
+		}
+	}
+	logging.L(b.ctx).Info("The connection is established")
+
+	logging.L(b.ctx).Info("Preparing for backup creation")
+
+	if err := utils.RunWithCtx(b.ctx, b.backup); err != nil {
+		logging.L(b.ctx).Error("Error creating backup database")
+		return err
+	}
+	logging.L(b.ctx).Info("Backup was successfully created and downloaded")
+
+	if b.cfg.Settings.DirArchived != "" {
+		logging.L(b.ctx).Info("Search for old backups")
+		dbNamePrefix := fmt.Sprintf("%s_%s",
+			b.dbConnect.Server.GetName(),
+			b.dbConnect.Database.GetName(),
+		)
+
+		if err := utils.RunWithCtx(b.ctx, func() error {
+			return utils.ArchivedLocalFile(dbNamePrefix, b.cmdConfig.DumpName, b.cfg.Settings.DirDump, b.cfg.Settings.DirArchived)
+		}); err != nil {
+			logging.L(b.ctx).Error("Error archiving old backups")
+			return err
+		}
+
+		logging.L(b.ctx).Info("Archived old backups", logging.StringAttr("path", b.cfg.Settings.DirArchived))
+	}
+
+	return nil
+}
+
+func (b *Backup) backup() error {
 	switch b.cfg.Settings.DumpLocation {
 	case "server":
-		return b.backupByServer()
+		byServer := backupByServer.NewApp(b.ctx, b.conn, b.cmdConfig)
+		return byServer.Run()
 	case "local-ssh":
-		return b.backupByLocalSSH()
+		localSSH := backupLocalSSH.NewApp(b.ctx, b.conn, b.cmdConfig)
+		return localSSH.Run()
 	case "local-direct":
-		return b.backupLocalDirect()
+		localDirect := backupLocalDirect.NewApp(b.ctx, b.conn, b.cmdConfig)
+		return localDirect.Run()
 	default:
 		logging.L(b.ctx).Error(
 			"Unsupported backup dump location",
@@ -69,131 +141,6 @@ func (b *Backup) Backup() error {
 		)
 		return fmt.Errorf("unsupported backup dump location: %s", b.cfg.Settings.DumpLocation)
 	}
-}
-
-func (b *Backup) backupByServer() error {
-
-	isRemoveDump := b.removeDump
-	checkCmd := fmt.Sprintf("test -f %s", b.remotePath)
-
-	logging.L(b.ctx).Info(
-		"Run command found backup in server with name",
-		logging.StringAttr("name", b.remotePath),
-	)
-
-	if msg, err := b.conn.RunCommand(checkCmd); err == nil {
-		logging.L(b.ctx).Info(
-			"Dump already exists on server",
-			logging.StringAttr("name", b.remotePath),
-			logging.StringAttr("msg", msg),
-		)
-
-		fmt.Println("Dump already exists on server:", b.remotePath)
-		isRemoveDump = false
-	} else {
-		stop := make(chan struct{})
-		dumpCreateTimeNow := time.Now()
-
-		logging.L(b.ctx).Info("File dump name", logging.StringAttr("name", b.remotePath))
-		fmt.Println("File dump name:", b.remotePath)
-
-		go utils.Spinner(stop)
-
-		if msg, err := b.conn.RunCommand(b.backupCmd); err != nil {
-			logging.L(b.ctx).Error(
-				"Failed to create dump",
-				logging.StringAttr("msg", msg),
-				logging.ErrAttr(err),
-			)
-			return fmt.Errorf("failed to create dump: %v", err)
-		}
-
-		close(stop)
-
-		elapsed := time.Since(dumpCreateTimeNow)
-
-		totalSize, err := b.fileSize()
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("\rDump created successfully in %.2f sec\n", elapsed.Seconds())
-		fmt.Printf("\rFile dump size: %s [%d bytes]\n", utils.FormatBytes(totalSize), totalSize)
-
-		dumpCreateTimeSec := fmt.Sprintf("%.2f sec", elapsed.Seconds())
-		logging.L(b.ctx).Info(
-			"The dump was successfully created",
-			logging.StringAttr("time", dumpCreateTimeSec),
-			logging.Int64Attr("size", totalSize),
-		)
-	}
-
-	var fileList []*FileRemoveList
-	fileList = append(fileList, &FileRemoveList{Name: b.remotePath, IsRemove: isRemoveDump})
-
-	if b.cfg.Settings.Encrypt.Type != "" {
-		encOpts := enc.Options{
-			FilePath: b.remotePath,
-			Password: b.dbData.Encrypt.Password,
-			Type:     b.dbData.Encrypt.Type,
-			Crypt:    "encrypt",
-		}
-		encryptApp := encrypt.NewApp(&encOpts)
-		encryptCmd, _ := encryptApp.Generate()
-
-		if msg, err := b.conn.RunCommand(encryptCmd.CMD); err != nil {
-			logging.L(b.ctx).Error(
-				"Failed to encrypt dump",
-				logging.StringAttr("msg", msg),
-				logging.ErrAttr(err),
-			)
-			return fmt.Errorf("failed to encrypt dump on server: %v, msg: %s", err, msg)
-		}
-
-		logging.L(b.ctx).Info("File dump encrypted successfully")
-		fmt.Println("File dump encrypted successfully")
-
-		b.remotePath = encryptCmd.Name
-		fileList = append(fileList, &FileRemoveList{Name: encryptCmd.Name, IsRemove: true})
-	}
-
-	logging.L(b.ctx).Info("Downloading dump", logging.StringAttr("name", b.remotePath))
-	dumpDownloadTimeNow := time.Now()
-	if err := b.downloadFile(); err != nil {
-		logging.L(b.ctx).Error(
-			"Failed to download dump",
-			logging.ErrAttr(err),
-		)
-		return fmt.Errorf("failed to download dump: %v", err)
-	}
-
-	dumpDownloadTimeSec := fmt.Sprintf("%.2f sec", time.Since(dumpDownloadTimeNow).Seconds())
-
-	logging.L(b.ctx).Info(
-		"The dump was successfully downloaded",
-		logging.StringAttr("time", dumpDownloadTimeSec),
-	)
-
-	for _, file := range fileList {
-
-		if !file.IsRemove {
-			continue
-		}
-
-		logging.L(b.ctx).Info("Removing dump on server")
-		fmt.Println("Removing dump from server:", file.Name)
-		if msg, err := b.conn.RunCommand(fmt.Sprintf("rm -f %s", file.Name)); err != nil {
-			logging.L(b.ctx).Error(
-				"Failed to remove dump on server",
-				logging.StringAttr("msg", msg),
-			)
-			return fmt.Errorf("failed to delete dump on server: %v", err)
-		}
-	}
-
-	logging.L(b.ctx).Info("The dump was successfully deleted on server")
-
-	return nil
 }
 
 func (b *Backup) backupByLocalSSH() error {
@@ -204,83 +151,39 @@ func (b *Backup) backupLocalDirect() error {
 	panic("not implement")
 }
 
-func (b *Backup) downloadFile() error {
-	localPath := filepath.Join(b.cfg.Settings.DirDump, filepath.Base(b.remotePath))
+func (b *Backup) prepareBackupConfig() {
+	logging.L(b.ctx).Info("Prepare command config")
 
-	var totalSize int64
-
-	totalSize, err := b.fileSize()
-	if err != nil {
-		return err
+	dataFormat := utils.TemplateData{
+		Server:   b.dbConnect.Server.GetName(),
+		Database: b.dbConnect.Database.GetName(),
+		Template: b.cfg.Settings.Template,
 	}
+	nameFile := utils.GetTemplateFileName(dataFormat)
 
-	outFile, err := os.Create(localPath)
-	if err != nil {
-		return fmt.Errorf("failed to create local file: %v", err)
+	b.cmdConfig = &commandConfig.Config{
+		Database: commandConfig.Database{
+			User:     b.dbConnect.Database.User,
+			Password: b.dbConnect.Database.Password,
+			Name:     b.dbConnect.Database.GetName(),
+			Port:     b.dbConnect.Database.GetPort(b.cfg.Settings.DBPort),
+			Format:   b.dbConnect.Database.GetFormat(b.cfg.Settings.DumpFormat),
+			Driver:   b.dbConnect.Database.GetDriver(b.cfg.Settings.Driver),
+			Options:  b.dbConnect.Database.Options,
+		},
+		Server: commandConfig.Server{
+			Host: b.dbConnect.Server.Host,
+			Port: b.dbConnect.Server.Port,
+			Key:  b.dbConnect.Server.SSHKey,
+		},
+		DumpLocation: b.cfg.Settings.DumpLocation,
+		Archive:      *b.cfg.Settings.Archive,
+		DumpDirLocal: b.cfg.Settings.DirDump,
+		DumpName:     nameFile,
+		RemoveBackup: *b.cfg.Settings.RemoveDump,
+		Encrypt: encryptConfigDomain.Encrypt{
+			Type:     b.dbConnect.Database.GetEncryptType(b.cfg.Settings.Encrypt.Type),
+			Password: b.dbConnect.Database.GetEncryptPass(b.cfg.Settings.Encrypt.Password),
+		},
 	}
-
-	defer func(outFile *os.File) {
-		_ = outFile.Close()
-		return
-	}(outFile)
-
-	session, err := b.conn.NewSession()
-	if err != nil {
-		return err
-	}
-
-	defer func(session *ssh.Session) {
-		_ = session.Close()
-		return
-	}(session)
-
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	if err := session.Start(fmt.Sprintf("cat %s", b.remotePath)); err != nil {
-		return err
-	}
-
-	var downloaded int64
-	buf := make([]byte, 32*1024)
-	for {
-		n, readErr := stdout.Read(buf)
-		if n > 0 {
-			if _, err := outFile.Write(buf[:n]); err != nil {
-				return err
-			}
-			downloaded += int64(n)
-			utils.Progress(downloaded, totalSize)
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			return readErr
-		}
-	}
-
-	fmt.Println("\nDownload complete:", localPath)
-
-	return session.Wait()
-}
-
-func (b *Backup) fileSize() (int64, error) {
-	sizeOutput, err := b.conn.RunCommand(fmt.Sprintf("stat -c %%s %s", b.remotePath))
-
-	var totalSize int64
-
-	if err != nil {
-		return totalSize, fmt.Errorf("failed to get file size: %v", err)
-	}
-	sizeOutput = strings.TrimSpace(sizeOutput)
-
-	_, err = fmt.Sscanf(sizeOutput, "%d", &totalSize)
-	if err != nil {
-		return totalSize, err
-	}
-
-	return totalSize, nil
 }

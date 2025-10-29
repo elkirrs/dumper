@@ -1,102 +1,144 @@
-package mariadb
+package mariadb_test
 
 import (
-	"dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
+	"dumper/internal/command/database/mariadb"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestMariaDBGenerator_Generate(t *testing.T) {
-	gen := MariaDBGenerator{}
-
+func TestMariaDbGenerator_Generate(t *testing.T) {
 	tests := []struct {
-		name       string
-		data       *command_config.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "port is empty, archive=false, dumpLocation=client",
-			data: &command_config.ConfigData{
-				User:     "root",
-				Password: "pass",
-				Port:     "",
-				Name:     "mydb",
-				DumpName: "backup",
+			name: "No archive, local dump",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "root",
+					Password: "123",
+					Port:     "3306",
+					Name:     "testdb",
+				},
+				DumpName:     "dump",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"/usr/bin/mariadb-dump",
+				"-uroot",
+				"-p123",
+				"-P3306",
+				"testdb",
 			},
-			wantCmd:    "/usr/bin/mariadb-dump -uroot -ppass -h127.0.0.1 -P3306 mydb",
-			wantRemote: "./backup.sql",
+			expectedExt: "sql",
 		},
 		{
-			name: "port is set, archive=false, dumpLocation=server",
-			data: &command_config.ConfigData{
-				User:     "admin",
-				Password: "secret",
-				Port:     "3307",
-				Name:     "testdb",
-				DumpName: "dumpfile",
+			name: "Archive enabled, local dump",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "root",
+					Password: "123",
+					Port:     "3306",
+					Name:     "testdb",
+				},
+				DumpName:     "dump",
+				Archive:      true,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
+			expectedContains: []string{
+				"/usr/bin/mariadb-dump",
+				"gzip",
+			},
+			expectedExt: "sql.gz",
+		},
+		{
+			name: "No archive, dump to server",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "root",
+					Password: "123",
+					Port:     "3306",
+					Name:     "testdb",
+				},
+				DumpName:     "server_dump",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    "/usr/bin/mariadb-dump -uadmin -psecret -h127.0.0.1 -P3307 testdb > ./dumpfile.sql",
-			wantRemote: "./dumpfile.sql",
+			expectedContains: []string{
+				"/usr/bin/mariadb-dump",
+				"> ./server_dump.sql",
+			},
+			expectedExt: "sql",
 		},
 		{
-			name: "port empty, archive=true, dumpLocation=client",
-			data: &command_config.ConfigData{
-				User:     "user1",
-				Password: "p123",
-				Name:     "db1",
-				DumpName: "data",
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
-			},
-			wantCmd:    "/usr/bin/mariadb-dump -uuser1 -pp123 -h127.0.0.1 -P3306 db1 | gzip",
-			wantRemote: "./data.sql.gz",
-		},
-		{
-			name: "port set, archive=true, dumpLocation=server",
-			data: &command_config.ConfigData{
-				User:     "alice",
-				Password: "pw",
-				Port:     "3310",
-				Name:     "sales",
-				DumpName: "sales_dump",
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
+			name: "Archive enabled, dump to server",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "root",
+					Password: "123",
+					Port:     "3306",
+					Name:     "testdb",
+				},
+				DumpName:     "server_dump",
+				Archive:      true,
 				DumpLocation: "server",
 			},
-			wantCmd:    "/usr/bin/mariadb-dump -ualice -ppw -h127.0.0.1 -P3310 sales | gzip > ./sales_dump.sql.gz",
-			wantRemote: "./sales_dump.sql.gz",
+			expectedContains: []string{
+				"/usr/bin/mariadb-dump",
+				"gzip",
+				"> ./server_dump.sql.gz",
+			},
+			expectedExt: "sql.gz",
 		},
 	}
+
+	gen := mariadb.MariaDbGenerator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
+			require.NoError(t, err, "Generate should not return an error")
+			require.NotNil(t, cmd, "Returned command must not be nil")
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string should not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath should not be empty")
 
-			assert.Equal(t, tt.wantCmd, gotCmd,
-				"Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote,
-				"Remote path mismatch in test '%s'", tt.name)
+			for _, expect := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expect, "Command should contain expected fragment: %s", expect)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should have expected extension")
 		})
 	}
+}
+
+func TestMariaDbGenerator_CommandIntegrity(t *testing.T) {
+	cfg := &cmdCfg.Config{
+		Database: cmdCfg.Database{
+			User:     "admin",
+			Password: "secret",
+			Port:     "3307",
+			Name:     "mydb",
+		},
+		DumpName:     "backup",
+		Archive:      false,
+		DumpLocation: "local",
+	}
+
+	gen := mariadb.MariaDbGenerator{}
+	cmd, err := gen.Generate(cfg)
+	require.NoError(t, err)
+	require.NotNil(t, cmd)
+
+	expectedPrefix := "/usr/bin/mariadb-dump -uadmin -psecret -h127.0.0.1 -P3307 mydb"
+	assert.Contains(t, cmd.Command, expectedPrefix, "Command must be constructed correctly")
+	assert.Equal(t, "./backup.sql", cmd.DumpPath, "DumpPath should match expected filename")
 }

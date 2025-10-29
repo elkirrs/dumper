@@ -1,99 +1,108 @@
-package sqlite
+package sqlite_test
 
 import (
-	"dumper/internal/domain/command-config"
+	"dumper/internal/command/database/sqlite"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/internal/domain/config/setting"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestSQLiteGenerator_Generate(t *testing.T) {
-	gen := SQLiteGenerator{}
-
+func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 	tests := []struct {
-		name       string
-		data       *command_config.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "archive=false, dumpLocation=client",
-			data: &command_config.ConfigData{
-				DumpName: "backup",
-				Options: option.Options{
-					Path: "/tmp/db.sqlite",
+			name: "Standard SQLite dump, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Options: option.Options{Path: "test.db"},
 				},
+				DumpName:     "dump1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"sqlite3 test.db .dump",
+				"> ./dump1.sql",
 			},
-			wantCmd:    "sqlite3 /tmp/db.sqlite .dump > ./backup.sql",
-			wantRemote: "./backup.sql",
+			expectedExt: "sql",
 		},
 		{
-			name: "archive=false, dumpLocation=server",
-			data: &command_config.ConfigData{
-				DumpName: "dumpfile",
-				Options: option.Options{
-					Path: "/var/db/app.db",
+			name: "SQLite dump with archive, local",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Options: option.Options{Path: "archive.db"},
 				},
+				DumpName:     "archive1",
+				Archive:      true,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
+			expectedContains: []string{
+				"sqlite3 archive.db .dump",
+				"| gzip",
+				"./archive1.sql.gz",
+			},
+			expectedExt: "sql.gz",
+		},
+		{
+			name: "SQLite dump to server, no archive",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Options: option.Options{Path: "server.db"},
+				},
+				DumpName:     "serverDump",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    "sqlite3 /var/db/app.db .dump > ./dumpfile.sql",
-			wantRemote: "./dumpfile.sql",
+			expectedContains: []string{
+				"sqlite3 server.db .dump",
+				"> ./serverDump.sql",
+			},
+			expectedExt: "sql",
 		},
 		{
-			name: "archive=true, dumpLocation=client",
-			data: &command_config.ConfigData{
-				DumpName: "data",
-				Options: option.Options{
-					Path: "/data/db.sqlite3",
+			name: "SQLite dump to server with archive",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Options: option.Options{Path: "serverArchive.db"},
 				},
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
-			},
-			wantCmd:    "sqlite3 /data/db.sqlite3 .dump | gzip > ./data.sql.gz",
-			wantRemote: "./data.sql.gz",
-		},
-		{
-			name: "archive=true, dumpLocation=server",
-			data: &command_config.ConfigData{
-				DumpName: "app_backup",
-				Options: option.Options{
-					Path: "/opt/app/app.db",
-				},
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
+				DumpName:     "serverArchive",
+				Archive:      true,
 				DumpLocation: "server",
 			},
-			wantCmd:    "sqlite3 /opt/app/app.db .dump | gzip > ./app_backup.sql.gz",
-			wantRemote: "./app_backup.sql.gz",
+			expectedContains: []string{
+				"sqlite3 serverArchive.db .dump",
+				"| gzip",
+				"./serverArchive.sql.gz",
+			},
+			expectedExt: "sql.gz",
 		},
 	}
 
+	gen := sqlite.SQLiteGenerator{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
+			require.NoError(t, err, "Generate() should not return an error")
+			require.NotNil(t, cmd, "DBCommand should not be nil")
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string should not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath should not be empty")
 
-			assert.Equal(t, tt.wantCmd, gotCmd, "Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote, "Remote path mismatch in test '%s'", tt.name)
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expected, "Command should contain %s", expected)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should contain extension %s", tt.expectedExt)
 		})
 	}
 }

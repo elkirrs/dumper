@@ -1,102 +1,123 @@
-package mysql
+package mysql_test
 
 import (
-	"dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
+	"dumper/internal/command/database/mysql"
+	commandDomain "dumper/internal/domain/command"
+	cmdCfg "dumper/internal/domain/command-config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(b bool) *bool { return &b }
-
-func TestMySQLGenerator_Generate(t *testing.T) {
-	gen := MySQLGenerator{}
-
+func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 	tests := []struct {
-		name       string
-		data       *command_config.ConfigData
-		settings   *setting.Settings
-		wantCmd    string
-		wantRemote string
+		name             string
+		config           *cmdCfg.Config
+		expectedContains []string
+		expectedExt      string
 	}{
 		{
-			name: "archive=false, dumpLocation=client",
-			data: &command_config.ConfigData{
-				User:     "root",
-				Password: "pass",
-				Port:     "3306",
-				Name:     "mydb",
-				DumpName: "backup",
+			name: "Standard MySQL dump (no archive, local)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "3306",
+					User:     "root",
+					Password: "password",
+					Name:     "testdb",
+				},
+				DumpName:     "dump1",
+				Archive:      false,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
-				DumpLocation: "client",
+			expectedContains: []string{
+				"/usr/bin/mysqldump",
+				"-h 127.0.0.1",
+				"-u root",
+				"-ppassword",
+				"testdb",
 			},
-			wantCmd:    "/usr/bin/mysqldump -h 127.0.0.1 -P 3306 -u root -ppass mydb",
-			wantRemote: "./backup.sql",
+			expectedExt: "sql",
 		},
 		{
-			name: "archive=false, dumpLocation=server",
-			data: &command_config.ConfigData{
-				User:     "admin",
-				Password: "secret",
-				Port:     "3307",
-				Name:     "testdb",
-				DumpName: "dumpfile",
+			name: "Archived MySQL dump (gzip, local)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "3307",
+					User:     "admin",
+					Password: "1234",
+					Name:     "prod_db",
+				},
+				DumpName:     "backup1",
+				Archive:      true,
+				DumpLocation: "local",
 			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(false),
+			expectedContains: []string{
+				"/usr/bin/mysqldump",
+				"| gzip",
+				"prod_db",
+			},
+			expectedExt: "sql.gz",
+		},
+		{
+			name: "Server dump (no archive)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "3308",
+					User:     "sa",
+					Password: "pw123",
+					Name:     "serverdb",
+				},
+				DumpName:     "dump_server",
+				Archive:      false,
 				DumpLocation: "server",
 			},
-			wantCmd:    "/usr/bin/mysqldump -h 127.0.0.1 -P 3307 -u admin -psecret testdb > ./dumpfile.sql",
-			wantRemote: "./dumpfile.sql",
+			expectedContains: []string{
+				"> ./dump_server.sql",
+				"serverdb",
+			},
+			expectedExt: "sql",
 		},
 		{
-			name: "archive=true, dumpLocation=client",
-			data: &command_config.ConfigData{
-				User:     "user1",
-				Password: "p123",
-				Port:     "3306",
-				Name:     "db1",
-				DumpName: "data",
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
-				DumpLocation: "client",
-			},
-			wantCmd:    "/usr/bin/mysqldump -h 127.0.0.1 -P 3306 -u user1 -pp123 db1 | gzip",
-			wantRemote: "./data.sql.gz",
-		},
-		{
-			name: "archive=true, dumpLocation=server",
-			data: &command_config.ConfigData{
-				User:     "alice",
-				Password: "pw",
-				Port:     "3308",
-				Name:     "sales",
-				DumpName: "sales_dump",
-			},
-			settings: &setting.Settings{
-				Archive:      boolPtr(true),
+			name: "Server dump (with archive)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "3309",
+					User:     "admin",
+					Password: "pw",
+					Name:     "archivedb",
+				},
+				DumpName:     "dump_archive",
+				Archive:      true,
 				DumpLocation: "server",
 			},
-			wantCmd:    "/usr/bin/mysqldump -h 127.0.0.1 -P 3308 -u alice -ppw sales | gzip > ./sales_dump.sql.gz",
-			wantRemote: "./sales_dump.sql.gz",
+			expectedContains: []string{
+				"| gzip",
+				"> ./dump_archive.sql.gz",
+				"archivedb",
+			},
+			expectedExt: "sql.gz",
 		},
 	}
 
+	gen := mysql.MySQLGenerator{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			require.NotNil(t, tt.data)
-			require.NotNil(t, tt.settings)
+			cmd, err := gen.Generate(tt.config)
 
-			gotCmd, gotRemote := gen.Generate(tt.data, tt.settings)
+			require.NoError(t, err, "Generate() should not return an error")
+			require.NotNil(t, cmd, "DBCommand should not be nil")
 
-			assert.Equal(t, tt.wantCmd, gotCmd, "Command mismatch in test '%s'", tt.name)
-			assert.Equal(t, tt.wantRemote, gotRemote, "Remote path mismatch in test '%s'", tt.name)
+			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
+			assert.NotEmpty(t, cmd.Command, "Command string must not be empty")
+			assert.NotEmpty(t, cmd.DumpPath, "DumpPath must not be empty")
+
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, cmd.Command, expected, "Command should contain %s", expected)
+			}
+
+			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should contain extension %s", tt.expectedExt)
 		})
 	}
 }

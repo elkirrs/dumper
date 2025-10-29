@@ -1,21 +1,20 @@
 package mysql
 
 import (
-	command "dumper/internal/command/database"
+	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type MySQLGenerator struct{}
 
-func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
+func (g MySQLGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
 	baseCmd := fmt.Sprintf("/usr/bin/mysqldump -h 127.0.0.1 -P %s -u %s -p%s %s",
-		data.Port, data.User, data.Password, data.Name)
+		data.Database.Port, data.Database.User, data.Database.Password, data.Database.Name)
 
-	if *settings.Archive {
+	if data.Archive {
 		baseCmd += " | gzip"
 		ext += ".gz"
 	}
@@ -23,13 +22,15 @@ func (g MySQLGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Sett
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("./%s", fileName)
 
-	if settings.DumpLocation == "server" {
-		return fmt.Sprintf("%s > %s", baseCmd, remotePath), remotePath
+	if data.DumpLocation == "server" {
+		return &commandDomain.DBCommand{
+			Command:  fmt.Sprintf("%s > %s", baseCmd, remotePath),
+			DumpPath: remotePath,
+		}, nil
 	}
 
-	return baseCmd, remotePath
-}
-
-func init() {
-	command.Register("mysql", MySQLGenerator{})
+	return &commandDomain.DBCommand{
+		Command:  baseCmd,
+		DumpPath: remotePath,
+	}, nil
 }

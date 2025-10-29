@@ -1,36 +1,37 @@
 package sqlite
 
 import (
-	command "dumper/internal/command/database"
+	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
-	"dumper/internal/domain/config/setting"
 	"fmt"
 )
 
 type SQLiteGenerator struct{}
 
-func (g SQLiteGenerator) Generate(data *cmdCfg.ConfigData, settings *setting.Settings) (string, string) {
+func (g SQLiteGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("./%s", fileName)
 
-	baseCmd := fmt.Sprintf("sqlite3 %s .dump", data.Options.Path)
+	baseCmd := fmt.Sprintf("sqlite3 %s .dump", data.Database.Options.Path)
 
-	if *settings.Archive {
+	if data.Archive {
 		remotePath += ".gz"
 		baseCmd = fmt.Sprintf("%s | gzip > %s", baseCmd, remotePath)
 	} else {
 		baseCmd = fmt.Sprintf("%s > %s", baseCmd, remotePath)
 	}
 
-	if settings.DumpLocation == "server" {
-		return baseCmd, remotePath
+	if data.DumpLocation == "server" {
+		return &commandDomain.DBCommand{
+			Command:  baseCmd,
+			DumpPath: remotePath,
+		}, nil
 	}
 
-	return baseCmd, remotePath
-}
-
-func init() {
-	command.Register("sqlite", SQLiteGenerator{})
+	return &commandDomain.DBCommand{
+		Command:  baseCmd,
+		DumpPath: remotePath,
+	}, nil
 }
