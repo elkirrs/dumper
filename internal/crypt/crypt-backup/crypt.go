@@ -1,4 +1,4 @@
-package decrypt
+package crypt_backup
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type Encrypt struct {
+type CryptBackup struct {
 	FilePath string
 	Password string
 	Crypt    string
@@ -21,15 +21,15 @@ func NewApp(
 	filePath string,
 	password string,
 	crypt string,
-) *Encrypt {
-	return &Encrypt{
+) *CryptBackup {
+	return &CryptBackup{
 		FilePath: filePath,
 		Password: password,
 		Crypt:    crypt,
 	}
 }
 
-func (e *Encrypt) Decrypt() error {
+func (e *CryptBackup) Decrypt() error {
 	if e.FilePath == "" {
 		return errors.New("-dec option is required")
 	}

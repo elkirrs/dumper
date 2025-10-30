@@ -1,7 +1,9 @@
 package local_config
 
 import (
+	"dumper/internal/crypt"
 	"dumper/internal/domain/config"
+	"dumper/pkg/utils"
 	"fmt"
 	"os"
 
@@ -10,10 +12,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Load(filename string) (*config.Config, error) {
+func Load(filename, appSecret string) (*config.Config, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
+	}
+
+	if utils.IsEncrypted(data) || utils.LooksEncrypted(data) {
+		data, err = crypt.DecryptInApp(data, appSecret)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var cfg config.Config

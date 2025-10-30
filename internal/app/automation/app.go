@@ -18,13 +18,13 @@ import (
 type Automation struct {
 	ctx context.Context
 	cfg *cfg.Config
-	env *app.Env
+	env *app.Flags
 }
 
 func NewApp(
 	ctx context.Context,
 	cfg *cfg.Config,
-	env *app.Env,
+	env *app.Flags,
 ) *Automation {
 	return &Automation{
 		ctx: ctx,
@@ -36,7 +36,7 @@ func NewApp(
 func (a *Automation) Run() error {
 	logging.L(a.ctx).Info("Prepare data for create dumps")
 
-	dbList := strings.Split(a.env.DbName, ",")
+	dbList := strings.Split(a.env.DbNameList, ",")
 	countDBs := len(dbList)
 
 	serversDatabases := make(map[string][]dbConnect.DBConnect)

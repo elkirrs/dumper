@@ -21,7 +21,7 @@ import (
 type Manual struct {
 	ctx context.Context
 	cfg *cfg.Config
-	env *app.Env
+	env *app.Flags
 }
 
 type Remote interface {
@@ -32,7 +32,7 @@ type Remote interface {
 func NewApp(
 	ctx context.Context,
 	cfg *cfg.Config,
-	env *app.Env,
+	env *app.Flags,
 ) *Manual {
 	return &Manual{
 		ctx: ctx,

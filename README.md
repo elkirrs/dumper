@@ -16,7 +16,9 @@ flexible connection and storage settings.
 - Work with **SSH-Keys** (include passphrase).
 - Custom dump name templates.
 - Archiving old dumps.
-- Encrypting
+- Encrypting:
+    - Encrypting dump file
+    - Encrypt and Decrypt config file
 - Different formats.
 
 ---
@@ -231,7 +233,7 @@ A list of databases that need to be backed up.
 
 ---
 
-#### 🔐 4. encrypt
+#### 🔐 4. decrypt database file
 If the file need to encrypt your database backup,
 you can use encryption (the encryption utility must be
 installed in the environment where the database backup
@@ -273,14 +275,36 @@ settings:
 
 The file can be decrypted either via dumper or an encryption utility.
 
-#### Decrypt
+- Decrypt command
 ```
-./dumper --dec --input dump.sql.gz.enc --pass 1234566 --crypt aes
+./dumper --crypt backup --password 123456 --input ./dump.sql.gz.enc
 ```
 or
 ```
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.sql.gz -k 123456
 ```
+
+
+####  🔐 5. encrypt and decrypt file config
+
+How it works: 
+1. Password encryption (outputs recovery token)
+    ```
+   ./dumper --crypt config --mode encrypt --password <password> --input config.yaml
+   ```
+2. Launching the application (reading without password)
+    ```
+    ./dumper --crypt config --mode decrypt --password <password> --input config.yaml
+    ```
+3. Decryption on the same device
+    ```
+    ./dumper --crypt config --mode decrypt --password <password> --input config.yaml
+    ```
+4. Recovery on another device
+    ```
+    ./dumper --crypt config --mode recover --recovery <recovery_token> --input config.yaml
+    ```
+
 
 ### ▶ Launch examples
 
@@ -292,16 +316,17 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.s
 
 #### Flag list
 
-| Flag         | Example           | Description                                      | 
-|--------------|-------------------|--------------------------------------------------|
-| `--config`   | ./cfg.yaml        | path to config file                              |
-| `--db`       | demo,app          | backup databases from list                       |
-| `--all`      |                   | backup all databases from config file            |
-| `--file-log` | file.log          | file name log file (if settings.logging == true) |
-| `--dec`      |                   | decrypt process                                  |
-| `--input`    | ./dump.sql.gz.enc | path to encrypt file                             |
-| `--crypt`    | aes               | type encrypting [ aes ]                          |
-| `--pass`     | 123456            | password for decrypt (only for aes)              |
+| Flag           | Example           | Description                                      | 
+|----------------|-------------------|--------------------------------------------------|
+| `--config`     | ./cfg.yaml        | path to config file                              |
+| `--db`         | demo,app          | backup databases from list                       |
+| `--all`        |                   | backup all databases from config file            |
+| `--file-log`   | file.log          | file name log file (if settings.logging == true) |
+| `--crypt`      | config            | Crypt file: `dump`, `config`                     |                                 |
+| `--input`      | ./dump.sql.gz.enc | path to encrypt file                             |
+| `--mode`       | encrypt           | Mode crypt: `encrypt`, `decrypt`, `recover`      |
+| `--password`   | 123456            | password for decrypt (only for aes)              |
+| `--recovery`   | 4j3k4lc7na09s     | Recovery token for recovery                      |
 
 ---
 

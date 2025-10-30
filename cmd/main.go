@@ -4,7 +4,7 @@ import (
 	"context"
 	"dumper/internal/app"
 	conf "dumper/internal/config/local"
-	"dumper/internal/decrypt"
+	"dumper/internal/crypt"
 	appDomain "dumper/internal/domain/app"
 	"dumper/pkg/logging"
 	"flag"
@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	version = "dev"
-	date    = "unknown"
+	version   = "dev"
+	date      = "unknown"
+	appSecret = "wTke8p;yGRM#$9Fh1kkYf$o_S@qnEt0Y"
 )
 var showVersion bool
 
@@ -40,10 +41,11 @@ func main() {
 	dbName := flag.String("db", "", "Name of the backup database")
 	all := flag.Bool("all", false, "Backup of all databases from the configuration")
 	fileLog := flag.String("file-log", "dumper.log", "Log files from the configuration")
-	dec := flag.Bool("dec", false, "Decrypt process")
-	decFile := flag.String("input", "", "Decrypt path backup file")
-	crypt := flag.String("crypt", "", "Type encrypt [aes]")
-	pass := flag.String("pass", "", "Password to decrypt backup file [required if crypt aes]")
+	input := flag.String("input", "", "Decrypt path backup file")
+	cryptType := flag.String("crypt", "", "Crypt file: dump | config")
+	pass := flag.String("password", "", "Password to decrypt backup file")
+	mode := flag.String("mode", "", "Mode: encrypt | decrypt | recover")
+	recovery := flag.String("recovery", "", "Recovery token for recovery")
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
@@ -53,15 +55,27 @@ func main() {
 
 	flag.Parse()
 
-	if *dec {
-		decApp := decrypt.NewApp(*decFile, *pass, *crypt)
-		err := decApp.Decrypt()
+	flags := appDomain.Flags{
+		ConfigFile: *configPath,
+		DbNameList: *dbName,
+		All:        *all,
+		FileLog:    *fileLog,
+		Input:      *input,
+		Crypt:      *cryptType,
+		Password:   *pass,
+		Mode:       *mode,
+		Recovery:   *recovery,
+		AppSecret:  appSecret,
+	}
+
+	if flags.Crypt != "" {
+		cryptApp := crypt.NewApp(ctx, &flags)
+		err := cryptApp.Run()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Crypt error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Decrypt success")
-		return
+		os.Exit(0)
 	}
 
 	if showVersion {
@@ -69,20 +83,13 @@ func main() {
 		return
 	}
 
-	env := appDomain.Env{
-		ConfigFile: *configPath,
-		DbName:     *dbName,
-		All:        *all,
-		FileLog:    *fileLog,
-	}
-
-	config, err := conf.Load(*configPath)
+	config, err := conf.Load(*configPath, appSecret)
 	if err != nil {
 		fmt.Printf("configuration loading error : %v \n", err)
 		os.Exit(1)
 	}
 
-	logger := runLog(&env, *config.Settings.Logging)
+	logger := runLog(&flags, *config.Settings.Logging)
 
 	defer func(logger *logging.Logs) {
 		_ = logger.Close()
@@ -92,7 +99,7 @@ func main() {
 
 	logging.L(ctx).Info("Configuration loaded")
 
-	a := app.NewApp(ctx, config, &env)
+	a := app.NewApp(ctx, config, &flags)
 
 	logging.L(ctx).Info("Starting application...")
 
@@ -107,7 +114,7 @@ func main() {
 }
 
 func runLog(
-	e *appDomain.Env,
+	e *appDomain.Flags,
 	isLogging bool,
 ) *logging.Logs {
 	var opts []logging.LoggerOption

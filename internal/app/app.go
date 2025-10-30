@@ -19,16 +19,16 @@ import (
 )
 
 type App struct {
-	ctx context.Context
-	cfg *cfg.Config
-	env *app.Env
+	ctx   context.Context
+	cfg   *cfg.Config
+	flags *app.Flags
 }
 
-func NewApp(ctx context.Context, cfg *cfg.Config, env *app.Env) *App {
+func NewApp(ctx context.Context, cfg *cfg.Config, flags *app.Flags) *App {
 	return &App{
-		ctx: ctx,
-		cfg: cfg,
-		env: env,
+		ctx:   ctx,
+		cfg:   cfg,
+		flags: flags,
 	}
 }
 
@@ -41,25 +41,25 @@ func (a *App) MustRun() error {
 }
 
 func (a *App) Run() error {
-	if a.env.All == false && a.env.DbName != "" {
+	if a.flags.All == false && a.flags.DbNameList != "" {
 		logging.L(a.ctx).Info("Running the app with the parameters specified (db list)")
-		automationDumpApp := automation.NewApp(a.ctx, a.cfg, a.env)
+		automationDumpApp := automation.NewApp(a.ctx, a.cfg, a.flags)
 		return automationDumpApp.Run()
 	}
 
-	if a.env.All == true && a.env.DbName == "" {
+	if a.flags.All == true && a.flags.DbNameList == "" {
 		logging.L(a.ctx).Info("Running the app with the parameters specified (db all)")
 		var keys []string
 		for key := range a.cfg.Databases {
 			keys = append(keys, key)
 		}
-		a.env.DbName = strings.Join(keys, ",")
+		a.flags.DbNameList = strings.Join(keys, ",")
 
-		automationDumpApp := automation.NewApp(a.ctx, a.cfg, a.env)
+		automationDumpApp := automation.NewApp(a.ctx, a.cfg, a.flags)
 		return automationDumpApp.Run()
 	}
 
 	logging.L(a.ctx).Info("Running the app in manual mode with db selection")
-	manualDumpApp := manual.NewApp(a.ctx, a.cfg, a.env)
+	manualDumpApp := manual.NewApp(a.ctx, a.cfg, a.flags)
 	return manualDumpApp.Run()
 }
