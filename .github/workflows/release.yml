@@ -26,6 +26,11 @@ jobs:
         env:
           GO111MODULE: on
 
+      - name: Generate app key
+        id: secret
+        run: |
+          echo "APP_KEY=$(head -c 32 /dev/urandom | base64)" >> $GITHUB_ENV
+
       - name: Run Go Releaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -33,3 +38,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          APP_KEY: ${{ env.APP_KEY }}

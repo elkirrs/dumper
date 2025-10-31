@@ -58,28 +58,28 @@ func GetDeviceID() string {
 
 	switch runtime.GOOS {
 	case "linux":
-		if id := tryReadFile("/etc/machine-id"); id != "" {
+		if id := TryReadFile("/etc/machine-id"); id != "" {
 			return id
 		}
-		if id := tryReadFile("/var/lib/dbus/machine-id"); id != "" {
+		if id := TryReadFile("/var/lib/dbus/machine-id"); id != "" {
 			return id
 		}
-		if id := tryReadFile("/sys/class/dmi/id/product_uuid"); id != "" {
+		if id := TryReadFile("/sys/class/dmi/id/product_uuid"); id != "" {
 			return id
 		}
 	case "darwin":
-		if id := tryRunAndTrim("ioreg", "-rd1", "-c", "IOPlatformExpertDevice"); id != "" {
+		if id := TryRunAndTrim("ioreg", "-rd1", "-c", "IOPlatformExpertDevice"); id != "" {
 			if parsed := ParseIoRegUUID(id); parsed != "" {
 				return parsed
 			}
 		}
 	case "windows":
-		if id := tryRunAndTrim("wmic", "csproduct", "get", "uuid"); id != "" {
+		if id := TryRunAndTrim("wmic", "csproduct", "get", "uuid"); id != "" {
 			if parsed := ParseWmicUUID(id); parsed != "" {
 				return parsed
 			}
 		}
-		if id := tryRunAndTrim("powershell", "-Command", "Get-WmiObject -Class Win32_ComputerSystemProduct | Select-Object -ExpandProperty UUID"); id != "" {
+		if id := TryRunAndTrim("powershell", "-Command", "Get-WmiObject -Class Win32_ComputerSystemProduct | Select-Object -ExpandProperty UUID"); id != "" {
 			return id
 		}
 	}
@@ -97,7 +97,7 @@ func GetDeviceKey() []byte {
 	return sum[:]
 }
 
-func tryReadFile(path string) string {
+func TryReadFile(path string) string {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return ""
@@ -105,7 +105,7 @@ func tryReadFile(path string) string {
 	return strings.ToLower(strings.TrimSpace(string(b)))
 }
 
-func tryRunAndTrim(name string, args ...string) string {
+func TryRunAndTrim(name string, args ...string) string {
 	cmd := exec.Command(name, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var BackoffFunc = ExponentialBackoff
+
 func WithRetry(
 	ctx context.Context,
 	maxRetries int,

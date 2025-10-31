@@ -11,6 +11,7 @@ builds:
       - -X main.version={{.Tag}}
       - -X main.commit={{.FullCommit}}
       - -X main.date={{.Date}}
+      - -X main.app={{.Env.APP_KEY}}
     goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
 

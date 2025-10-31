@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	version   = "dev"
-	date      = "unknown"
-	appSecret = "wTke8p;yGRM#$9Fh1kkYf$o_S@qnEt0Y"
+	version = "dev"
+	date    = "unknown"
+	appKey  = ""
 )
 var showVersion bool
 
@@ -65,7 +65,7 @@ func main() {
 		Password:   *pass,
 		Mode:       *mode,
 		Recovery:   *recovery,
-		AppSecret:  appSecret,
+		AppSecret:  appKey,
 	}
 
 	if flags.Crypt != "" {
@@ -83,7 +83,7 @@ func main() {
 		return
 	}
 
-	config, err := conf.Load(*configPath, appSecret)
+	config, err := conf.Load(*configPath, appKey)
 	if err != nil {
 		fmt.Printf("configuration loading error : %v \n", err)
 		os.Exit(1)

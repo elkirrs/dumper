@@ -86,6 +86,11 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 		return err
 	}
 
+	isEnc, err := utils.IsEncryptedFile(input)
+	if err == nil && isEnc {
+		return fmt.Errorf("the %s file is already encrypted", input)
+	}
+
 	salt := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return err
@@ -101,7 +106,8 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 	deriveAppSecret := utils.DeriveAppKey(appSecret, deviceKey, salt)
 	encKeyForApp := utils.EncryptAES(deriveAppSecret, finalKey)
 
-	data := append(salt, byte(len(encKeyForApp)))
+	data := append(utils.MagicHeader(), salt...)
+	data = append(data, byte(len(encKeyForApp)))
 	data = append(data, encKeyForApp...)
 	data = append(data, encConfig...)
 
@@ -112,7 +118,7 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 }
 
 func (c *Crypt) decryptWithPassword(input, output, password string) error {
-	data, err := os.ReadFile(input)
+	data, err := utils.ReadEncryptedFile(input)
 	if err != nil {
 		return err
 	}

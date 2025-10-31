@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"os"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -51,10 +52,12 @@ func ComputeFinalKey(passwordKey, deviceKey []byte) []byte {
 	return pbkdf2.Key(passwordKey, deviceKey, 100000, 32, sha256.New)
 }
 
-const MagicHeader = "ENCF"
-
 func IsEncrypted(data []byte) bool {
-	return len(data) > 4 && string(data[:4]) == MagicHeader
+	header := MagicHeader()
+	if len(data) < len(header) {
+		return false
+	}
+	return string(data[:len(header)]) == string(header)
 }
 
 func LooksEncrypted(data []byte) bool {
@@ -67,4 +70,36 @@ func LooksEncrypted(data []byte) bool {
 		}
 	}
 	return false
+}
+
+func IsEncryptedFile(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+
+	header := make([]byte, len(MagicHeader()))
+	n, err := f.Read(header)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+	return n == len(MagicHeader()) && string(header) == string(MagicHeader()), nil
+}
+
+func ReadEncryptedFile(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) < len(MagicHeader()) || string(data[:len(MagicHeader())]) != string(MagicHeader()) {
+		return nil, fmt.Errorf("the file does not have an encrypted signature")
+	}
+	return data[len(MagicHeader()):], nil
+}
+
+func MagicHeader() []byte {
+	return []byte("ENCFDCA")
 }

@@ -3,7 +3,8 @@
 # Run unit tests
 test:
 	go test -v ./internal/command/... \
- 		./internal/select/...
+ 		./internal/select/... \
+ 		./pkg/utils/...
 
 # Run build binary app
 build:

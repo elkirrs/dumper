@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.7.0] - 2025-10-31
+- Add encrypt config file
+
 ## [1.6.0] - 2025-10-28
 - Add support encrypt aes (openssl) for dump files 
 - Add Server and Database titles config
