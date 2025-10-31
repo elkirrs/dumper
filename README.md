@@ -294,7 +294,7 @@ How it works:
    ```
 2. Launching the application (reading without password)
     ```
-    ./dumper --crypt config --mode decrypt --password <password> --input config.yaml
+    ./dumper --config config.yaml
     ```
 3. Decryption on the same device
     ```
