@@ -18,6 +18,7 @@ type Database struct {
 	Options    option.Options  `yaml:"options"`
 	RemoveDump *bool           `yaml:"remove_dump"`
 	Encrypt    encrypt.Encrypt `yaml:"encrypt"`
+	Storages   []string        `yaml:"storages"`
 }
 
 func (d Database) GetName() string {

@@ -6,11 +6,15 @@ import (
 	"dumper/internal/connect"
 	backupDomain "dumper/internal/domain/backup"
 	commandConfig "dumper/internal/domain/command-config"
+	configStorageDomain "dumper/internal/domain/config/storage"
 	encryptDomain "dumper/internal/domain/encrypt"
-	"dumper/internal/download"
+	storageDomain "dumper/internal/domain/storage"
+	"dumper/internal/storage"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -42,7 +46,7 @@ func (b *BackupServer) Run() error {
 		logging.StringAttr("name", b.config.DumpName),
 	)
 
-	downloadApp := download.NewApp(b.ctx, b.conn, b.config)
+	var totalSize int64
 
 	if msg, err := b.conn.RunCommand(checkCmd); err == nil {
 		logging.L(b.ctx).Info(
@@ -53,6 +57,14 @@ func (b *BackupServer) Run() error {
 
 		fmt.Println("Dump already exists on server:", b.config.DumpName)
 		isRemoveDump = false
+
+		totalSize, err = b.FileSize()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("\rFile dump size: %s [%d bytes]\n", utils.FormatBytes(totalSize), totalSize)
+
 	} else {
 		stop := make(chan struct{})
 		dumpCreateTimeNow := time.Now()
@@ -75,7 +87,7 @@ func (b *BackupServer) Run() error {
 
 		elapsed := time.Since(dumpCreateTimeNow)
 
-		totalSize, err := downloadApp.FileSize()
+		totalSize, err = b.FileSize()
 		if err != nil {
 			return err
 		}
@@ -128,23 +140,67 @@ func (b *BackupServer) Run() error {
 
 	logging.L(b.ctx).Info("Downloading dump", logging.StringAttr("name", b.config.DumpName))
 	dumpDownloadTimeNow := time.Now()
-	if err := downloadApp.DownloadFile(); err != nil {
-		logging.L(b.ctx).Error(
-			"Failed to download dump",
-			logging.ErrAttr(err),
-		)
-		return fmt.Errorf("failed to download dump: %v", err)
+
+	wg := &sync.WaitGroup{}
+	errCh := make(chan error, len(b.config.Storages))
+	var countStorage int8
+
+	for _, storageItem := range b.config.Storages {
+		countStorage++
+		wg.Add(1)
+		go func(item configStorageDomain.ListStorages) {
+			defer wg.Done()
+
+			select {
+			case <-b.ctx.Done():
+				logging.L(b.ctx).Info("download cancelled by context")
+				errCh <- fmt.Errorf("download cancelled for storage %s", storageItem.Type)
+				return
+			default:
+				storageConfig := storageDomain.Config{
+					Type:     storageItem.Type,
+					DumpName: b.config.DumpName,
+					FileSize: totalSize,
+					Conn:     b.conn,
+					Config:   storageItem.Configs,
+				}
+
+				storageApp := storage.NewApp(b.ctx, &storageConfig)
+
+				if err := storageApp.Save(); err != nil {
+					logging.L(b.ctx).Error(
+						"Failed to download dump",
+						logging.ErrAttr(err),
+					)
+					errCh <- fmt.Errorf("failed to download dump %s: %w", b.config.DumpName, err)
+					return
+				}
+
+				dumpDownloadTimeSec := fmt.Sprintf("%.2f sec", time.Since(dumpDownloadTimeNow).Seconds())
+
+				logging.L(b.ctx).Info(
+					"The dump was successfully downloaded",
+					logging.StringAttr("time", dumpDownloadTimeSec),
+					logging.StringAttr("storage", storageItem.Type),
+				)
+			}
+		}(storageItem)
 	}
 
-	dumpDownloadTimeSec := fmt.Sprintf("%.2f sec", time.Since(dumpDownloadTimeNow).Seconds())
+	wg.Wait()
+	close(errCh)
 
-	logging.L(b.ctx).Info(
-		"The dump was successfully downloaded",
-		logging.StringAttr("time", dumpDownloadTimeSec),
-	)
+	for err := range errCh {
+		countStorage--
+		if err != nil {
+			fmt.Println(err)
+		}
+		if countStorage == 0 {
+			return fmt.Errorf("failed to download dump")
+		}
+	}
 
 	for _, file := range fileList {
-
 		if !file.IsRemove {
 			continue
 		}
@@ -163,4 +219,22 @@ func (b *BackupServer) Run() error {
 	logging.L(b.ctx).Info("The dump was successfully deleted on server")
 
 	return nil
+}
+
+func (b *BackupServer) FileSize() (int64, error) {
+	sizeOutput, err := b.conn.RunCommand(fmt.Sprintf("stat -c %%s %s", b.config.DumpName))
+
+	var totalSize int64
+
+	if err != nil {
+		return totalSize, fmt.Errorf("failed to get file size: %v", err)
+	}
+	sizeOutput = strings.TrimSpace(sizeOutput)
+
+	_, err = fmt.Sscanf(sizeOutput, "%d", &totalSize)
+	if err != nil {
+		return totalSize, err
+	}
+
+	return totalSize, nil
 }

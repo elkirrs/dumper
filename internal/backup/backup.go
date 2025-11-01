@@ -176,6 +176,7 @@ func (b *Backup) prepareBackupConfig() {
 			Port: b.dbConnect.Server.Port,
 			Key:  b.dbConnect.Server.SSHKey,
 		},
+		Storages:     b.dbConnect.Storages,
 		DumpLocation: b.cfg.Settings.DumpLocation,
 		Archive:      *b.cfg.Settings.Archive,
 		DumpDirLocal: b.cfg.Settings.DirDump,

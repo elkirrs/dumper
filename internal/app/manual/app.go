@@ -10,6 +10,7 @@ import (
 	cfg "dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
 	"dumper/internal/domain/config/server"
+	"dumper/internal/domain/config/storage"
 	_select "dumper/internal/select"
 	t "dumper/internal/temr"
 	"dumper/pkg/logging"
@@ -187,8 +188,31 @@ func (m *Manual) prepareDBConnect() map[string]dbConnect.DBConnect {
 		connectDBs[idx] = dbConnect.DBConnect{
 			Server:   m.cfg.Servers[database.Server],
 			Database: database,
+			Storages: m.prepareStorages(database.Storages),
 		}
 	}
 
 	return connectDBs
+}
+
+func (m *Manual) prepareStorages(list []string) map[string]storage.ListStorages {
+	storages := make(map[string]storage.ListStorages, len(list))
+	for _, storageType := range list {
+		storages[storageType] = storage.ListStorages{
+			Type:    storageType,
+			Configs: m.cfg.Storages[storageType],
+		}
+	}
+
+	if len(storages) == 0 {
+		storages["local"] = storage.ListStorages{
+			Type: "local",
+			Configs: storage.Storage{
+				Type: "local",
+				Dir:  m.cfg.Settings.DirDump,
+			},
+		}
+	}
+
+	return storages
 }
