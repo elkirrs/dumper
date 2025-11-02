@@ -21,9 +21,9 @@ flexible connection and storage settings.
     - Encrypt and Decrypt config file
 - Different formats.
 - Storages
-    - local ([options](#local))
-    - ftp ([options](#ftp))
-    - sftp ([options](#sftp))
+    - local
+    - ftp
+    - sftp
 
 ---
 
@@ -253,6 +253,7 @@ A list of databases that need to be backed up.
 | `remove_dump`      | remove dump file after created (default true)     | option   |                                                  |
 | `encrypt.type`     | Type encrypting (only aes)                        | option   |                                                  |
 | `encrypt.password` | Password for encrypting (only aes)                | option   |                                                  |
+| `storages`         | Storage list when the dump need to upload         | required |
 
 #### Options
 
@@ -345,7 +346,8 @@ How it works:
 
 #### 🗄️ 6. Storage
 
-Configuration: 
+Configuration:
+
 ```yaml
 storages:
   local:
