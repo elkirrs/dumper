@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.8.0] - 2025-11-02
+- Add support storage FTP, SFTP
+- Multiple upload dump file by several servers
+
 ## [1.7.0] - 2025-10-31
 - Add encrypt config file
 
