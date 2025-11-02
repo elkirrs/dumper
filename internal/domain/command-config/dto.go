@@ -23,14 +23,15 @@ type Server struct {
 }
 
 type Config struct {
-	Database     Database
-	Server       Server
-	Storages     map[string]storage.ListStorages
-	DumpLocation string
-	Archive      bool
-	RemoveBackup bool
-	Command      string
-	DumpName     string
-	DumpDirLocal string
-	Encrypt      encrypt.Encrypt
+	Database            Database
+	Server              Server
+	Storages            map[string]storage.ListStorages
+	DumpLocation        string
+	Archive             bool
+	RemoveBackup        bool
+	Command             string
+	DumpName            string
+	DumpDirLocal        string
+	Encrypt             encrypt.Encrypt
+	MaxParallelDownload int
 }

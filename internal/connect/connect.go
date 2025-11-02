@@ -13,44 +13,41 @@ import (
 )
 
 type Connect struct {
-	Server           string
-	Username         string
-	Port             string
-	SSHLocalKeyPath  string
-	SSHServerKeyPath string
-	Passphrase       string
-	IsPassphrase     bool
-	Password         string
-	client           *ssh.Client
+	Server       string
+	Username     string
+	Port         string
+	PrivateKey   string
+	Passphrase   string
+	IsPassphrase bool
+	Password     string
+	client       *ssh.Client
 }
 
 func New(
 	server,
 	username,
 	port,
-	sshLocalKeyPath,
-	sshServerKeyPath,
+	PrivateKey,
 	passphrase,
 	password string,
 	isPassphrase bool,
 ) *Connect {
 	return &Connect{
-		Server:           server,
-		Username:         username,
-		Port:             port,
-		SSHLocalKeyPath:  sshLocalKeyPath,
-		SSHServerKeyPath: sshServerKeyPath,
-		Passphrase:       passphrase,
-		IsPassphrase:     isPassphrase,
-		Password:         password,
+		Server:       server,
+		Username:     username,
+		Port:         port,
+		PrivateKey:   PrivateKey,
+		Passphrase:   passphrase,
+		IsPassphrase: isPassphrase,
+		Password:     password,
 	}
 }
 
 func (c *Connect) buildSSHConfig() (*ssh.ClientConfig, error) {
 	var authMethods []ssh.AuthMethod
 
-	if c.SSHLocalKeyPath != "" {
-		key, err := os.ReadFile(c.SSHLocalKeyPath)
+	if c.PrivateKey != "" {
+		key, err := os.ReadFile(c.PrivateKey)
 		if err != nil {
 			return nil, fmt.Errorf("error couldn't read SSH key: %v", err)
 		}
@@ -159,6 +156,26 @@ func (c *Connect) RunCommand(cmd string) (string, error) {
 	}
 
 	return output, nil
+}
+
+func (c *Connect) Client() *ssh.Client {
+	return c.client
+}
+
+func (c *Connect) IsConnected() bool {
+	if c.client == nil {
+		return false
+	}
+	_, _, err := c.client.SendRequest("keepalive@openssh.com", true, nil)
+	return err == nil
+}
+
+func (c *Connect) Reconnect() error {
+	fmt.Println("[SSH] Attempting reconnect...")
+
+	_ = c.Close()
+	time.Sleep(2 * time.Second)
+	return c.Connect()
 }
 
 func (c *Connect) TestConnection() error {

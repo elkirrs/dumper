@@ -61,7 +61,6 @@ func (b *Backup) Run() error {
 		b.dbConnect.Server.User,
 		b.dbConnect.Server.GetPort(b.cfg.Settings.SrvPost),
 		b.cfg.Settings.SSH.PrivateKey,
-		b.dbConnect.Server.SSHKey,
 		b.cfg.Settings.SSH.Passphrase,
 		b.dbConnect.Server.Password,
 		*b.cfg.Settings.SSH.IsPassphrase,
@@ -174,7 +173,7 @@ func (b *Backup) prepareBackupConfig() {
 		Server: commandConfig.Server{
 			Host: b.dbConnect.Server.Host,
 			Port: b.dbConnect.Server.Port,
-			Key:  b.dbConnect.Server.SSHKey,
+			Key:  b.dbConnect.Server.GetPrivateKey(b.cfg.Settings.SSH.PrivateKey),
 		},
 		Storages:     b.dbConnect.Storages,
 		DumpLocation: b.cfg.Settings.DumpLocation,
@@ -186,5 +185,6 @@ func (b *Backup) prepareBackupConfig() {
 			Type:     b.dbConnect.Database.GetEncryptType(b.cfg.Settings.Encrypt.Type),
 			Password: b.dbConnect.Database.GetEncryptPass(b.cfg.Settings.Encrypt.Password),
 		},
+		MaxParallelDownload: b.cfg.Settings.MaxParallelDownload,
 	}
 }

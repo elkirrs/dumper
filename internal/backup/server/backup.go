@@ -144,12 +144,20 @@ func (b *BackupServer) Run() error {
 	wg := &sync.WaitGroup{}
 	errCh := make(chan error, len(b.config.Storages))
 	var countStorage int8
+	sem := make(chan struct{}, b.config.MaxParallelDownload)
+	var totalAll int64
+
+	totalAll = totalSize * int64(len(b.config.Storages))
+	globalProgress := utils.GlobalProgress(totalAll)
 
 	for _, storageItem := range b.config.Storages {
 		countStorage++
 		wg.Add(1)
 		go func(item configStorageDomain.ListStorages) {
 			defer wg.Done()
+
+			sem <- struct{}{}
+			defer func() { <-sem }()
 
 			select {
 			case <-b.ctx.Done():
@@ -165,7 +173,8 @@ func (b *BackupServer) Run() error {
 					Config:   storageItem.Configs,
 				}
 
-				storageApp := storage.NewApp(b.ctx, &storageConfig)
+				ctx := context.WithValue(b.ctx, "globalProgress", globalProgress)
+				storageApp := storage.NewApp(ctx, &storageConfig)
 
 				if err := storageApp.Save(); err != nil {
 					logging.L(b.ctx).Error(
@@ -189,6 +198,8 @@ func (b *BackupServer) Run() error {
 
 	wg.Wait()
 	close(errCh)
+
+	utils.Progress(totalAll, totalAll)
 
 	for err := range errCh {
 		countStorage--

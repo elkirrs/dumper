@@ -139,8 +139,7 @@ func (m *Manual) prepareRemoteDatabaseList(
 		server.Host,
 		server.User,
 		server.GetPort(m.cfg.Settings.SrvPost),
-		m.cfg.Settings.SSH.PrivateKey,
-		server.SSHKey,
+		server.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey),
 		m.cfg.Settings.SSH.Passphrase,
 		server.Password,
 		*m.cfg.Settings.SSH.IsPassphrase,
@@ -198,9 +197,22 @@ func (m *Manual) prepareDBConnect() map[string]dbConnect.DBConnect {
 func (m *Manual) prepareStorages(list []string) map[string]storage.ListStorages {
 	storages := make(map[string]storage.ListStorages, len(list))
 	for _, storageType := range list {
+		st := m.cfg.Storages[storageType]
+		st.PrivateKey = st.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey)
 		storages[storageType] = storage.ListStorages{
 			Type:    storageType,
-			Configs: m.cfg.Storages[storageType],
+			Configs: st,
+		}
+	}
+
+	if len(storages) == 0 {
+		for _, storageType := range m.cfg.Settings.Storages {
+			st := m.cfg.Storages[storageType]
+			st.PrivateKey = st.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey)
+			storages[storageType] = storage.ListStorages{
+				Type:    storageType,
+				Configs: st,
+			}
 		}
 	}
 

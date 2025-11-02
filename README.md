@@ -1,7 +1,7 @@
 # 📦 Dumper
 
 **Dumper** — This is a CLI utility for creating backups databases of various types (PostgreSQL, MySQL and etc.) with
-flexible connection and storage settings. 
+flexible connection and storage settings.
 
 ---
 
@@ -20,6 +20,10 @@ flexible connection and storage settings.
     - Encrypting dump file
     - Encrypt and Decrypt config file
 - Different formats.
+- Storages
+    - local ([options](#local))
+    - ftp ([options](#ftp))
+    - sftp ([options](#sftp))
 
 ---
 
@@ -46,6 +50,28 @@ settings:
   dir_dump: "./dumps"
   dir_archived: "./archived"
   remove_dump: true
+  parallel_download: 1
+  storages:
+    - local
+
+storages:
+  local:
+    dir: "./dumps"
+
+  ftp:
+    dir: "./uploads/dumps"
+    host: "116.34.17.94"
+    port: 21
+    username: "ftpuser"
+    password: "123456"
+
+  sftp:
+    dir: "./dumps"
+    host: "56.7.127.64"
+    port: 22
+    username: "sftpuser"
+    private_key: "/Users/sftpuser/.ssh/id_rsa"
+    passphrase: "123456"
 
 servers:
   first-server:
@@ -84,7 +110,7 @@ databases:
     format: "sql"
     server: "first-server"
     remove_dump: false
-    
+
   mongo:
     name: "mongo_db_name"
     user: "root"
@@ -96,7 +122,7 @@ databases:
     options:
       auth_source: "admin"
       ssl: true
-    remove_dump: false  
+    remove_dump: false
 
   maria_db:
     name: "maria_db_dumper"
@@ -150,6 +176,8 @@ Apply to all servers and databases, unless redefined locally.
 | `remove_dump`       | remove dump file after created (default true)            | option   |
 | `encrypt.type`      | Type encrypting (only aes)                               | option   |
 | `encrypt.password`  | Password for encrypting (only aes)                       | option   |
+| `storages`          | Storage list when the dump need to upload                | required |
+| `parallel_download` | parallel upload dump file for several storages           | option   |
 
 #### Params:
 
@@ -160,7 +188,7 @@ Apply to all servers and databases, unless redefined locally.
     - `mariadb` — MariaDB
     - `mssql` — Microsoft SQL Server
     - `sqlite` — SQLite
-    - `redis` — Redis 
+    - `redis` — Redis
 
 - #### Format:
     - PostgreSQL: `plain`, `dump`, `tar`
@@ -184,6 +212,11 @@ Apply to all servers and databases, unless redefined locally.
 
 - #### Encrypt:
     - `aes` — type encrypting (openssl)
+
+- #### Storages:
+    - `local` - download local when the app started
+    - `ftp` - upload to ftp server
+    - `sftp` - upload to sftp server
 
 #### 🖥 2. servers
 
@@ -223,71 +256,76 @@ A list of databases that need to be backed up.
 
 #### Options
 
-| Parameter             | Description            | Type     | Additional info               |
-|-----------------------|------------------------|----------|-------------------------------|
-| `options.auth_source` | Name database for auth | option   | if set up driver mongo        |
-| `options.ssl`         | SSL/TLS                | option   | if set up driver mongo, mssql |
-| `options.mode`        | Mode create dump       | option   | if set up driver redis        |
-| `options.role`        | Role for create dump   | option   | if set up driver firebird     |
-| `options.path`        | Path database SQLite   | option   | if set up driver sqlite       |
+| Parameter             | Description            | Type   | Additional info               |
+|-----------------------|------------------------|--------|-------------------------------|
+| `options.auth_source` | Name database for auth | option | if set up driver mongo        |
+| `options.ssl`         | SSL/TLS                | option | if set up driver mongo, mssql |
+| `options.mode`        | Mode create dump       | option | if set up driver redis        |
+| `options.role`        | Role for create dump   | option | if set up driver firebird     |
+| `options.path`        | Path database SQLite   | option | if set up driver sqlite       |
 
 ---
 
 #### 🔐 4. decrypt database file
+
 If the file need to encrypt your database backup,
 you can use encryption (the encryption utility must be
 installed in the environment where the database backup
 is performed)
 
 In global  (encrypt for all databases)
+
 ```yaml
 settings:
   encrypt:
-    type: "aes" 
+    type: "aes"
     password: "123456"
 
-  servers:
-  # several servers
-  databases:
-  # several databases
+servers:
+# several servers
+databases:
+# several databases
 ```
 
-Or only for a specific purpose
+Or only for a specific database
 
 ```yaml
 settings:
-  # several settings
-  servers:
-  # several servers
-  databases:
-    db-psql:
-        name: 'mydb'
-        user: 'myuser'
-        password: 'mypassword'
-        port: 5432
-        driver: 'psql'
-        server: 'srv-psql'
-        format: 'plan'
-        encrypt:
-          type: "aes"
-          password: "123456"
+# several settings
+servers:
+# several servers
+databases:
+  db-psql:
+    name: 'mydb'
+    user: 'myuser'
+    password: 'mypassword'
+    port: 5432
+    driver: 'psql'
+    server: 'srv-psql'
+    format: 'plan'
+    encrypt:
+      type: "aes"
+      password: "123456"
 ```
 
 The file can be decrypted either via dumper or an encryption utility.
 
 - Decrypt command
+
 ```
 ./dumper --crypt backup --password 123456 --input ./dump.sql.gz.enc
 ```
+
 or
+
 ```
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.sql.gz -k 123456
 ```
 
+#### 🔐 5. encrypt and decrypt file config
 
-####  🔐 5. encrypt and decrypt file config
+How it works:
 
-How it works: 
 1. Password encryption (outputs recovery token)
     ```
    ./dumper --crypt config --mode encrypt --password <password> --input config.yaml
@@ -305,6 +343,89 @@ How it works:
     ./dumper --crypt config --mode recover --recovery <recovery_token> --input config.yaml
     ```
 
+#### 🗄️ 6. Storage
+
+Configuration: 
+```yaml
+storages:
+  local:
+    dir: "./dumps"
+
+  ftp:
+    dir: "./uploads/dumps"
+    host: "172.168.139.109"
+    port: 21
+    username: "ftpuser"
+    password: "123456"
+
+  sftp:
+    dir: "./dumps"
+    host: "172.168.139.108"
+    port: 22
+    username: "sftpuser"
+    private_key: "/Users/sftpuser/.ssh/id_rsa"
+    passphrase: "123456" #option set up if key has passphrase
+```
+
+In global  (storage for all databases)
+
+```yaml
+settings:
+  storages:
+    - local
+
+storages:
+  local:
+    dir: "./dumps"
+
+  ftp:
+    dir: "./uploads/dumps"
+    host: "172.168.139.108"
+    port: 21
+    username: "ftpuser"
+    password: "123456"
+
+servers:
+# several servers
+databases:
+# several databases
+```
+
+Or only for a specific database
+
+```yaml
+settings:
+  storages:
+    - local
+
+storages:
+  local:
+    dir: "./dumps"
+
+  ftp:
+    dir: "./uploads/dumps"
+    host: "172.168.139.108"
+    port: 21
+    username: "ftpuser"
+    password: "123456"
+
+servers:
+# several servers
+
+databases:
+  db-psql:
+    title: "My DB PSQL #1"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+    storages:
+      - local
+      - sftp 
+```
 
 ### ▶ Launch examples
 
@@ -316,17 +437,17 @@ How it works:
 
 #### Flag list
 
-| Flag           | Example           | Description                                      | 
-|----------------|-------------------|--------------------------------------------------|
-| `--config`     | ./cfg.yaml        | path to config file                              |
-| `--db`         | demo,app          | backup databases from list                       |
-| `--all`        |                   | backup all databases from config file            |
-| `--file-log`   | file.log          | file name log file (if settings.logging == true) |
-| `--crypt`      | config            | Crypt file: `dump`, `config`                     |                                 |
-| `--input`      | ./dump.sql.gz.enc | path to encrypt file                             |
-| `--mode`       | encrypt           | Mode crypt: `encrypt`, `decrypt`, `recover`      |
-| `--password`   | 123456            | password for decrypt (only for aes)              |
-| `--recovery`   | 4j3k4lc7na09s     | Recovery token for recovery                      |
+| Flag         | Example           | Description                                      | 
+|--------------|-------------------|--------------------------------------------------|
+| `--config`   | ./cfg.yaml        | path to config file                              |
+| `--db`       | demo,app          | backup databases from list                       |
+| `--all`      |                   | backup all databases from config file            |
+| `--file-log` | file.log          | file name log file (if settings.logging == true) |
+| `--crypt`    | config            | Crypt file: `dump`, `config`                     |                                 |
+| `--input`    | ./dump.sql.gz.enc | path to encrypt file                             |
+| `--mode`     | encrypt           | Mode crypt: `encrypt`, `decrypt`, `recover`      |
+| `--password` | 123456            | password for decrypt (only for aes)              |
+| `--recovery` | 4j3k4lc7na09s     | Recovery token for recovery                      |
 
 ---
 

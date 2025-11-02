@@ -6,7 +6,7 @@ type Server struct {
 	User       string `yaml:"user" validate:"required"`
 	Name       string `yaml:"name,omitempty"`
 	Port       string `yaml:"port,omitempty"`
-	SSHKey     string `yaml:"key,omitempty"`
+	PrivateKey string `yaml:"private_key,omitempty"`
 	Password   string `yaml:"password,omitempty"`
 	ConfigPath string `yaml:"conf_path,omitempty"`
 }
@@ -35,4 +35,11 @@ func (s Server) GetTitle() string {
 	}
 
 	return s.Host
+}
+
+func (s Server) GetPrivateKey(pathKey string) string {
+	if s.PrivateKey != "" {
+		return s.PrivateKey
+	}
+	return pathKey
 }
