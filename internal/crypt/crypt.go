@@ -32,8 +32,9 @@ func (c *Crypt) Run() error {
 			c.flags.Input,
 			c.flags.Password,
 			"aes",
+			c.flags.Mode,
 		)
-		err := cryptBackupApp.Decrypt()
+		err := cryptBackupApp.Run()
 		if err != nil {
 			return err
 		}

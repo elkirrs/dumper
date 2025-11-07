@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.8.1] - 2025-11-07
+- Fix issue in crypt recovery mode
+- Feature set password in command line
+
 ## [1.8.0] - 2025-11-02
 - Add support storage FTP, SFTP
 - Multiple upload dump file by several servers

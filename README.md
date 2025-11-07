@@ -16,14 +16,9 @@ flexible connection and storage settings.
 - Work with **SSH-Keys** (include passphrase).
 - Custom dump name templates.
 - Archiving old dumps.
-- Encrypting:
-    - Encrypting dump file
-    - Encrypt and Decrypt config file
+- Encrypting and Decrypting backup and config file
 - Different formats.
-- Storages
-    - local
-    - ftp
-    - sftp
+- Different storages.
 
 ---
 
@@ -314,7 +309,7 @@ The file can be decrypted either via dumper or an encryption utility.
 - Decrypt command
 
 ```
-./dumper --crypt backup --password 123456 --input ./dump.sql.gz.enc
+./dumper --crypt backup --mode decrypt --input ./dump.sql.gz.enc
 ```
 
 or
@@ -323,13 +318,19 @@ or
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.sql.gz -k 123456
 ```
 
+- Encrypt command
+
+```
+./dumper --crypt backup --mode encrypt --input ./dump.sql.gz
+```
+
 #### 🔐 5. encrypt and decrypt file config
 
 How it works:
 
 1. Password encryption (outputs recovery token)
     ```
-   ./dumper --crypt config --mode encrypt --password <password> --input config.yaml
+   ./dumper --crypt config --mode encrypt --input config.yaml
    ```
 2. Launching the application (reading without password)
     ```
@@ -337,11 +338,11 @@ How it works:
     ```
 3. Decryption on the same device
     ```
-    ./dumper --crypt config --mode decrypt --password <password> --input config.yaml
+    ./dumper --crypt config --mode decrypt --input config.yaml
     ```
 4. Recovery on another device
     ```
-    ./dumper --crypt config --mode recover --recovery <recovery_token> --input config.yaml
+    ./dumper --crypt config --mode recovery --token <recovery_token> --input config.yaml
     ```
 
 #### 🗄️ 6. Storage
@@ -445,10 +446,10 @@ databases:
 | `--db`       | demo,app          | backup databases from list                       |
 | `--all`      |                   | backup all databases from config file            |
 | `--file-log` | file.log          | file name log file (if settings.logging == true) |
-| `--crypt`    | config            | Crypt file: `dump`, `config`                     |                                 |
+| `--crypt`    | config            | Crypt file: `backup`, `config`                   |                                 |
 | `--input`    | ./dump.sql.gz.enc | path to encrypt file                             |
-| `--mode`     | encrypt           | Mode crypt: `encrypt`, `decrypt`, `recover`      |
-| `--password` | 123456            | password for decrypt (only for aes)              |
+| `--mode`     | encrypt           | Mode crypt: `encrypt`, `decrypt`, `recovery`     |
+| `--password` | 123456            | password for crypt (optional)                    |
 | `--recovery` | 4j3k4lc7na09s     | Recovery token for recovery                      |
 
 ---

@@ -7,6 +7,7 @@ import (
 	"dumper/internal/crypt"
 	appDomain "dumper/internal/domain/app"
 	"dumper/pkg/logging"
+	"dumper/pkg/utils"
 	"flag"
 	"fmt"
 	"os"
@@ -17,7 +18,8 @@ import (
 var (
 	version = "dev"
 	date    = "unknown"
-	appKey  = ""
+	appKey  = "app_key"
+	appName = "Dumper"
 )
 var showVersion bool
 
@@ -41,11 +43,11 @@ func main() {
 	dbName := flag.String("db", "", "Name of the backup database")
 	all := flag.Bool("all", false, "Backup of all databases from the configuration")
 	fileLog := flag.String("file-log", "dumper.log", "Log files from the configuration")
-	input := flag.String("input", "", "Decrypt path backup file")
-	cryptType := flag.String("crypt", "", "Crypt file: dump | config")
-	pass := flag.String("password", "", "Password to decrypt backup file")
-	mode := flag.String("mode", "", "Mode: encrypt | decrypt | recover")
-	recovery := flag.String("recovery", "", "Recovery token for recovery")
+	input := flag.String("input", "", "Decrypt path file")
+	cryptType := flag.String("crypt", "", "Crypt file: backup | config")
+	pass := flag.String("password", "", "Password to crypt file (optional)")
+	mode := flag.String("mode", "", "Mode: encrypt | decrypt | recovery")
+	recoveryKey := flag.String("token", "", "Recovery token for recovery")
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
@@ -64,14 +66,13 @@ func main() {
 		Crypt:      *cryptType,
 		Password:   *pass,
 		Mode:       *mode,
-		Recovery:   *recovery,
+		Recovery:   *recoveryKey,
 		AppSecret:  appKey,
 	}
 
 	if flags.Crypt != "" {
 		cryptApp := crypt.NewApp(ctx, &flags)
-		err := cryptApp.Run()
-		if err != nil {
+		if err := utils.RunWithCtx(ctx, func() error { cryptApp.Run(); return nil }); err != nil {
 			fmt.Printf("Crypt error: %v\n", err)
 			os.Exit(1)
 		}
@@ -79,6 +80,7 @@ func main() {
 	}
 
 	if showVersion {
+		fmt.Println(appName)
 		fmt.Printf("Version: %s \nDate: %s\n", version, date)
 		return
 	}

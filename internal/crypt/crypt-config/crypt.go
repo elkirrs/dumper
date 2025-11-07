@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
+
+	"golang.org/x/term"
 )
 
 type Crypt struct {
@@ -40,10 +43,19 @@ func NewApp(
 func (c *Crypt) Run() error {
 	switch c.mode {
 	case "encrypt":
-		if c.password == "" || c.input == "" {
-			fmt.Println("Use: -crypt config -mode encrypt -password <password> -input config.yaml")
-			return nil
+		if c.input == "" {
+			c.input = "config.yaml"
 		}
+
+		if c.password == "" {
+			fmt.Println("Enter the password :")
+			password, err := term.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				return fmt.Errorf("input error: %v", err)
+			}
+			c.password = strings.TrimSpace(string(password))
+		}
+
 		if err := c.encryptConfig(c.input, c.input, c.password); err != nil {
 			fmt.Println("Encryption error:", err)
 			return nil
@@ -51,19 +63,32 @@ func (c *Crypt) Run() error {
 		fmt.Println("The configuration is encrypted in", c.input)
 
 	case "decrypt":
-		if c.password == "" || c.input == "" {
-			fmt.Println("Use: -crypt config -mode decrypt -password <password> -input config.yaml")
-			return nil
+		if c.input == "" {
+			c.input = "config.yaml"
 		}
+
+		if c.password == "" {
+			fmt.Println("Enter the password :")
+			password, err := term.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				return fmt.Errorf("input error: %v", err)
+			}
+			c.password = strings.TrimSpace(string(password))
+		}
+
 		if err := c.decryptWithPassword(c.input, c.input, c.password); err != nil {
 			fmt.Println("Error:", err)
 			return nil
 		}
 		fmt.Println("The configuration is decrypted in", c.input)
 
-	case "recover":
-		if c.input == "" || c.recoveryKey == "" {
-			fmt.Println("Use: -crypt config -mode recover -recovery <recovery key> -input config.yaml")
+	case "recovery":
+		if c.input == "" {
+			c.input = "config.yaml"
+		}
+
+		if c.recoveryKey == "" {
+			fmt.Println("Use: -crypt config -mode recovery -token <recovery key> -input config.yaml")
 			return nil
 		}
 
@@ -74,7 +99,7 @@ func (c *Crypt) Run() error {
 		fmt.Println("The config was restored using the recovery token in", c.input)
 
 	default:
-		fmt.Println("Available modes: encrypt | decrypt | recover")
+		fmt.Println("Available modes: encrypt | decrypt | recovery")
 	}
 
 	return nil
@@ -145,18 +170,28 @@ func (c *Crypt) recoverConfig(input, output, recoveryToken string) error {
 		return fmt.Errorf("input and recovery token must be specified")
 	}
 
-	data, err := os.ReadFile(input)
+	data, err := utils.ReadEncryptedFile(input)
 	if err != nil {
-		return fmt.Errorf("failed to read input file: %v", err)
+		return fmt.Errorf("failed to read encrypted file: %v", err)
+	}
+
+	if len(data) < 17 {
+		return fmt.Errorf("invalid encrypted file (too short)")
 	}
 
 	keyLen := int(data[16])
+	if len(data) < 17+keyLen {
+		return fmt.Errorf("invalid encrypted file (encKey length mismatch)")
+	}
 	offset := 17 + keyLen
 	encConfig := data[offset:]
 
 	finalKey, err := hex.DecodeString(recoveryToken)
 	if err != nil {
 		return fmt.Errorf("invalid recovery token format: %v", err)
+	}
+	if len(finalKey) != 32 {
+		return fmt.Errorf("invalid recovery token length: expected 32 bytes, got %d", len(finalKey))
 	}
 
 	plain, err := utils.DecryptAES(finalKey, encConfig)

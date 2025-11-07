@@ -53,12 +53,12 @@ func (c *Connect) buildSSHConfig() (*ssh.ClientConfig, error) {
 		}
 
 		if c.IsPassphrase && c.Passphrase == "" {
-			fmt.Print("Enter the passphrase : \n")
+			fmt.Println("Enter the passphrase :")
 			passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
 			if err != nil {
 				return nil, fmt.Errorf("input error: %v", err)
 			}
-			c.Passphrase = string(passphrase)
+			c.Passphrase = strings.TrimSpace(string(passphrase))
 		}
 
 		var signer ssh.Signer
