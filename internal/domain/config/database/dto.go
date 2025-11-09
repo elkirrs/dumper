@@ -3,7 +3,6 @@ package database
 import (
 	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/option"
-	"dumper/internal/domain/config/shell"
 )
 
 type Database struct {
@@ -20,7 +19,6 @@ type Database struct {
 	RemoveDump *bool           `yaml:"remove_dump"`
 	Encrypt    encrypt.Encrypt `yaml:"encrypt"`
 	Storages   []string        `yaml:"storages"`
-	Shell      shell.Shell     `yaml:"shell"`
 }
 
 func (d Database) GetName() string {
@@ -95,12 +93,4 @@ func (d Database) GetTitle() string {
 	}
 
 	return d.User
-}
-
-func (d Database) GetShell(s *shell.Shell) shell.Shell {
-	if d.Shell.After != "" || d.Shell.Before != "" {
-		return d.Shell
-	}
-
-	return *s
 }
