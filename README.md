@@ -38,6 +38,7 @@ settings:
     private_key: "path_your_key"
     passphrase: "your_passphrase"
     is_passphrase: true
+  dir_remote: "/var/www/dump/" 
   template: "{%srv%}_{%db%}_{%datetime%}"
   archive: true
   location: "server"
@@ -161,6 +162,7 @@ Apply to all servers and databases, unless redefined locally.
 | `ssh.passphrase`    | Passphrase for the key (optional).                       | option   |
 | `ssh.is_passphrase` | whether to use passphrase from the config                | option   |
 | `template`          | [File name template](#Template)                          | option   |
+| `dir_remote`        | Dir remote for dumps                                     | option   |
 | `archive`           | Archiving old dumps (need `{%srv%}_{%db%}` in template). | option   |
 | `location`          | [Dump execution method](#Location)                       | required |
 | `format`            | [The dump format](#Format)                               | required |
@@ -325,6 +327,11 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.s
 ```
 
 #### 🔐 5. encrypt and decrypt file config
+
+`
+Encrypting a configuration file with one version will not be decrypted by another version of the application.
+You can use the recovery token to decrypt it.
+`
 
 How it works:
 

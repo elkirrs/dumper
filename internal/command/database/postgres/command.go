@@ -22,7 +22,7 @@ func (g PSQLGenerator) Generate(data *commandConfig.Config) (*commandDomain.DBCo
 	}
 
 	baseCmd := fmt.Sprintf(
-		"/usr/bin/pg_dump --dbname=postgresql://%s:%s@127.0.0.1:%s/%s --clean --if-exists --no-owner %s",
+		"pg_dump --dbname=postgresql://%s:%s@127.0.0.1:%s/%s --clean --if-exists --no-owner %s",
 		data.Database.User,
 		data.Database.Password,
 		data.Database.Port,
@@ -36,7 +36,7 @@ func (g PSQLGenerator) Generate(data *commandConfig.Config) (*commandDomain.DBCo
 	}
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
-	remotePath := fmt.Sprintf("./%s", fileName)
+	remotePath := fmt.Sprintf("%s", fileName)
 
 	if data.DumpLocation == "server" {
 		return &commandDomain.DBCommand{

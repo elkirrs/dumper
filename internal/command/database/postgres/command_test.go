@@ -113,7 +113,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 				DumpLocation: "server",
 			},
 			expectedContains: []string{
-				"> ./server_plain.sql",
+				"> server_plain.sql",
 				"-Fp",
 			},
 			expectedExt: "sql",
@@ -134,7 +134,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"| gzip",
-				"> ./server_gzip.sql.gz",
+				"> server_gzip.sql.gz",
 			},
 			expectedExt: "sql.gz",
 		},

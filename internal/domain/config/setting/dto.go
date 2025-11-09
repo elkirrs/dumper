@@ -7,6 +7,7 @@ import (
 
 type Settings struct {
 	SSH                 sshConfig.SSHConfig `yaml:"ssh"`
+	DirRemote           string              `yaml:"dir_remote" default:"./"`
 	Template            string              `yaml:"template" default:"{%srv%}_{%db%}_{%time%}"`
 	Archive             *bool               `yaml:"archive" default:"true"`
 	Driver              string              `yaml:"driver" validate:"required"`

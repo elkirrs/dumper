@@ -96,6 +96,7 @@ func (e *CryptBackup) Decrypt() error {
 		return fmt.Errorf("decryption failed: %v\nOutput: %s", err, out.String())
 	}
 
+	fmt.Println("Decryption succeeded")
 	return nil
 }
 
@@ -147,5 +148,6 @@ func (e *CryptBackup) Encrypt() error {
 		return fmt.Errorf("encryption failed: %v\nOutput: %s", err, out.String())
 	}
 
+	fmt.Println("Encryption succeeded")
 	return nil
 }

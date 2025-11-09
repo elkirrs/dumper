@@ -12,6 +12,8 @@ settings:
     private_key: '/User/.ssh/id_rsa'
     passphrase: '123456'
     is_passphrase: true
+  # Dir remote dump
+  dir_remote: '/root/dump/'
   # Dump name template
   template: '{%srv%}_{%db%}_{%datetime%}'
   # Option to archive old dumps (available only if {%srv%}_{%db%} is present in the dump names)
@@ -144,6 +146,9 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'tar'
+    encrypt:
+      type: 'aes'
+      password: '123456'
   
   # Config MySQL databases
   db-mysql:
@@ -169,6 +174,9 @@ databases:
     format: 'sql'
     storages:
       - local
+    encrypt:
+      type: 'aes'
+      password: '123456'
   
   # Config Mongo databases
   db-mongo:
@@ -198,6 +206,9 @@ databases:
     options:
       auth_source: 'admin'
       ssl: true
+    encrypt:
+      type: 'aes'
+      password: '123456'
 
   db-mongo-without-options:
     title: 'My DB MongoDB #3'
@@ -233,6 +244,9 @@ databases:
     format: 'fbk'
     options:
       mode: 'save'
+    encrypt:
+      type: 'aes'
+      password: '123456'
   
   # Config SQLite3 databases
   db-sqlite:
