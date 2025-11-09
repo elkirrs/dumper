@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.8.2] - 2025-11-09
+- Fix static path main db dump to global
+- Feature added remote dir for dump
+
 ## [1.8.1] - 2025-11-07
 - Fix issue in crypt recovery mode
 - Feature set password in command line

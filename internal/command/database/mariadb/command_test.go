@@ -31,7 +31,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"/usr/bin/mariadb-dump",
+				"mariadb-dump",
 				"-uroot",
 				"-p123",
 				"-P3306",
@@ -53,7 +53,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"/usr/bin/mariadb-dump",
+				"mariadb-dump",
 				"gzip",
 			},
 			expectedExt: "sql.gz",
@@ -72,7 +72,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 				DumpLocation: "server",
 			},
 			expectedContains: []string{
-				"/usr/bin/mariadb-dump",
+				"mariadb-dump",
 				"> ./server_dump.sql",
 			},
 			expectedExt: "sql",
@@ -91,7 +91,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 				DumpLocation: "server",
 			},
 			expectedContains: []string{
-				"/usr/bin/mariadb-dump",
+				"mariadb-dump",
 				"gzip",
 				"> ./server_dump.sql.gz",
 			},
@@ -138,7 +138,7 @@ func TestMariaDbGenerator_CommandIntegrity(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 
-	expectedPrefix := "/usr/bin/mariadb-dump -uadmin -psecret -h127.0.0.1 -P3307 mydb"
+	expectedPrefix := "mariadb-dump -uadmin -psecret -h127.0.0.1 -P3307 mydb"
 	assert.Contains(t, cmd.Command, expectedPrefix, "Command must be constructed correctly")
 	assert.Equal(t, "./backup.sql", cmd.DumpPath, "DumpPath should match expected filename")
 }

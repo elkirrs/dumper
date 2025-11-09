@@ -159,6 +159,7 @@ func (b *Backup) prepareBackupConfig() {
 		Template: b.cfg.Settings.Template,
 	}
 	nameFile := utils.GetTemplateFileName(dataFormat)
+	fullPath := utils.GetFullPath(b.cfg.Settings.DirRemote, nameFile)
 
 	b.cmdConfig = &commandConfig.Config{
 		Database: commandConfig.Database{
@@ -175,12 +176,13 @@ func (b *Backup) prepareBackupConfig() {
 			Port: b.dbConnect.Server.Port,
 			Key:  b.dbConnect.Server.GetPrivateKey(b.cfg.Settings.SSH.PrivateKey),
 		},
-		Storages:     b.dbConnect.Storages,
-		DumpLocation: b.cfg.Settings.DumpLocation,
-		Archive:      *b.cfg.Settings.Archive,
-		DumpDirLocal: b.cfg.Settings.DirDump,
-		DumpName:     nameFile,
-		RemoveBackup: *b.cfg.Settings.RemoveDump,
+		Storages:      b.dbConnect.Storages,
+		DumpLocation:  b.cfg.Settings.DumpLocation,
+		Archive:       *b.cfg.Settings.Archive,
+		DumpDirLocal:  b.cfg.Settings.DirDump,
+		DumpName:      fullPath,
+		DumpDirRemote: b.cfg.Settings.DirRemote,
+		RemoveBackup:  *b.cfg.Settings.RemoveDump,
 		Encrypt: encryptConfigDomain.Encrypt{
 			Type:     b.dbConnect.Database.GetEncryptType(b.cfg.Settings.Encrypt.Type),
 			Password: b.dbConnect.Database.GetEncryptPass(b.cfg.Settings.Encrypt.Password),

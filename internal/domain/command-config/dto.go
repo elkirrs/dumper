@@ -31,6 +31,7 @@ type Config struct {
 	RemoveBackup        bool
 	Command             string
 	DumpName            string
+	DumpDirRemote       string
 	DumpDirLocal        string
 	Encrypt             encrypt.Encrypt
 	MaxParallelDownload int

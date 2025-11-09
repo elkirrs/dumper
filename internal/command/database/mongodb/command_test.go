@@ -40,7 +40,7 @@ func TestMongoGenerator_Generate_AllScenarios(t *testing.T) {
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"/usr/bin/mongodump",
+				"mongodump",
 				"--uri",
 				"mongodb://mongoUser:secret@127.0.0.1:27017/testdb",
 				"--out ./",

@@ -31,7 +31,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"/usr/bin/mysqldump",
+				"mysqldump",
 				"-h 127.0.0.1",
 				"-u root",
 				"-ppassword",
@@ -53,7 +53,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"/usr/bin/mysqldump",
+				"mysqldump",
 				"| gzip",
 				"prod_db",
 			},

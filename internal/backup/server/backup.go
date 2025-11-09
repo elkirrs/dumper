@@ -38,6 +38,23 @@ func NewApp(
 
 func (b *BackupServer) Run() error {
 
+	mkdirCmd := fmt.Sprintf("mkdir -p %s", b.config.DumpDirRemote)
+	if msg, err := b.conn.RunCommand(mkdirCmd); err == nil {
+		logging.L(b.ctx).Info(
+			"Created backup directory",
+			logging.StringAttr("dir", b.config.DumpDirRemote),
+			logging.StringAttr("msg", msg),
+		)
+	} else {
+		logging.L(b.ctx).Error(
+			"error while creating backup directory",
+			logging.StringAttr("dir", b.config.DumpDirRemote),
+			logging.StringAttr("msg", msg),
+			logging.ErrAttr(err),
+		)
+		return err
+	}
+
 	isRemoveDump := b.config.RemoveBackup
 	checkCmd := fmt.Sprintf("test -f %s", b.config.DumpName)
 
@@ -216,11 +233,15 @@ func (b *BackupServer) Run() error {
 			continue
 		}
 
-		logging.L(b.ctx).Info("Removing dump on server")
+		logging.L(b.ctx).Info(
+			"Removing dump on server",
+			logging.StringAttr("file", file.Name),
+		)
 		fmt.Println("Removing dump from server:", file.Name)
 		if msg, err := b.conn.RunCommand(fmt.Sprintf("rm -f %s", file.Name)); err != nil {
 			logging.L(b.ctx).Error(
 				"Failed to remove dump on server",
+				logging.StringAttr("file", file.Name),
 				logging.StringAttr("msg", msg),
 			)
 			return fmt.Errorf("failed to delete dump on server: %v", err)
