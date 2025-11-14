@@ -19,6 +19,7 @@ type Database struct {
 	RemoveDump *bool           `yaml:"remove_dump"`
 	Encrypt    encrypt.Encrypt `yaml:"encrypt"`
 	Storages   []string        `yaml:"storages"`
+	Archive    *bool           `yaml:"archive"`
 }
 
 func (d Database) GetName() string {
@@ -93,4 +94,11 @@ func (d Database) GetTitle() string {
 	}
 
 	return d.User
+}
+
+func (d Database) IsArchive(isGlobalArchive bool) bool {
+	if d.Archive != nil {
+		return *d.Archive
+	}
+	return isGlobalArchive
 }

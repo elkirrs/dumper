@@ -38,7 +38,7 @@ settings:
     private_key: "path_your_key"
     passphrase: "your_passphrase"
     is_passphrase: true
-  dir_remote: "/var/www/dump/" 
+  dir_remote: "/var/www/dump/"
   template: "{%srv%}_{%db%}_{%datetime%}"
   archive: true
   location: "server"
@@ -154,27 +154,27 @@ The file example you can find in repository
 
 Apply to all servers and databases, unless redefined locally.
 
-| Parameter           | Description                                              | type     |
-|---------------------|----------------------------------------------------------|----------|
-| `db_port`           | Default database connection port                         | option   |
-| `driver`            | [The DB driver list](#Driver)                            | required |
-| `ssh.private_key`   | The path to the private SSH key.                         | option   |
-| `ssh.passphrase`    | Passphrase for the key (optional).                       | option   |
-| `ssh.is_passphrase` | whether to use passphrase from the config                | option   |
-| `template`          | [File name template](#Template)                          | option   |
-| `dir_remote`        | Dir remote for dumps                                     | option   |
-| `archive`           | Archiving old dumps (need `{%srv%}_{%db%}` in template). | option   |
-| `location`          | [Dump execution method](#Location)                       | required |
-| `format`            | [The dump format](#Format)                               | required |
-| `dir_dump`          | Directory for saving dumps                               | option   |
-| `dir_archived`      | Archive Directory                                        | option   |
-| `logging`           | Create logging                                           | option   |
-| `retry_connect`     | attempts reconnect to server (default 5)                 | option   |
-| `remove_dump`       | remove dump file after created (default true)            | option   |
-| `encrypt.type`      | Type encrypting (only aes)                               | option   |
-| `encrypt.password`  | Password for encrypting (only aes)                       | option   |
-| `storages`          | Storage list when the dump need to upload                | required |
-| `parallel_download` | parallel upload dump file for several storages           | option   |
+| Parameter           | Description                                           | Type   | Rule     |
+|---------------------|-------------------------------------------------------|--------|----------|
+| `db_port`           | Default database connection port                      | int    | option   |
+| `driver`            | [The DB driver list](#Driver)                         | string | required |
+| `ssh.private_key`   | The path to the private SSH key.                      | string | option   |
+| `ssh.passphrase`    | Passphrase for the key (optional).                    | string | option   |
+| `ssh.is_passphrase` | whether to use passphrase from the config             | bool   | option   |
+| `template`          | [File name template](#Template)                       | string | option   |
+| `dir_remote`        | Dir remote for dumps                                  | string | option   |
+| `archive`           | Archive of backup file                                | bool   | option   |
+| `location`          | [Dump execution method](#Location)                    | string | required |
+| `format`            | [The dump format](#Format)                            | string | required |
+| `dir_dump`          | Directory for saving dumps                            | string | option   |
+| `dir_archived`      | Archive Directory (need `{%srv%}_{%db%}` in template) | string | option   |
+| `logging`           | Create logging                                        | bool   | option   |
+| `retry_connect`     | attempts reconnect to server (default 5)              | int    | option   |
+| `remove_dump`       | remove dump file after created (default true)         | bool   | option   |
+| `encrypt.type`      | Type encrypting (only aes)                            | string | option   |
+| `encrypt.password`  | Password for encrypting (only aes)                    | string | option   |
+| `storages`          | Storage list when the dump need to upload             | list   | required |
+| `parallel_download` | parallel upload dump file for several storages        | int    | option   |
 
 #### Params:
 
@@ -219,16 +219,16 @@ Apply to all servers and databases, unless redefined locally.
 
 Defines the connections through which databases can be backed up.
 
-| Parameter   | Description                   | type                                       |
-|-------------|-------------------------------|--------------------------------------------|
-| `title`     | Human-readable server name    | option                                     |
-| `name`      | Server name                   | option                                     |
-| `host`      | The IP address or domain name | required                                   |
-| `port`      | Connection port               | required<br/> (if not set `settings.port`) |
-| `user`      | Username                      | required                                   |
-| `password`  | Password (if there is no key) | required<br/> (if not set `key`)           |
-| `key`       | Key (if there is no password) | required<br/> (if not set `password`)      |
-| `conf_path` | Path remote config            | option (if set read only remote config)    | 
+| Parameter   | Description                   | Type   | Rule                                       |
+|-------------|-------------------------------|--------|--------------------------------------------|
+| `title`     | Human-readable server name    | string | option                                     |
+| `name`      | Server name                   | string | option                                     |
+| `host`      | The IP address or domain name | string | required                                   |
+| `port`      | Connection port               | int    | required<br/> (if not set `settings.port`) |
+| `user`      | Username                      | string | required                                   |
+| `password`  | Password (if there is no key) | string | required<br/> (if not set `key`)           |
+| `key`       | Key (if there is no password) | string | required<br/> (if not set `password`)      |
+| `conf_path` | Path remote config            | string | option (if set read only remote config)    | 
 
 The configuration file on the remote `servers` must contain the servers and `databases` section.
 
@@ -236,31 +236,32 @@ The configuration file on the remote `servers` must contain the servers and `dat
 
 A list of databases that need to be backed up.
 
-| Parameter          | Description                                       | Type     | Additional info                                  |
-|--------------------|---------------------------------------------------|----------|--------------------------------------------------|
-| `title`            | Human-readable database name                      | option   |                                                  |
-| `name`             | Database name (by default, the key name)          | option   | if set up driver sqlite need set up <path_to_db> |
-| `user`             | The database user                                 | required |                                                  |
-| `password`         | DB user's password                                | required |                                                  |
-| `server`           | The link to the server from the `servers` section | required |                                                  |
-| `port`             | Connection port                                   | required | if not set `settings.db_port`                    |
-| `driver`           | [The DB driver list](#Driver)                     | required | if not set `settings.driver`                     |
-| `format`           | [The dump format](#Format)                        | required | if not set `settings.format`                     |
-| `options.*`        | Additional option for another databases           | option   | [Option list](#Options)                          |
-| `remove_dump`      | remove dump file after created (default true)     | option   |                                                  |
-| `encrypt.type`     | Type encrypting (only aes)                        | option   |                                                  |
-| `encrypt.password` | Password for encrypting (only aes)                | option   |                                                  |
-| `storages`         | Storage list when the dump need to upload         | required |
+| Parameter          | Description                                       | Type   | Rule     | Additional info                                  |
+|--------------------|---------------------------------------------------|--------|----------|--------------------------------------------------|
+| `title`            | Human-readable database name                      | string | option   |                                                  |
+| `name`             | Database name (by default, the key name)          | string | option   | if set up driver sqlite need set up <path_to_db> |
+| `user`             | The database user                                 | string | required |                                                  |
+| `password`         | DB user's password                                | string | required |                                                  |
+| `server`           | The link to the server from the `servers` section | string | required |                                                  |
+| `port`             | Connection port                                   | int    | required | if not set `settings.db_port`                    |
+| `driver`           | [The DB driver list](#Driver)                     | string | required | if not set `settings.driver`                     |
+| `format`           | [The dump format](#Format)                        | string | required | if not set `settings.format`                     |
+| `archive`          | Archiving a backup file                           | bool   | option   |                                                  |
+| `options.*`        | Additional option for another databases           | object | option   | [Option list](#Options)                          |
+| `remove_dump`      | remove dump file after created (default true)     | bool   | option   |                                                  |
+| `encrypt.type`     | Type encrypting (only aes)                        | string | option   |                                                  |
+| `encrypt.password` | Password for encrypting (only aes)                | string | option   |                                                  |
+| `storages`         | Storage list when the dump need to upload         | list   | required |
 
 #### Options
 
-| Parameter             | Description            | Type   | Additional info               |
-|-----------------------|------------------------|--------|-------------------------------|
-| `options.auth_source` | Name database for auth | option | if set up driver mongo        |
-| `options.ssl`         | SSL/TLS                | option | if set up driver mongo, mssql |
-| `options.mode`        | Mode create dump       | option | if set up driver redis        |
-| `options.role`        | Role for create dump   | option | if set up driver firebird     |
-| `options.path`        | Path database SQLite   | option | if set up driver sqlite       |
+| Parameter             | Description            | Type   | Rule   | Additional info               |
+|-----------------------|------------------------|--------|--------|-------------------------------|
+| `options.auth_source` | Name database for auth | string | option | if set up driver mongo        |
+| `options.ssl`         | SSL/TLS                | bool   | option | if set up driver mongo, mssql |
+| `options.mode`        | Mode create dump       | string | option | if set up driver redis        |
+| `options.role`        | Role for create dump   | string | option | if set up driver firebird     |
+| `options.path`        | Path database SQLite   | string | option | if set up driver sqlite       |
 
 ---
 

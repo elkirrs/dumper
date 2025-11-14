@@ -178,7 +178,7 @@ func (b *Backup) prepareBackupConfig() {
 		},
 		Storages:      b.dbConnect.Storages,
 		DumpLocation:  b.cfg.Settings.DumpLocation,
-		Archive:       *b.cfg.Settings.Archive,
+		Archive:       b.dbConnect.Database.IsArchive(*b.cfg.Settings.Archive),
 		DumpDirLocal:  b.cfg.Settings.DirDump,
 		DumpName:      fullPath,
 		DumpDirRemote: b.cfg.Settings.DirRemote,

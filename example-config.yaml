@@ -24,8 +24,8 @@ settings:
   format: 'plain'
   # directory by save dump
   dir_dump: './dumps'
-  # directory by archived dump
-  dir_archived: './archived'
+  # directory by old dump
+  dir_archived: './old'
   logging: true
   retry_connect: 5
   remove_dump: true
@@ -133,6 +133,7 @@ databases:
     driver: 'psql'
     server: 'srv-psql'
     format: 'dump'
+    archive: false
     storages:
       - ftp
       - local

@@ -1,7 +1,7 @@
 .idea
 config.yaml
 dumps
-archived
+old
 dumper
 dumper.log
 .DS_Store

@@ -14,6 +14,7 @@ type Database struct {
 	Format   string
 	Driver   string
 	Options  option.Options
+	Archive  bool
 }
 
 type Server struct {
