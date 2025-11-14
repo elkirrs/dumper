@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented here.
 
-## [1.8.3] - 2025-11-09
+## [1.8.3] - 2025-11-15
 - Fix bug with create dump mongodb
 - Add parameter archive in database section
 - Update file name template
