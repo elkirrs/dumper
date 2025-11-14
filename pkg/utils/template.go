@@ -26,10 +26,6 @@ func GetTemplateFileName(data TemplateData) string {
 		data.Time = time.Now()
 	}
 
-	if data.Extension == "" {
-		data.Extension = "sql.gz"
-	}
-
 	replacements := map[string]string{
 		"{%srv%}":      data.Server,
 		"{%db%}":       data.Database,

@@ -3,6 +3,8 @@ All notable changes to this project will be documented here.
 
 ## [1.8.3] - 2025-11-09
 - Fix bug with create dump mongodb
+- Add parameter archive in database section
+- Update file name template
 
 ## [1.8.2] - 2025-11-09
 - Fix static path main db dump to global
