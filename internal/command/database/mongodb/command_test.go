@@ -11,158 +11,119 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMongoGenerator_Generate_AllScenarios(t *testing.T) {
-	trueVal := true
-	falseVal := false
-
+func TestMongoGenerator_Generate(t *testing.T) {
+	sslTrue := true
 	tests := []struct {
-		name             string
-		config           *cmdCfg.Config
-		expectedContains []string
-		expectedExt      string
+		name       string
+		cfg        *cmdCfg.Config
+		wantCmd    string
+		wantDump   string
+		shouldFail bool
 	}{
 		{
-			name: "Default BSON dump, local",
-			config: &cmdCfg.Config{
+			name: "archive format + --archive flag + gzip",
+			cfg: &cmdCfg.Config{
+				DumpName:     "backup",
+				Archive:      true,
+				DumpLocation: "server",
 				Database: cmdCfg.Database{
-					User:     "mongoUser",
-					Password: "secret",
+					Name:     "mydb",
+					User:     "user",
+					Password: "pass",
 					Port:     "27017",
-					Name:     "testdb",
-					Format:   "dump",
+					Format:   "archive",
 					Options: option.Options{
-						SSL:        &falseVal,
-						AuthSource: "",
+						AuthSource: "admin",
+						SSL:        &sslTrue,
 					},
 				},
+			},
+			wantCmd:  `mongodump --uri "mongodb://user:pass@127.0.0.1:27017/mydb?authSource=admin&ssl=true" --archive=backup.gz --gzip`,
+			wantDump: "backup.gz",
+		},
+		{
+			name: "non-archive format + tar.gz after dump",
+			cfg: &cmdCfg.Config{
 				DumpName:     "dump1",
-				Archive:      false,
-				DumpLocation: "local",
-			},
-			expectedContains: []string{
-				"mongodump",
-				"--uri",
-				"mongodb://mongoUser:secret@127.0.0.1:27017/testdb",
-				"--out ./",
-			},
-			expectedExt: "bson",
-		},
-		{
-			name: "Archive format, local",
-			config: &cmdCfg.Config{
-				Database: cmdCfg.Database{
-					User:     "mongoUser",
-					Password: "secret",
-					Port:     "27017",
-					Name:     "testdb",
-					Format:   "archive",
-					Options: option.Options{
-						SSL:        &falseVal,
-						AuthSource: "",
-					},
-				},
-				DumpName:     "dump2",
-				Archive:      false,
-				DumpLocation: "local",
-			},
-			expectedContains: []string{
-				"--archive",
-			},
-			expectedExt: "archive",
-		},
-		{
-			name: "BSON dump with gzip (Archive=true)",
-			config: &cmdCfg.Config{
-				Database: cmdCfg.Database{
-					User:     "mongoUser",
-					Password: "secret",
-					Port:     "27017",
-					Name:     "testdb",
-					Format:   "dump",
-					Options: option.Options{
-						SSL:        &falseVal,
-						AuthSource: "",
-					},
-				},
-				DumpName:     "dump3",
 				Archive:      true,
-				DumpLocation: "local",
-			},
-			expectedContains: []string{
-				"tar -czf dump3.tar.gz testdb",
-			},
-			expectedExt: "tar.gz",
-		},
-		{
-			name: "Archive format + gzip",
-			config: &cmdCfg.Config{
+				DumpLocation: "server",
 				Database: cmdCfg.Database{
-					User:     "mongoUser",
-					Password: "secret",
-					Port:     "27017",
-					Name:     "testdb",
-					Format:   "archive",
+					Name:     "mydb",
+					User:     "root",
+					Password: "qwerty",
+					Port:     "27018",
+					Format:   "",
 					Options: option.Options{
-						SSL:        &falseVal,
-						AuthSource: "",
+						AuthSource: "admin",
+						SSL:        &sslTrue,
 					},
 				},
-				DumpName:     "dump4",
-				Archive:      true,
-				DumpLocation: "local",
 			},
-			expectedContains: []string{
-				"--archive",
-				"--gzip",
-			},
-			expectedExt: "archive.gz",
+			wantCmd:  `mongodump --uri "mongodb://root:qwerty@127.0.0.1:27018/mydb?authSource=admin&ssl=true" && tar -czf dump1.tar.gz mydb`,
+			wantDump: "dump1.tar.gz",
 		},
 		{
-			name: "Server dump output redirect",
-			config: &cmdCfg.Config{
-				Database: cmdCfg.Database{
-					User:     "mongoUser",
-					Password: "secret",
-					Port:     "27017",
-					Name:     "testdb",
-					Format:   "dump",
-					Options: option.Options{
-						SSL:        &falseVal,
-						AuthSource: "",
-					},
-				},
-				DumpName:     "serverDump",
+			name: "no archive, format=archive, plain archive output",
+			cfg: &cmdCfg.Config{
+				DumpName:     "ddd",
 				Archive:      false,
 				DumpLocation: "server",
-			},
-			expectedContains: []string{
-				"> ./serverDump.bson",
-			},
-			expectedExt: "bson",
-		},
-		{
-			name: "SSL and AuthSource enabled",
-			config: &cmdCfg.Config{
 				Database: cmdCfg.Database{
-					User:     "mongoUser",
-					Password: "secret",
+					Name:     "db",
+					User:     "u",
+					Password: "p",
 					Port:     "27017",
-					Name:     "testdb",
-					Format:   "dump",
+					Format:   "archive",
 					Options: option.Options{
-						SSL:        &trueVal,
 						AuthSource: "admin",
+						SSL:        &sslTrue,
 					},
 				},
-				DumpName:     "secureDump",
+			},
+			wantCmd:  `mongodump --uri "mongodb://u:p@127.0.0.1:27017/db?authSource=admin&ssl=true" --archive=ddd.archive`,
+			wantDump: "ddd.archive",
+		},
+		{
+			name: "no archive, format=dir => tar.gz",
+			cfg: &cmdCfg.Config{
+				DumpName:     "test2",
 				Archive:      false,
-				DumpLocation: "local",
+				DumpLocation: "server",
+				Database: cmdCfg.Database{
+					Name:     "mydb",
+					User:     "u",
+					Password: "pp",
+					Port:     "27017",
+					Format:   "",
+					Options: option.Options{
+						AuthSource: "",
+						SSL:        &sslTrue,
+					},
+				},
 			},
-			expectedContains: []string{
-				"authSource=admin",
-				"ssl=true",
+			wantCmd:  `--out ./ mongodump --uri "mongodb://u:pp@127.0.0.1:27017/mydb?ssl=true" && tar -czf test2.tar.gz mydb`,
+			wantDump: "test2.tar.gz",
+		},
+		{
+			name: "special characters in username/password must be escaped",
+			cfg: &cmdCfg.Config{
+				DumpName:     "sp",
+				Archive:      false,
+				DumpLocation: "server",
+				Database: cmdCfg.Database{
+					Name:     "db",
+					User:     "us er",
+					Password: "p@ss",
+					Port:     "27017",
+					Format:   "archive",
+					Options: option.Options{
+						AuthSource: "adm in",
+						SSL:        &sslTrue,
+					},
+				},
 			},
-			expectedExt: "bson",
+			wantCmd:  `mongodump --uri "mongodb://us+er:p%40ss@127.0.0.1:27017/db?authSource=adm+in&ssl=true" --archive=sp.archive`,
+			wantDump: "sp.archive",
 		},
 	}
 
@@ -170,19 +131,20 @@ func TestMongoGenerator_Generate_AllScenarios(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd, err := gen.Generate(tt.config)
-			require.NoError(t, err, "Generate() should not return an error")
-			require.NotNil(t, cmd, "Returned command must not be nil")
-
-			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
-			assert.NotEmpty(t, cmd.Command, "Command string should not be empty")
-			assert.NotEmpty(t, cmd.DumpPath, "DumpPath should not be empty")
-
-			for _, expect := range tt.expectedContains {
-				assert.Contains(t, cmd.Command, expect, "Command should contain expected fragment: %s", expect)
+			res, err := gen.Generate(tt.cfg)
+			if tt.shouldFail {
+				require.Error(t, err)
+				return
 			}
 
-			assert.Contains(t, cmd.DumpPath, tt.expectedExt, "DumpPath should have the correct extension")
+			require.NoError(t, err)
+			require.NotNil(t, res)
+
+			assert.Equal(t, tt.wantCmd, res.Command)
+			assert.Equal(t, tt.wantDump, res.DumpPath)
+
+			_, ok := interface{}(res).(*commandDomain.DBCommand)
+			assert.True(t, ok)
 		})
 	}
 }
