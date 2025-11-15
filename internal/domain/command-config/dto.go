@@ -1,6 +1,7 @@
 package command_config
 
 import (
+	"dumper/internal/domain/config/docker"
 	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/option"
 	"dumper/internal/domain/config/storage"
@@ -15,6 +16,7 @@ type Database struct {
 	Driver   string
 	Options  option.Options
 	Archive  bool
+	Docker   *docker.Docker
 }
 
 type Server struct {

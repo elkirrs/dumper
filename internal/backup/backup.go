@@ -43,7 +43,7 @@ func (b *Backup) Run() error {
 
 	logging.L(b.ctx).Info("Prepare command for dump")
 
-	cmdApp := command.NewApp(b.cmdConfig)
+	cmdApp := command.NewApp(b.ctx, b.cmdConfig)
 	cmdDB, err := cmdApp.GetCommand()
 
 	if err != nil {
@@ -170,6 +170,7 @@ func (b *Backup) prepareBackupConfig() {
 			Format:   b.dbConnect.Database.GetFormat(b.cfg.Settings.DumpFormat),
 			Driver:   b.dbConnect.Database.GetDriver(b.cfg.Settings.Driver),
 			Options:  b.dbConnect.Database.Options,
+			Docker:   b.dbConnect.Database.GetDocker(&b.cfg.Settings.Docker),
 		},
 		Server: commandConfig.Server{
 			Host: b.dbConnect.Server.Host,

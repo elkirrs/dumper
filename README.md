@@ -175,6 +175,8 @@ Apply to all servers and databases, unless redefined locally.
 | `encrypt.password`  | Password for encrypting (only aes)                    | string | option   |
 | `storages`          | Storage list when the dump need to upload             | list   | required |
 | `parallel_download` | parallel upload dump file for several storages        | int    | option   |
+| `docker.enabled`    | Enabled create dump from docker container             | bool   | option   |
+| `docker.command`    | Docker command for connect to container               | string | option   |
 
 #### Params:
 
@@ -190,7 +192,7 @@ Apply to all servers and databases, unless redefined locally.
 - #### Format:
     - PostgreSQL: `plain`, `dump`, `tar`
     - MySQL: `sql`
-    - MongoDB: `bson`
+    - MongoDB: `bson`, `archive`
     - MariaDB: `sql`
     - MSSQL: `bac`, `bacpac`
     - SQLite: `sql`
@@ -251,8 +253,9 @@ A list of databases that need to be backed up.
 | `remove_dump`      | remove dump file after created (default true)     | bool   | option   |                                                  |
 | `encrypt.type`     | Type encrypting (only aes)                        | string | option   |                                                  |
 | `encrypt.password` | Password for encrypting (only aes)                | string | option   |                                                  |
-| `storages`         | Storage list when the dump need to upload         | list   | required |
-
+| `storages`         | Storage list when the dump need to upload         | list   | required |                                                  |
+| `docker.enabled`   | Enabled create dump from docker container         | bool   | option   |                                                  |
+| `docker.command`   | Docker command for connect to container           | string | option   |                                                  |
 #### Options
 
 | Parameter             | Description            | Type   | Rule   | Additional info               |
@@ -437,6 +440,52 @@ databases:
       - local
       - sftp 
 ```
+
+#### 7. 🐳 Docker
+Configuration:
+
+In global (docker for all databases)
+
+```yaml
+settings:
+  docker:
+    enabled: true
+    command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
+
+storages:
+# several storages
+servers:
+# several servers
+databases:
+# several databases
+```
+Or only for a specific database
+
+```yaml
+settings:
+# several settings
+storages:
+# several storages
+servers:
+# several servers
+databases:
+  db-psql:
+    title: "My DB PSQL Docker"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+    storages:
+      - local
+      - sftp 
+    docker:
+      enabled: true
+      command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
+```
+*This docker configuration can be used in both locations. priority in the database parameters*
 
 ### ▶ Launch examples
 

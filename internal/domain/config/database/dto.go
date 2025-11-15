@@ -1,6 +1,7 @@
 package database
 
 import (
+	"dumper/internal/domain/config/docker"
 	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/option"
 )
@@ -20,6 +21,7 @@ type Database struct {
 	Encrypt    encrypt.Encrypt `yaml:"encrypt"`
 	Storages   []string        `yaml:"storages"`
 	Archive    *bool           `yaml:"archive"`
+	Docker     *docker.Docker  `yaml:"docker"`
 }
 
 func (d Database) GetName() string {
@@ -101,4 +103,12 @@ func (d Database) IsArchive(isGlobalArchive bool) bool {
 		return *d.Archive
 	}
 	return isGlobalArchive
+}
+
+func (d Database) GetDocker(globalDocker *docker.Docker) *docker.Docker {
+	if d.Docker != nil {
+		return d.Docker
+	}
+
+	return globalDocker
 }

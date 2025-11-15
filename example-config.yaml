@@ -35,6 +35,9 @@ settings:
 #  encrypt:
 #    type: 'aes'
 #    password: '123456'
+#  docker:
+#    enabled: false
+#    command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 
 storages:
   local:
@@ -123,6 +126,9 @@ databases:
     storages:
       - sftp
       - local
+    docker:
+      enabled: true
+      command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 
   db-psql-custom:
     title: 'My DB PSQL #2'
@@ -137,6 +143,9 @@ databases:
     storages:
       - ftp
       - local
+    docker:
+      enabled: true
+      command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 
   db-psql-tar:
     title: 'My DB PSQL #3'
@@ -163,6 +172,9 @@ databases:
     format: 'sql'
     storages:
       - sftp
+    docker:
+      enabled: true
+      command: "docker compose --file /var/www/docker-compose.yaml exec -T mysql"
 
   db-mysql-s:
     title: 'My DB MySQL #2'
@@ -178,6 +190,8 @@ databases:
     encrypt:
       type: 'aes'
       password: '123456'
+    docker:
+      enabled: false
   
   # Config Mongo databases
   db-mongo:

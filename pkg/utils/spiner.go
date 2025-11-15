@@ -26,7 +26,7 @@ func Spinner(stop chan struct{}) {
 			fmt.Print("\r")
 			return
 		case <-spinTicker.C:
-			fmt.Printf("\rCreating dump... %s  |  Elapsed: %.2f sec ", chars[i%lenChars], elapsed)
+			fmt.Printf("\rCreating dump... %s  |  Elapsed: %.2f ", chars[i%lenChars], elapsed)
 			i++
 		case <-timeTicker.C:
 			elapsed = time.Since(start).Seconds()
