@@ -1,14 +1,17 @@
 package server
 
+import "dumper/internal/domain/config/shell"
+
 type Server struct {
-	Title      string `yaml:"title,omitempty"`
-	Host       string `yaml:"host" validate:"required"`
-	User       string `yaml:"user" validate:"required"`
-	Name       string `yaml:"name,omitempty"`
-	Port       string `yaml:"port,omitempty"`
-	PrivateKey string `yaml:"private_key,omitempty"`
-	Password   string `yaml:"password,omitempty"`
-	ConfigPath string `yaml:"conf_path,omitempty"`
+	Title      string      `yaml:"title,omitempty"`
+	Host       string      `yaml:"host" validate:"required"`
+	User       string      `yaml:"user" validate:"required"`
+	Name       string      `yaml:"name,omitempty"`
+	Port       string      `yaml:"port,omitempty"`
+	PrivateKey string      `yaml:"private_key,omitempty"`
+	Password   string      `yaml:"password,omitempty"`
+	ConfigPath string      `yaml:"conf_path,omitempty"`
+	Shell      shell.Shell `yaml:"shell,omitempty"`
 }
 
 func (s Server) GetName() string {
@@ -42,4 +45,11 @@ func (s Server) GetPrivateKey(pathKey string) string {
 		return s.PrivateKey
 	}
 	return pathKey
+}
+
+func (s Server) GetShell(globalShell *shell.Shell) *shell.Shell {
+	if s.Shell.Before != "" || s.Shell.After != "" {
+		return &s.Shell
+	}
+	return globalShell
 }

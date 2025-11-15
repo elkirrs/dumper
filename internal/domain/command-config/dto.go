@@ -4,6 +4,7 @@ import (
 	"dumper/internal/domain/config/docker"
 	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/option"
+	"dumper/internal/domain/config/shell"
 	"dumper/internal/domain/config/storage"
 )
 
@@ -20,9 +21,10 @@ type Database struct {
 }
 
 type Server struct {
-	Host string
-	Port string
-	Key  string
+	Host  string
+	Port  string
+	Key   string
+	Shell *shell.Shell
 }
 
 type Config struct {

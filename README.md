@@ -19,6 +19,8 @@ flexible connection and storage settings.
 - Encrypting and Decrypting backup and config file
 - Different formats.
 - Different storages.
+- Backup from docker
+- Shell script after and before backup
 
 ---
 
@@ -49,6 +51,13 @@ settings:
   parallel_download: 1
   storages:
     - local
+  docker:
+    command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
+  shell:
+    before: |
+      echo "run script before create dump create dump"
+    after: |
+      echo "run script after created dump created dump"
 
 storages:
   local:
@@ -76,10 +85,19 @@ servers:
     port: "22"
     user: "user"
     password: "password"
+    shell:
+      before: |
+        echo "run script before create dump create dump"
+      after: |
+        echo "run script after created dump created dump"
+        
   second-server:
     name: "mongo"
     host: "172.0.18.54"
     user: "root"
+    shell: 
+      enabled: false
+      
   remote-config-server:
     name: "mongo"
     host: "43.4.58.64"
@@ -96,6 +114,8 @@ databases:
     port: "5432"
     driver: "psql"
     format: "dump"
+    docker:
+      command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 
   mysql_db:
     name: "mysql_db_dumper"
@@ -106,6 +126,8 @@ databases:
     format: "sql"
     server: "first-server"
     remove_dump: false
+    docker:
+      enabled: false
 
   mongo:
     name: "mongo_db_name"
@@ -177,6 +199,9 @@ Apply to all servers and databases, unless redefined locally.
 | `parallel_download` | parallel upload dump file for several storages        | int    | option   |
 | `docker.enabled`    | Enabled create dump from docker container             | bool   | option   |
 | `docker.command`    | Docker command for connect to container               | string | option   |
+| `shell.enabled`     | Enabled run shell script                              | bool   | option   |
+| `shell.before`      | Run hell script in server before create dump          | string | option   |
+| `shell.after`       | Run hell script in server after created dump          | string | option   |  
 
 #### Params:
 
@@ -221,16 +246,19 @@ Apply to all servers and databases, unless redefined locally.
 
 Defines the connections through which databases can be backed up.
 
-| Parameter   | Description                   | Type   | Rule                                       |
-|-------------|-------------------------------|--------|--------------------------------------------|
-| `title`     | Human-readable server name    | string | option                                     |
-| `name`      | Server name                   | string | option                                     |
-| `host`      | The IP address or domain name | string | required                                   |
-| `port`      | Connection port               | int    | required<br/> (if not set `settings.port`) |
-| `user`      | Username                      | string | required                                   |
-| `password`  | Password (if there is no key) | string | required<br/> (if not set `key`)           |
-| `key`       | Key (if there is no password) | string | required<br/> (if not set `password`)      |
-| `conf_path` | Path remote config            | string | option (if set read only remote config)    | 
+| Parameter       | Description                                  | Type   | Rule                                       |
+|-----------------|----------------------------------------------|--------|--------------------------------------------|
+| `title`         | Human-readable server name                   | string | option                                     |
+| `name`          | Server name                                  | string | option                                     |
+| `host`          | The IP address or domain name                | string | required                                   |
+| `port`          | Connection port                              | int    | required<br/> (if not set `settings.port`) |
+| `user`          | Username                                     | string | required                                   |
+| `password`      | Password (if there is no key)                | string | required<br/> (if not set `key`)           |
+| `key`           | Key (if there is no password)                | string | required<br/> (if not set `password`)      |
+| `conf_path`     | Path remote config                           | string | option (if set read only remote config)    | 
+| `shell.enabled` | Enabled run shell script                     | bool   | option                                     |
+| `shell.before`  | Run hell script in server before create dump | string | option                                     |
+| `shell.after`   | Run hell script in server after created dump | string | option                                     |  
 
 The configuration file on the remote `servers` must contain the servers and `databases` section.
 
@@ -255,7 +283,8 @@ A list of databases that need to be backed up.
 | `encrypt.password` | Password for encrypting (only aes)                | string | option   |                                                  |
 | `storages`         | Storage list when the dump need to upload         | list   | required |                                                  |
 | `docker.enabled`   | Enabled create dump from docker container         | bool   | option   |                                                  |
-| `docker.command`   | Docker command for connect to container           | string | option   |                                                  |
+| `docker.command`   | Docker command for connect to container           | string | option   |                                                  | |
+
 #### Options
 
 | Parameter             | Description            | Type   | Rule   | Additional info               |
@@ -442,6 +471,7 @@ databases:
 ```
 
 #### 7. 🐳 Docker
+
 Configuration:
 
 In global (docker for all databases)
@@ -459,6 +489,7 @@ servers:
 databases:
 # several databases
 ```
+
 Or only for a specific database
 
 ```yaml
@@ -480,12 +511,68 @@ databases:
     format: "plain"
     storages:
       - local
-      - sftp 
+      - sftp
     docker:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 ```
-*This docker configuration can be used in both locations. priority in the database parameters*
+
+*This docker configuration can be used in both locations. Priority in the database parameters*
+
+#### 7. ❯ Shell
+
+Configuration:
+
+In global (Shell script for all servers)
+
+```yaml
+settings:
+  shell:
+    enabled: true #(option default value true)
+    before: |
+      echo "run script before create dump create dump"
+    after: |
+      echo "run script after created dump created dump"cker compose --file /var/www/docker-compose.yaml exec -T postgres"
+
+storages:
+# several storages
+servers:
+# several servers
+databases:
+# several databases
+```
+
+Or only for a specific server
+
+```yaml
+settings:
+# several settings
+storages:
+# several storages
+servers:
+# several servers
+databases:
+  db-psql:
+    title: "My DB PSQL"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+    storages:
+      - sftp
+    shell:
+      enabled: true #(option default value true)
+      before: |
+        echo "run script before create dump create dump"
+      after: |
+        echo "run script after created dump created dump"cker compose --file /var/www/docker-compose.yaml exec -T postgres"
+
+```
+
+*This shell configuration can be used in both locations. Priority in the server parameters*
 
 ### ▶ Launch examples
 

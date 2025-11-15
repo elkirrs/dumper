@@ -38,6 +38,11 @@ settings:
 #  docker:
 #    enabled: false
 #    command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
+  shell:
+    before: |
+      echo "run script before create dump create dump"
+    after: |
+      echo "run script after created dump created dump"
 
 storages:
   local:
@@ -129,6 +134,11 @@ databases:
     docker:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
+    shell:
+      before: |
+        echo "run script before create dump create dump"
+      after: |
+        echo "run script after created dump created dump"
 
   db-psql-custom:
     title: 'My DB PSQL #2'
@@ -159,6 +169,11 @@ databases:
     encrypt:
       type: 'aes'
       password: '123456'
+    shell:
+      before: |
+        echo "run script before create dump create dump"
+      after: |
+        echo "run script after created dump created dump"
   
   # Config MySQL databases
   db-mysql:
@@ -175,6 +190,8 @@ databases:
     docker:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T mysql"
+    shell:
+      enabled: false
 
   db-mysql-s:
     title: 'My DB MySQL #2'

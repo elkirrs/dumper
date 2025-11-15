@@ -3,6 +3,7 @@ package setting
 import (
 	"dumper/internal/domain/config/docker"
 	"dumper/internal/domain/config/encrypt"
+	"dumper/internal/domain/config/shell"
 	sshConfig "dumper/internal/domain/config/ssh-config"
 )
 
@@ -25,4 +26,5 @@ type Settings struct {
 	Storages            []string            `yaml:"storages"`
 	MaxParallelDownload int                 `yaml:"parallel_download" default:"2"`
 	Docker              docker.Docker       `yaml:"docker"`
+	Shell               shell.Shell         `yaml:"shell"`
 }

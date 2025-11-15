@@ -12,6 +12,7 @@ import (
 	"dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
 	encryptConfigDomain "dumper/internal/domain/config/encrypt"
+	"dumper/internal/shell"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
 	"fmt"
@@ -94,6 +95,12 @@ func (b *Backup) Run() error {
 	}
 	logging.L(b.ctx).Info("The connection is established")
 
+	shellApp := shell.NewApp(b.ctx, b.cmdConfig, conn)
+	if err := utils.RunWithCtx(b.ctx, shellApp.RunScriptBefore); err != nil {
+		logging.L(b.ctx).Error("Error run shell script before start backup")
+		return err
+	}
+
 	logging.L(b.ctx).Info("Preparing for backup creation")
 
 	if err := utils.RunWithCtx(b.ctx, b.backup); err != nil {
@@ -117,6 +124,11 @@ func (b *Backup) Run() error {
 		}
 
 		logging.L(b.ctx).Info("Archived old backups", logging.StringAttr("path", b.cfg.Settings.DirArchived))
+	}
+
+	if err := utils.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
+		logging.L(b.ctx).Error("Error run shell script after finished backup")
+		return err
 	}
 
 	return nil
@@ -173,9 +185,10 @@ func (b *Backup) prepareBackupConfig() {
 			Docker:   b.dbConnect.Database.GetDocker(&b.cfg.Settings.Docker),
 		},
 		Server: commandConfig.Server{
-			Host: b.dbConnect.Server.Host,
-			Port: b.dbConnect.Server.Port,
-			Key:  b.dbConnect.Server.GetPrivateKey(b.cfg.Settings.SSH.PrivateKey),
+			Host:  b.dbConnect.Server.Host,
+			Port:  b.dbConnect.Server.Port,
+			Key:   b.dbConnect.Server.GetPrivateKey(b.cfg.Settings.SSH.PrivateKey),
+			Shell: b.dbConnect.Server.GetShell(&b.cfg.Settings.Shell),
 		},
 		Storages:      b.dbConnect.Storages,
 		DumpLocation:  b.cfg.Settings.DumpLocation,

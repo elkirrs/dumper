@@ -4,6 +4,7 @@ import (
 	"dumper/internal/domain/config/docker"
 	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/option"
+	"dumper/internal/domain/config/shell"
 )
 
 type Database struct {
@@ -22,6 +23,7 @@ type Database struct {
 	Storages   []string        `yaml:"storages"`
 	Archive    *bool           `yaml:"archive"`
 	Docker     *docker.Docker  `yaml:"docker"`
+	Shell      *shell.Shell    `yaml:"shell"`
 }
 
 func (d Database) GetName() string {
@@ -109,6 +111,5 @@ func (d Database) GetDocker(globalDocker *docker.Docker) *docker.Docker {
 	if d.Docker != nil {
 		return d.Docker
 	}
-
 	return globalDocker
 }
