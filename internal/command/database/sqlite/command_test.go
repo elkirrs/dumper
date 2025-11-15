@@ -30,7 +30,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"sqlite3 test.db .dump",
-				"> ./dump1.sql",
+				"> dump1.sql",
 			},
 			expectedExt: "sql",
 		},
@@ -47,7 +47,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"sqlite3 archive.db .dump",
 				"| gzip",
-				"./archive1.sql.gz",
+				"archive1.sql.gz",
 			},
 			expectedExt: "sql.gz",
 		},
@@ -63,7 +63,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"sqlite3 server.db .dump",
-				"> ./serverDump.sql",
+				"> serverDump.sql",
 			},
 			expectedExt: "sql",
 		},
@@ -80,7 +80,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"sqlite3 serverArchive.db .dump",
 				"| gzip",
-				"./serverArchive.sql.gz",
+				"serverArchive.sql.gz",
 			},
 			expectedExt: "sql.gz",
 		},

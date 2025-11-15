@@ -73,7 +73,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 				DumpLocation: "server",
 			},
 			expectedContains: []string{
-				"> ./dump_server.sql",
+				"> dump_server.sql",
 				"serverdb",
 			},
 			expectedExt: "sql",
@@ -93,7 +93,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"| gzip",
-				"> ./dump_archive.sql.gz",
+				"> dump_archive.sql.gz",
 				"archivedb",
 			},
 			expectedExt: "sql.gz",

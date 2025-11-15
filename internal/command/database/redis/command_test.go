@@ -33,7 +33,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"redis-cli",
 				"--rdb",
-				"./dump1.rdb",
+				"dump1.rdb",
 			},
 			expectedExt: "rdb",
 		},
@@ -52,7 +52,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"SAVE",
 				"--rdb",
-				"./dump2.rdb",
+				"dump2.rdb",
 			},
 			expectedExt: "rdb",
 		},
@@ -71,7 +71,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"--rdb",
 				"| gzip",
-				"./archive1.rdb.gz",
+				"archive1.rdb.gz",
 			},
 			expectedExt: "rdb.gz",
 		},
@@ -91,7 +91,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				"SAVE",
 				"--rdb",
 				"| gzip",
-				"./archive2.rdb.gz",
+				"archive2.rdb.gz",
 			},
 			expectedExt: "rdb.gz",
 		},
@@ -109,7 +109,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"--rdb",
-				"./serverDump.rdb",
+				"serverDump.rdb",
 			},
 			expectedExt: "rdb",
 		},
@@ -129,7 +129,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				"SAVE",
 				"--rdb",
 				"| gzip",
-				"./serverArchive.rdb.gz",
+				"serverArchive.rdb.gz",
 			},
 			expectedExt: "rdb.gz",
 		},

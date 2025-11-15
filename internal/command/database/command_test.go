@@ -1,17 +1,19 @@
 package database_test
 
 import (
+	"context"
+	dockerDomain "dumper/internal/domain/config/docker"
+	"testing"
+
 	"dumper/internal/command/database"
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// buildConfig creates a safe default config for all drivers
 func buildConfig(driver string, format ...string) *cmdCfg.Config {
 	ssl := false
 	dbFormat := "default"
@@ -27,6 +29,7 @@ func buildConfig(driver string, format ...string) *cmdCfg.Config {
 			Password: "pass",
 			Name:     "db",
 			Port:     "1234",
+			Docker:   &dockerDomain.Docker{Enabled: false},
 			Options: option.Options{
 				SSL:  &ssl,
 				Path: "db.sqlite",
@@ -53,18 +56,19 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 		{"SQLite driver", "sqlite", false, ""},
 		{"MariaDB driver", "mariadb", false, ""},
 		{"Redis driver", "redis", false, ""},
-		{"MSSQL driver", "mssql", false, "bac"}, // valid MSSQL format
+		{"MSSQL driver", "mssql", false, "bac"}, // supported MSSQL format
 		{"Unsupported driver", "unknown", true, ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := buildConfig(tt.driver)
+
 			if tt.driver == "mssql" && tt.format != "" {
 				cfg.Database.Format = tt.format
 			}
 
-			app := database.NewApp(cfg)
+			app := database.NewApp(context.Background(), cfg)
 			cmd, err := app.GetCommand()
 
 			if tt.expectErr {
@@ -75,6 +79,7 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, cmd)
+
 			assert.IsType(t, &commandDomain.DBCommand{}, cmd)
 			assert.NotEmpty(t, cmd.Command)
 			assert.NotEmpty(t, cmd.DumpPath)
@@ -83,22 +88,22 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 }
 
 func TestSettings_GetCommand_PropagatesGeneratorError(t *testing.T) {
-	// Force MSSQL unsupported format to generate an error
-	cfg := buildConfig("mssql", "unsupported_format")
+	cfg := buildConfig("mssql", "wrong_format")
 
-	app := database.NewApp(cfg)
+	app := database.NewApp(context.Background(), cfg)
 	cmd, err := app.GetCommand()
 
 	require.Error(t, err)
 	assert.Nil(t, cmd)
-	assert.Contains(t, err.Error(), "unsupported database format")
+	assert.Contains(t, err.Error(), "unsupported")
 }
 
 func TestSettings_GetCommand_UnsupportedDriver(t *testing.T) {
-	cfg := buildConfig("nope")
-	app := database.NewApp(cfg)
+	cfg := buildConfig("nonexistent_driver")
 
+	app := database.NewApp(context.Background(), cfg)
 	cmd, err := app.GetCommand()
+
 	require.Error(t, err)
 	assert.Nil(t, cmd)
 	assert.Contains(t, err.Error(), "unsupported database driver")

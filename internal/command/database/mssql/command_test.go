@@ -40,7 +40,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"sqlcmd",
 				"BACKUP DATABASE [MyDB]",
-				"TO DISK='./backup1.bak'",
+				"TO DISK='backup1.bak'",
 			},
 			expectedExt: ".bak",
 		},
@@ -63,7 +63,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 				"sqlpackage",
 				"/Action:Export",
 				"/SourceServerName:localhost",
-				"/TargetFile:./export1.bacpac",
+				"/TargetFile:export1.bacpac",
 			},
 			expectedExt: ".bacpac",
 		},
@@ -148,7 +148,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"sqlcmd",
-				"TO DISK='./dumpServer.bak'",
+				"TO DISK='dumpServer.bak'",
 			},
 			expectedExt: ".bak",
 		},

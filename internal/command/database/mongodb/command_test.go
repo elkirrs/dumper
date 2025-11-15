@@ -1,11 +1,12 @@
 package mongodb_test
 
 import (
+	"testing"
+
 	"dumper/internal/command/database/mongodb"
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,7 @@ import (
 
 func TestMongoGenerator_Generate(t *testing.T) {
 	sslTrue := true
+
 	tests := []struct {
 		name       string
 		cfg        *cmdCfg.Config
@@ -84,7 +86,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 			wantDump: "ddd.archive",
 		},
 		{
-			name: "no archive, format=dir => tar.gz",
+			name: "no archive, format=dir ⇒ tar.gz",
 			cfg: &cmdCfg.Config{
 				DumpName:     "test2",
 				Archive:      false,
@@ -132,6 +134,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			res, err := gen.Generate(tt.cfg)
+
 			if tt.shouldFail {
 				require.Error(t, err)
 				return

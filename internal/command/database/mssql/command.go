@@ -63,7 +63,7 @@ func genFormatBacpac(
 ) *commandDomain.DBCommand {
 	ext := "bacpac"
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
-	remotePath := fmt.Sprintf("./%s", fileName)
+	remotePath := fmt.Sprintf("%s", fileName)
 
 	baseCmd := fmt.Sprintf(
 		"sqlpackage /Action:Export /SourceServerName:%s /SourceDatabaseName:%s /SourceUser:%s /SourcePassword:%s /TargetFile:%s",
