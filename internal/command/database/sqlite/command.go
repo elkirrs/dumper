@@ -12,7 +12,7 @@ func (g SQLiteGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand
 	ext := "sql"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
-	remotePath := fmt.Sprintf("./%s", fileName)
+	remotePath := fmt.Sprintf("%s", fileName)
 
 	baseCmd := fmt.Sprintf("sqlite3 %s .dump", data.Database.Options.Path)
 

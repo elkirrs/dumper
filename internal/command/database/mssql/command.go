@@ -41,7 +41,7 @@ func genFormatBak(
 ) *commandDomain.DBCommand {
 	ext := "bak"
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
-	remotePath := fmt.Sprintf("./%s", fileName)
+	remotePath := fmt.Sprintf("%s", fileName)
 
 	baseCmd := fmt.Sprintf(
 		"sqlcmd -S %s -U %s -P %s -Q \"BACKUP DATABASE [%s] TO DISK='%s' WITH FORMAT, INIT\"",

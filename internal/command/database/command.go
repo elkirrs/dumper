@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"dumper/internal/command/database/mariadb"
 	"dumper/internal/command/database/mongodb"
 	"dumper/internal/command/database/mssql"
@@ -8,17 +9,23 @@ import (
 	"dumper/internal/command/database/postgres"
 	"dumper/internal/command/database/redis"
 	"dumper/internal/command/database/sqlite"
+	"dumper/internal/docker"
 	commandDomain "dumper/internal/domain/command"
 	commandConfig "dumper/internal/domain/command-config"
 	"fmt"
 )
 
 type Settings struct {
+	ctx    context.Context
 	Config *commandConfig.Config
 }
 
-func NewApp(config *commandConfig.Config) *Settings {
+func NewApp(
+	ctx context.Context,
+	config *commandConfig.Config,
+) *Settings {
 	return &Settings{
+		ctx:    ctx,
 		Config: config,
 	}
 }
@@ -54,6 +61,11 @@ func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if s.Config.Database.Docker.Enabled {
+		docker := docker.NewApp(s.ctx, cmdData, s.Config)
+		docker.Prepare()
 	}
 
 	return cmdData, nil

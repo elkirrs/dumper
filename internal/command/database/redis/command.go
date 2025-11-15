@@ -12,7 +12,7 @@ func (g RedisGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 	ext := "rdb"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
-	remotePath := fmt.Sprintf("./%s", fileName)
+	remotePath := fmt.Sprintf("%s", fileName)
 
 	host := "127.0.0.1"
 

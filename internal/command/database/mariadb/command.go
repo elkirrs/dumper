@@ -25,7 +25,7 @@ func (g MariaDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBComman
 	}
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
-	remotePath := fmt.Sprintf("./%s", fileName)
+	remotePath := fmt.Sprintf("%s", fileName)
 
 	if data.DumpLocation == "server" {
 		return &commandDomain.DBCommand{
