@@ -27,7 +27,7 @@ func NewApp(
 }
 
 func (s *Shell) RunScriptBefore() error {
-	if !s.config.Server.Shell.Enabled {
+	if !s.config.Server.Shell.Enabled || s.config.Server.Shell.Before == "" {
 		return nil
 	}
 
@@ -41,7 +41,7 @@ func (s *Shell) RunScriptBefore() error {
 }
 
 func (s *Shell) RunScriptAfter() error {
-	if !s.config.Server.Shell.Enabled {
+	if !s.config.Server.Shell.Enabled || s.config.Server.Shell.After == "" {
 		return nil
 	}
 
