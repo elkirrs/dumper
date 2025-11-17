@@ -9,6 +9,7 @@ type Server struct {
 	Name       string      `yaml:"name,omitempty"`
 	Port       string      `yaml:"port,omitempty"`
 	PrivateKey string      `yaml:"private_key,omitempty"`
+	Passphrase string      `yaml:"passphrase,omitempty"`
 	Password   string      `yaml:"password,omitempty"`
 	ConfigPath string      `yaml:"conf_path,omitempty"`
 	Shell      shell.Shell `yaml:"shell,omitempty"`
@@ -45,6 +46,28 @@ func (s Server) GetPrivateKey(pathKey string) string {
 		return s.PrivateKey
 	}
 	return pathKey
+}
+
+func (s Server) GetPassphrase(passphrase string) string {
+	if s.Passphrase != "" {
+		return s.Passphrase
+	}
+	return passphrase
+}
+
+func (s Server) GetIsPassphrase(isPassphrase bool) bool {
+	if s.Passphrase != "" {
+		return isPassphrase
+	}
+
+	return isPassphrase
+}
+
+func (s Server) GetPassword(password string) string {
+	if s.Password != "" {
+		return s.Password
+	}
+	return password
 }
 
 func (s Server) GetShell(globalShell *shell.Shell) *shell.Shell {

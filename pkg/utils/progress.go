@@ -33,17 +33,3 @@ func (p *GlobProgress) Print() {
 	percent := float64(done) / float64(p.total) * 100
 	fmt.Printf("\rDownloading... %.2f%% [%d/%d bytes]", percent, done, p.total)
 }
-
-//func (p *GlobProgress) Print() {
-//	consoleMu.Lock()
-//	defer consoleMu.Unlock()
-//
-//	done := atomic.LoadInt64(&p.completed)
-//	percent := float64(done) / float64(p.total) * 100
-//
-//	fmt.Printf("\r\033[KDownloading... %.2f%% [%d/%d bytes]", percent, done, p.total)
-//
-//	if done >= p.total {
-//		fmt.Printf("\n")
-//	}
-//}

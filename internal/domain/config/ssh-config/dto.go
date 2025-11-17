@@ -4,4 +4,5 @@ type SSHConfig struct {
 	PrivateKey   string `yaml:"private_key"`
 	Passphrase   string `yaml:"passphrase"`
 	IsPassphrase *bool  `yaml:"is_passphrase" validate:"required"`
+	Password     string `yaml:"password"`
 }

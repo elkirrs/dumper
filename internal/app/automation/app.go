@@ -3,10 +3,12 @@ package automation
 import (
 	"context"
 	"dumper/internal/backup"
+	"dumper/internal/connect"
 	connecterror "dumper/internal/connect/connect-error"
 	"dumper/internal/domain/app"
 	cfg "dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
+	connectDomain "dumper/internal/domain/connect"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
 	"errors"
@@ -84,7 +86,17 @@ func (a *Automation) Run() error {
 					errCh <- fmt.Errorf("backup cancelled for database %s", dbConn.Database.Name)
 					return
 				default:
-					backupApp := backup.NewApp(a.ctx, a.cfg, dbConn)
+					connectDto := &connectDomain.Connect{
+						Server:       dbConn.Server.Host,
+						Port:         dbConn.Server.GetPort(a.cfg.Settings.SrvPost),
+						Username:     dbConn.Server.User,
+						Password:     dbConn.Server.GetPassword(a.cfg.Settings.SSH.Password),
+						PrivateKey:   dbConn.Server.GetPrivateKey(a.cfg.Settings.SSH.PrivateKey),
+						Passphrase:   dbConn.Server.GetPassphrase(a.cfg.Settings.SSH.Passphrase),
+						IsPassphrase: dbConn.Server.GetIsPassphrase(*a.cfg.Settings.SSH.IsPassphrase),
+					}
+					connectApp := connect.NewApp(a.ctx, connectDto)
+					backupApp := backup.NewApp(a.ctx, a.cfg, dbConn, connectApp)
 
 					err := utils.WithRetry(
 						a.ctx, a.cfg.Settings.RetryConnect,

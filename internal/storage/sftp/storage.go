@@ -3,6 +3,7 @@ package sftp
 import (
 	"context"
 	"dumper/internal/connect"
+	connectDomain "dumper/internal/domain/connect"
 	"dumper/internal/domain/storage"
 	"dumper/pkg/utils"
 	"fmt"
@@ -29,15 +30,18 @@ func NewApp(
 }
 
 func (s *SFTP) Save() error {
-	tClient := connect.New(
-		s.config.Config.Host,
-		s.config.Config.Username,
-		s.config.Config.Port,
-		s.config.Config.PrivateKey,
-		s.config.Config.Passphrase,
-		s.config.Config.Password,
-		true,
-	)
+	connectDto := &connectDomain.Connect{
+		Server:       s.config.Config.Host,
+		Port:         s.config.Config.Port,
+		Username:     s.config.Config.Username,
+		Password:     s.config.Config.Password,
+		PrivateKey:   s.config.Config.PrivateKey,
+		Passphrase:   s.config.Config.Passphrase,
+		IsPassphrase: true,
+	}
+
+	tClient := connect.NewApp(s.ctx, connectDto)
+
 	if err := tClient.Connect(); err != nil {
 		return fmt.Errorf("failed to connect target SFTP: %w", err)
 	}
