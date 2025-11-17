@@ -8,6 +8,7 @@ import (
 	appDomain "dumper/internal/domain/app"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -106,12 +107,20 @@ func main() {
 	logging.L(ctx).Info("Starting application...")
 
 	if err := a.MustRun(); err != nil {
-		logging.L(ctx).Error("Failed to run app", logging.ErrAttr(err))
-		fmt.Printf("\napplication run error : %v \n", err)
-		os.Exit(1)
+		switch {
+		case errors.Is(err, context.Canceled):
+			fmt.Println("Closed dumper...")
+			logging.L(ctx).Error("Closed dumper", logging.ErrAttr(err))
+			os.Exit(0)
+		default:
+			fmt.Printf("\napplication run error : %v \n", err)
+			logging.L(ctx).Error("Failed to run app", logging.ErrAttr(err))
+			os.Exit(1)
+		}
 	}
 
-	logging.L(ctx).Info("Finished dumper...")
+	fmt.Println("Finished dumper...")
+	logging.L(ctx).Info("Finished dumper")
 	os.Exit(0)
 }
 

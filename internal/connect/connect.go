@@ -2,6 +2,9 @@ package connect
 
 import (
 	"bytes"
+	"context"
+	connectDomain "dumper/internal/domain/connect"
+	"dumper/pkg/logging"
 	"dumper/pkg/utils"
 	"fmt"
 	"os"
@@ -13,57 +16,43 @@ import (
 )
 
 type Connect struct {
-	Server       string
-	Username     string
-	Port         string
-	PrivateKey   string
-	Passphrase   string
-	IsPassphrase bool
-	Password     string
-	client       *ssh.Client
+	ctx     context.Context
+	connect *connectDomain.Connect
+	client  *ssh.Client
 }
 
-func New(
-	server,
-	username,
-	port,
-	PrivateKey,
-	passphrase,
-	password string,
-	isPassphrase bool,
+func NewApp(
+	ctx context.Context,
+	connect *connectDomain.Connect,
 ) *Connect {
 	return &Connect{
-		Server:       server,
-		Username:     username,
-		Port:         port,
-		PrivateKey:   PrivateKey,
-		Passphrase:   passphrase,
-		IsPassphrase: isPassphrase,
-		Password:     password,
+		ctx:     ctx,
+		connect: connect,
 	}
 }
 
 func (c *Connect) buildSSHConfig() (*ssh.ClientConfig, error) {
 	var authMethods []ssh.AuthMethod
 
-	if c.PrivateKey != "" {
-		key, err := os.ReadFile(c.PrivateKey)
+	if c.connect.PrivateKey != "" {
+		key, err := os.ReadFile(c.connect.PrivateKey)
 		if err != nil {
 			return nil, fmt.Errorf("error couldn't read SSH key: %v", err)
 		}
 
-		if c.IsPassphrase && c.Passphrase == "" {
-			fmt.Println("Enter the passphrase :")
+		if c.connect.IsPassphrase && c.connect.Passphrase == "" {
+			fmt.Printf("Enter the passphrase : ")
 			passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+			fmt.Printf("\r")
 			if err != nil {
 				return nil, fmt.Errorf("input error: %v", err)
 			}
-			c.Passphrase = strings.TrimSpace(string(passphrase))
+			c.connect.Passphrase = strings.TrimSpace(string(passphrase))
 		}
 
 		var signer ssh.Signer
-		if c.Passphrase != "" {
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(c.Passphrase))
+		if c.connect.Passphrase != "" {
+			signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(c.connect.Passphrase))
 		} else {
 			signer, err = ssh.ParsePrivateKey(key)
 		}
@@ -73,8 +62,8 @@ func (c *Connect) buildSSHConfig() (*ssh.ClientConfig, error) {
 		}
 
 		authMethods = append(authMethods, ssh.PublicKeys(signer))
-	} else if c.Password != "" {
-		authMethods = append(authMethods, ssh.Password(c.Password))
+	} else if c.connect.Password != "" {
+		authMethods = append(authMethods, ssh.Password(c.connect.Password))
 	}
 
 	if len(authMethods) == 0 {
@@ -82,7 +71,7 @@ func (c *Connect) buildSSHConfig() (*ssh.ClientConfig, error) {
 	}
 
 	return &ssh.ClientConfig{
-		User:            c.Username,
+		User:            c.connect.Username,
 		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         10 * time.Second,
@@ -95,7 +84,13 @@ func (c *Connect) Connect() error {
 		return err
 	}
 
-	client, err := ssh.Dial("tcp", c.Server+":"+c.Port, config)
+	fmt.Printf("Trying to connect to server %s...\n", c.connect.Server)
+	logging.L(c.ctx).Info(
+		"Trying to test connection to server",
+		logging.StringAttr("server", c.connect.Server),
+	)
+
+	client, err := ssh.Dial("tcp", c.connect.Server+":"+c.connect.Port, config)
 	if err != nil {
 		return fmt.Errorf("error couldn't connect via SSH: %v", err)
 	}

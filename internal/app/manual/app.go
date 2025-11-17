@@ -11,6 +11,7 @@ import (
 	dbConnect "dumper/internal/domain/config/db-connect"
 	"dumper/internal/domain/config/server"
 	"dumper/internal/domain/config/storage"
+	connectDomain "dumper/internal/domain/connect"
 	_select "dumper/internal/select"
 	t "dumper/internal/temr"
 	"dumper/pkg/logging"
@@ -99,7 +100,19 @@ func (m *Manual) Run() error {
 
 	logging.L(m.ctx).Info("Selected database", logging.StringAttr("database", dbKey))
 
-	backupApp := backup.NewApp(m.ctx, m.cfg, dbConn)
+	connectDto := &connectDomain.Connect{
+		Server:       dbConn.Server.Host,
+		Username:     dbConn.Server.User,
+		Port:         dbConn.Server.GetPort(m.cfg.Settings.SrvPost),
+		Password:     dbConn.Server.Password,
+		PrivateKey:   dbConn.Server.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey),
+		Passphrase:   dbConn.Server.GetPassphrase(m.cfg.Settings.SSH.Passphrase),
+		IsPassphrase: dbConn.Server.GetIsPassphrase(*m.cfg.Settings.SSH.IsPassphrase),
+	}
+
+	connectApp := connect.NewApp(m.ctx, connectDto)
+
+	backupApp := backup.NewApp(m.ctx, m.cfg, dbConn, connectApp)
 
 	err = utils.WithRetry(
 		m.ctx, m.cfg.Settings.RetryConnect,
@@ -135,17 +148,18 @@ func (m *Manual) prepareRemoteDatabaseList(
 ) (map[string]dbConnect.DBConnect, error) {
 	logging.L(m.ctx).Info("Prepare connection")
 
-	conn := connect.New(
-		server.Host,
-		server.User,
-		server.GetPort(m.cfg.Settings.SrvPost),
-		server.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey),
-		m.cfg.Settings.SSH.Passphrase,
-		server.Password,
-		*m.cfg.Settings.SSH.IsPassphrase,
-	)
+	connectDto := &connectDomain.Connect{
+		Server:       server.Host,
+		Username:     server.User,
+		Port:         server.GetPort(m.cfg.Settings.SrvPost),
+		Password:     server.GetPassword(m.cfg.Settings.SSH.Password),
+		PrivateKey:   server.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey),
+		Passphrase:   server.GetPassphrase(m.cfg.Settings.SSH.Passphrase),
+		IsPassphrase: server.GetIsPassphrase(*m.cfg.Settings.SSH.IsPassphrase),
+	}
 
-	fmt.Printf("Trying to connect to server %s...\n", server.Host)
+	conn := connect.NewApp(m.ctx, connectDto)
+
 	if err := utils.RunWithCtx(m.ctx, conn.Connect); err != nil {
 		logging.L(m.ctx).Error(
 			"Error connecting to server",
@@ -159,13 +173,10 @@ func (m *Manual) prepareRemoteDatabaseList(
 		_ = conn.Close()
 	}(conn)
 
-	logging.L(m.ctx).Info("Trying to test connection to server")
-	if err := utils.RunWithCtx(m.ctx, conn.TestConnection); err != nil {
-		logging.L(m.ctx).Error("Error testing connection to server")
-		return nil, &connecterror.ConnectError{Addr: server.Host, Err: err}
-	}
-
-	logging.L(m.ctx).Info("The connection is established")
+	logging.L(m.ctx).Info(
+		"The connection is established",
+		logging.StringAttr("server", server.Host),
+	)
 
 	var rmt Remote
 	rmt = remote.New(m.ctx, conn, server.ConfigPath)

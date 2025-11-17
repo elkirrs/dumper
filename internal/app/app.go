@@ -14,7 +14,6 @@ import (
 	"dumper/internal/domain/app"
 	cfg "dumper/internal/domain/config"
 	"dumper/pkg/logging"
-	"fmt"
 	"strings"
 )
 
@@ -34,8 +33,8 @@ func NewApp(ctx context.Context, cfg *cfg.Config, flags *app.Flags) *App {
 
 func (a *App) MustRun() error {
 	if err := a.Run(); err != nil {
-		logging.L(a.ctx).Error("App failed to run")
-		return fmt.Errorf("%v", err)
+		logging.L(a.ctx).Error("App failed to run", logging.ErrAttr(err))
+		return err
 	}
 	return nil
 }

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented here.
 
+## [1.9.1] - 
+- Fix view message shell script if script is empty
+- Fix re-entry of passphrase when reconnect 
+
 ## [1.9.0] - 2025-11-16
 - Add support docker
 - Fix issue create dump file in only main dir

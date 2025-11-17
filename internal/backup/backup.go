@@ -30,11 +30,13 @@ func NewApp(
 	ctx context.Context,
 	cfg *config.Config,
 	dbConnect dbConnect.DBConnect,
+	conn *connect.Connect,
 ) *Backup {
 	return &Backup{
 		ctx:       ctx,
 		cfg:       cfg,
 		dbConnect: dbConnect,
+		conn:      conn,
 	}
 }
 
@@ -57,19 +59,7 @@ func (b *Backup) Run() error {
 
 	logging.L(b.ctx).Info("Prepare connection")
 
-	conn := connect.New(
-		b.dbConnect.Server.Host,
-		b.dbConnect.Server.User,
-		b.dbConnect.Server.GetPort(b.cfg.Settings.SrvPost),
-		b.cfg.Settings.SSH.PrivateKey,
-		b.cfg.Settings.SSH.Passphrase,
-		b.dbConnect.Server.Password,
-		*b.cfg.Settings.SSH.IsPassphrase,
-	)
-	b.conn = conn
-
-	fmt.Printf("Trying to connect to server %s...\n", b.dbConnect.Server.Host)
-	if err := utils.RunWithCtx(b.ctx, conn.Connect); err != nil {
+	if err := utils.RunWithCtx(b.ctx, b.conn.Connect); err != nil {
 		logging.L(b.ctx).Error(
 			"Error connecting to server",
 			logging.StringAttr("server", b.dbConnect.Server.Host),
@@ -81,21 +71,9 @@ func (b *Backup) Run() error {
 		}
 	}
 
-	defer func(conn *connect.Connect) {
-		_ = conn.Close()
-	}(conn)
-
-	logging.L(b.ctx).Info("Trying to test connection to server")
-	if err := utils.RunWithCtx(b.ctx, conn.TestConnection); err != nil {
-		logging.L(b.ctx).Error("Error testing connection to server")
-		return &connecterror.ConnectError{
-			Addr: b.dbConnect.Server.Host,
-			Err:  err,
-		}
-	}
 	logging.L(b.ctx).Info("The connection is established")
 
-	shellApp := shell.NewApp(b.ctx, b.cmdConfig, conn)
+	shellApp := shell.NewApp(b.ctx, b.cmdConfig, b.conn)
 	if err := utils.RunWithCtx(b.ctx, shellApp.RunScriptBefore); err != nil {
 		logging.L(b.ctx).Error("Error run shell script before start backup")
 		return err
