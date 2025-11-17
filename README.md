@@ -1,4 +1,4 @@
-# 📦 Dumper
+# Dumper
 
 **Dumper** — This is a CLI utility for creating backups databases of various types (PostgreSQL, MySQL and etc.) with
 flexible connection and storage settings.
@@ -7,7 +7,7 @@ flexible connection and storage settings.
 
 ![Demo](assets/dumper.gif)
 
-## 🚀 Opportunities
+## Opportunities
 
 - Multiple database systems can be managed.
 - Support **PostgreSQL**, **MySQL**, **MongoDB** and etc.
@@ -24,7 +24,7 @@ flexible connection and storage settings.
 
 ---
 
-## 📄 Configuration
+## Configuration
 
 The configuration is set in a YAML file. (example, `config.yaml`).
 
@@ -168,11 +168,9 @@ The file example you can find in repository
 
 ---
 
-### 📑 Configuration Description
+## Configuration Description
 
-#### The configuration consists of three sections:
-
-#### 🔧 1. settings — global settings
+### Settings (global settings)
 
 Apply to all servers and databases, unless redefined locally.
 
@@ -242,7 +240,7 @@ Apply to all servers and databases, unless redefined locally.
     - `ftp` - upload to ftp server
     - `sftp` - upload to sftp server
 
-#### 🖥 2. servers
+### Servers
 
 Defines the connections through which databases can be backed up.
 
@@ -262,7 +260,7 @@ Defines the connections through which databases can be backed up.
 
 The configuration file on the remote `servers` must contain the servers and `databases` section.
 
-#### 🗄 3. databases
+### Databases
 
 A list of databases that need to be backed up.
 
@@ -297,7 +295,7 @@ A list of databases that need to be backed up.
 
 ---
 
-#### 🔐 4. decrypt database file
+### Decrypt database file
 
 If the file need to encrypt your database backup,
 you can use encryption (the encryption utility must be
@@ -359,7 +357,7 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in dump.sql.gz.enc -out dump.s
 ./dumper --crypt backup --mode encrypt --input ./dump.sql.gz
 ```
 
-#### 🔐 5. encrypt and decrypt file config
+### Encrypt and decrypt file config
 
 `
 Encrypting a configuration file with one version will not be decrypted by another version of the application.
@@ -385,7 +383,7 @@ How it works:
     ./dumper --crypt config --mode recovery --token <recovery_token> --input config.yaml
     ```
 
-#### 🗄️ 6. Storage
+### Storage
 
 Configuration:
 
@@ -470,7 +468,7 @@ databases:
       - sftp 
 ```
 
-#### 7. 🐳 Docker
+### Docker
 
 Configuration:
 
@@ -519,7 +517,7 @@ databases:
 
 *This docker configuration can be used in both locations. Priority in the database parameters*
 
-#### 7. ❯ Shell
+### Shell
 
 Configuration:
 
@@ -574,7 +572,7 @@ databases:
 
 *This shell configuration can be used in both locations. Priority in the server parameters*
 
-### ▶ Launch examples
+### Launch examples
 
 #### Backup with a choice of database from config file
 
@@ -598,17 +596,6 @@ databases:
 
 ---
 
-### 📂 Project structure
-
-```
-├── dumps/       # Directory for new dumps
-├── archived/    # Archive of old dumps
-├── config.yaml  # Configuration file
-├── dumper       # The executable file of the utility
-└── dumper.log   # Log file
-
-```
-
 ### Checking the receipt by the user:
 
 - Mac/Linux:
@@ -624,7 +611,7 @@ databases:
     Get-FileHash .\dumper_windows_amd64.zip -Algorithm SHA256
 ```
 
-## 💖 Support the Project
+## Support the Project
 
 ### If you like this project, you can support development:
 
@@ -632,4 +619,4 @@ databases:
 - #### BTC [bc1qqrrtkymdck9q4h764hejjyenyfnyrpt4pgxd6h](bc1qqrrtkymdck9q4h764hejjyenyfnyrpt4pgxd6h)
 - #### ETH [0xfe25171F3763E789d50279c2d4e16d2bAf14F701](0xfe25171F3763E789d50279c2d4e16d2bAf14F701)
 
-## 🙏 Thank you for your support!
+## Thank you for your support!
