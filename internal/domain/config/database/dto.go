@@ -8,87 +8,73 @@ import (
 )
 
 type Database struct {
-	Title      string          `yaml:"title,omitempty"`
-	User       string          `yaml:"user"`
-	Password   string          `yaml:"password"`
-	Name       string          `yaml:"name,omitempty"`
-	Server     string          `yaml:"server" validate:"required"`
-	Key        string          `yaml:"key"`
-	Port       string          `yaml:"port,omitempty"`
-	Driver     string          `yaml:"driver"`
-	Format     string          `yaml:"format" validate:"required"`
-	Options    option.Options  `yaml:"options"`
-	RemoveDump *bool           `yaml:"remove_dump"`
-	Encrypt    encrypt.Encrypt `yaml:"encrypt"`
-	Storages   []string        `yaml:"storages"`
-	Archive    *bool           `yaml:"archive"`
-	Docker     *docker.Docker  `yaml:"docker"`
-	Shell      *shell.Shell    `yaml:"shell"`
+	Title      string           `yaml:"title,omitempty"`
+	User       string           `yaml:"user"`
+	Password   string           `yaml:"password"`
+	Name       string           `yaml:"name,omitempty"`
+	Server     string           `yaml:"server" validate:"required"`
+	Key        string           `yaml:"key"`
+	Port       string           `yaml:"port,omitempty"`
+	Driver     string           `yaml:"driver"`
+	Format     string           `yaml:"format" validate:"required"`
+	Options    *option.Options  `yaml:"options"`
+	RemoveDump *bool            `yaml:"remove_dump"`
+	Encrypt    *encrypt.Encrypt `yaml:"encrypt"`
+	Storages   []string         `yaml:"storages"`
+	Archive    *bool            `yaml:"archive"`
+	Docker     *docker.Docker   `yaml:"docker"`
+	Shell      *shell.Shell     `yaml:"shell"`
 }
 
-func (d Database) GetName() string {
+func (d *Database) GetName() string {
 	if d.Name != "" {
 		return d.Name
 	}
 	return d.User
 }
 
-func (d Database) GetPort(port string) string {
+func (d *Database) GetPort(port string) string {
 	if d.Port != "" {
 		return d.Port
 	}
 	return port
 }
 
-func (d Database) GetDriver(driver string) string {
+func (d *Database) GetDriver(driver string) string {
 	if d.Driver != "" {
 		return d.Driver
 	}
 	return driver
 }
-func (d Database) GetAuthSource() string {
-	if d.Options.AuthSource != "" {
-		return d.Options.AuthSource
-	}
-	return d.GetName()
-}
 
-func (d Database) GetRemoveDump(removeDump bool) bool {
+func (d *Database) GetRemoveDump(removeDump bool) bool {
 	if d.RemoveDump != nil {
 		return *d.RemoveDump
 	}
 	return removeDump
 }
 
-func (d Database) GetDisplayName(key string) string {
-	if d.Name != "" {
-		return d.Name
-	}
-	return key
-}
-
-func (d Database) GetFormat(format string) string {
+func (d *Database) GetFormat(format string) string {
 	if d.Format != "" {
 		return d.Format
 	}
 	return format
 }
 
-func (d Database) GetEncryptType(crypt string) string {
-	if d.Encrypt.Type != "" {
-		return d.Encrypt.Type
+func (d *Database) GetEncrypt(e *encrypt.Encrypt) encrypt.Encrypt {
+
+	if d.Encrypt == nil {
+		return *e
 	}
-	return crypt
+
+	if *d.Encrypt.Enabled && d.Encrypt.Password == "" && d.Encrypt.Type == "" {
+		return *e
+	}
+
+	return *d.Encrypt
 }
 
-func (d Database) GetEncryptPass(pass string) string {
-	if d.Encrypt.Password != "" {
-		return d.Encrypt.Password
-	}
-	return pass
-}
-
-func (d Database) GetTitle() string {
+func (d *Database) GetTitle() string {
 	if d.Title != "" {
 		return d.Title
 	}
@@ -100,16 +86,40 @@ func (d Database) GetTitle() string {
 	return d.User
 }
 
-func (d Database) IsArchive(isGlobalArchive bool) bool {
+func (d *Database) IsArchive(isGlobalArchive bool) bool {
 	if d.Archive != nil {
 		return *d.Archive
 	}
 	return isGlobalArchive
 }
 
-func (d Database) GetDocker(globalDocker *docker.Docker) *docker.Docker {
+func (d *Database) GetDocker(globalDocker *docker.Docker) docker.Docker {
 	if d.Docker != nil {
-		return d.Docker
+		return *d.Docker
 	}
-	return globalDocker
+	return *globalDocker
+}
+
+func (d *Database) GetOptions() option.Options {
+	if d.Options != nil {
+		return *d.Options
+	}
+	return option.Options{}
+}
+
+func (d *Database) GetShell(serverShell *shell.Shell) shell.Shell {
+	if d.Shell == nil && serverShell == nil {
+		val := false
+		return shell.Shell{Enabled: &val}
+	}
+
+	if d.Shell == nil && serverShell != nil {
+		return *serverShell
+	}
+
+	if *d.Shell.Enabled && d.Shell.Before == "" && d.Shell.After == "" {
+		return *serverShell
+	}
+
+	return *d.Shell
 }

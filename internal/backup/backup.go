@@ -11,7 +11,6 @@ import (
 	commandConfig "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
-	encryptConfigDomain "dumper/internal/domain/config/encrypt"
 	"dumper/internal/shell"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
@@ -150,6 +149,7 @@ func (b *Backup) prepareBackupConfig() {
 	}
 	nameFile := utils.GetTemplateFileName(dataFormat)
 	fullPath := utils.GetFullPath(b.cfg.Settings.DirRemote, nameFile)
+	shellScript := b.dbConnect.Server.GetShell(b.cfg.Settings.Shell)
 
 	b.cmdConfig = &commandConfig.Config{
 		Database: commandConfig.Database{
@@ -159,26 +159,23 @@ func (b *Backup) prepareBackupConfig() {
 			Port:     b.dbConnect.Database.GetPort(b.cfg.Settings.DBPort),
 			Format:   b.dbConnect.Database.GetFormat(b.cfg.Settings.DumpFormat),
 			Driver:   b.dbConnect.Database.GetDriver(b.cfg.Settings.Driver),
-			Options:  b.dbConnect.Database.Options,
-			Docker:   b.dbConnect.Database.GetDocker(&b.cfg.Settings.Docker),
+			Options:  b.dbConnect.Database.GetOptions(),
+			Docker:   b.dbConnect.Database.GetDocker(b.cfg.Settings.Docker),
 		},
 		Server: commandConfig.Server{
-			Host:  b.dbConnect.Server.Host,
-			Port:  b.dbConnect.Server.Port,
-			Key:   b.dbConnect.Server.GetPrivateKey(b.cfg.Settings.SSH.PrivateKey),
-			Shell: b.dbConnect.Server.GetShell(&b.cfg.Settings.Shell),
+			Host: b.dbConnect.Server.Host,
+			Port: b.dbConnect.Server.Port,
+			Key:  b.dbConnect.Server.GetPrivateKey(b.cfg.Settings.SSH.PrivateKey),
 		},
-		Storages:      b.dbConnect.Storages,
-		DumpLocation:  b.cfg.Settings.DumpLocation,
-		Archive:       b.dbConnect.Database.IsArchive(*b.cfg.Settings.Archive),
-		DumpDirLocal:  b.cfg.Settings.DirDump,
-		DumpName:      fullPath,
-		DumpDirRemote: b.cfg.Settings.DirRemote,
-		RemoveBackup:  *b.cfg.Settings.RemoveDump,
-		Encrypt: encryptConfigDomain.Encrypt{
-			Type:     b.dbConnect.Database.GetEncryptType(b.cfg.Settings.Encrypt.Type),
-			Password: b.dbConnect.Database.GetEncryptPass(b.cfg.Settings.Encrypt.Password),
-		},
+		Storages:            b.dbConnect.Storages,
+		DumpLocation:        b.cfg.Settings.DumpLocation,
+		Archive:             b.dbConnect.Database.IsArchive(*b.cfg.Settings.Archive),
+		DumpDirLocal:        b.cfg.Settings.DirDump,
+		DumpName:            fullPath,
+		DumpDirRemote:       b.cfg.Settings.DirRemote,
+		RemoveBackup:        *b.cfg.Settings.RemoveDump,
+		Encrypt:             b.dbConnect.Database.GetEncrypt(b.cfg.Settings.Encrypt),
 		MaxParallelDownload: b.cfg.Settings.MaxParallelDownload,
+		Shell:               b.dbConnect.Database.GetShell(&shellScript),
 	}
 }

@@ -1,8 +1,6 @@
 settings:
   # Global port for all databases
   db_port: '5432'
-  # Global key for connecting to the server
-  server_key: 'path_key'
   # Global port for connecting to the server
   server_port: '22'
   # Global Database Selection Driver (psql | mysql | mongo | mssql | redis | mariadb)
@@ -12,6 +10,7 @@ settings:
     private_key: '/User/.ssh/id_rsa'
     passphrase: '123456'
     is_passphrase: true
+    password: '123456'
   # Dir remote dump
   dir_remote: '/root/dump/'
   # Dump name template
@@ -32,17 +31,19 @@ settings:
   parallel_download: 1
   storages:
     - local
-#  encrypt:
-#    type: 'aes'
-#    password: '123456'
-#  docker:
-#    enabled: false
-#    command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
+  encrypt:
+    enabled: false
+    type: 'aes'
+    password: '123456'
+  docker:
+    enabled: false
+    command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
   shell:
+    enabled: false
     before: |
-      echo "run script before create dump create dump"
+      echo "run script before create dump create dump (global)"
     after: |
-      echo "run script after created dump created dump"
+      echo "run script after created dump created dump (global)"
 
 storages:
   local:
@@ -78,6 +79,12 @@ servers:
     host: '172.16.204.99'
     user: 'root'
     port: 22
+    shell:
+      enabled: true
+      before: |
+        echo "run script before create dump create dump (server)"
+      after: |
+        echo "run script after created dump created dump (server)"
 
   srv-mysql:
     title: 'Server MySQL'
@@ -85,6 +92,9 @@ servers:
     host: '203.0.113.77'
     user: 'root'
     port: 22
+    private_key: '/User/.ssh/id_rsa'
+    passphrase: '123456'
+    is_passphrase: true
 
   srv-mongo:
     title: 'Server Mongo DB'
@@ -92,6 +102,13 @@ servers:
     host: '54.217.33.10'
     user: 'root'
     port: 22
+    password: '123456'
+    shell:
+      enabled: true
+      before: |
+        echo "run script before create dump create dump (server)"
+      after: |
+        echo "run script after created dump created dump (server)"
 
   srv-redis:
     title: 'Server Redis'
@@ -99,6 +116,8 @@ servers:
     host: '172.31.88.200'
     user: 'root'
     port: 22
+    shell:
+      enabled: false
 
   srv-sqlite:
     title: 'Server SQLite3'
@@ -126,6 +145,7 @@ databases:
     server: 'srv-psql'
     format: 'plain'
     encrypt:
+      enabled: true
       type: 'aes'
       password: '123456'
     storages:
@@ -135,6 +155,7 @@ databases:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
     shell:
+      enabled: true
       before: |
         echo "run script before create dump create dump"
       after: |
@@ -167,9 +188,11 @@ databases:
     server: 'srv-psql'
     format: 'tar'
     encrypt:
+      enabled: true
       type: 'aes'
       password: '123456'
     shell:
+      enabled: true
       before: |
         echo "run script before create dump create dump"
       after: |
@@ -205,6 +228,7 @@ databases:
     storages:
       - local
     encrypt:
+      enabled: true
       type: 'aes'
       password: '123456'
     docker:
@@ -239,6 +263,7 @@ databases:
       auth_source: 'admin'
       ssl: true
     encrypt:
+      enabled: true
       type: 'aes'
       password: '123456'
 
@@ -251,6 +276,8 @@ databases:
     driver: 'mongo'
     server: 'srv-mongo'
     format: 'bson'
+    encrypt:
+      enabled: false
   
   # Config Redis databases
   db-redis:
@@ -302,6 +329,12 @@ databases:
     driver: 'mssql'
     server: 'srv-mssql'
     format: 'bac'
+    encrypt:
+      enabled: false
+    docker:
+      enabled: false
+    shell:
+      enabled: false
 
   db-mssql-bacpac:
     title: 'My DB MSSQL #2'
