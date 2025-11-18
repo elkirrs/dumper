@@ -17,14 +17,13 @@ type Database struct {
 	Driver   string
 	Options  option.Options
 	Archive  bool
-	Docker   *docker.Docker
+	Docker   docker.Docker
 }
 
 type Server struct {
-	Host  string
-	Port  string
-	Key   string
-	Shell *shell.Shell
+	Host string
+	Port string
+	Key  string
 }
 
 type Config struct {
@@ -40,4 +39,5 @@ type Config struct {
 	DumpDirLocal        string
 	Encrypt             encrypt.Encrypt
 	MaxParallelDownload int
+	Shell               shell.Shell
 }

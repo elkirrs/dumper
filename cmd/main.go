@@ -73,7 +73,9 @@ func main() {
 
 	if flags.Crypt != "" {
 		cryptApp := crypt.NewApp(ctx, &flags)
-		if err := utils.RunWithCtx(ctx, func() error { cryptApp.Run(); return nil }); err != nil {
+		if err := utils.RunWithCtx(ctx, func() error {
+			return cryptApp.Run()
+		}); err != nil {
 			fmt.Printf("Crypt error: %v\n", err)
 			os.Exit(1)
 		}
@@ -109,7 +111,7 @@ func main() {
 	if err := a.MustRun(); err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
-			fmt.Println("Closed dumper...")
+			fmt.Printf("\rClosed dumper...\n")
 			logging.L(ctx).Error("Closed dumper", logging.ErrAttr(err))
 			os.Exit(0)
 		default:

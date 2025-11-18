@@ -21,6 +21,7 @@ func buildConfig(driver string, format ...string) *cmdCfg.Config {
 		dbFormat = format[0]
 	}
 
+	val := false
 	return &cmdCfg.Config{
 		Database: cmdCfg.Database{
 			Driver:   driver,
@@ -29,7 +30,7 @@ func buildConfig(driver string, format ...string) *cmdCfg.Config {
 			Password: "pass",
 			Name:     "db",
 			Port:     "1234",
-			Docker:   &dockerDomain.Docker{Enabled: false},
+			Docker:   dockerDomain.Docker{Enabled: &val},
 			Options: option.Options{
 				SSL:  &ssl,
 				Path: "db.sqlite",

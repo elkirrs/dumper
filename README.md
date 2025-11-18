@@ -51,13 +51,19 @@ settings:
   parallel_download: 1
   storages:
     - local
+  encrypt:
+    enabled: false
+    type: "aes"
+    password: "123456"
   docker:
+    enabled: true
     command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
   shell:
+    enabled: true
     before: |
-      echo "run script before create dump create dump"
+      echo "run script before create dump create dump (settings)"
     after: |
-      echo "run script after created dump created dump"
+      echo "run script after created dump created dump (settings)"
 
 storages:
   local:
@@ -86,18 +92,19 @@ servers:
     user: "user"
     password: "password"
     shell:
+      enabled: true
       before: |
-        echo "run script before create dump create dump"
+        echo "run script before create dump create dump (server)"
       after: |
-        echo "run script after created dump created dump"
-        
+        echo "run script after created dump created dump (server)"
+
   second-server:
     name: "mongo"
     host: "172.0.18.54"
     user: "root"
-    shell: 
+    shell:
       enabled: false
-      
+
   remote-config-server:
     name: "mongo"
     host: "43.4.58.64"
@@ -128,6 +135,12 @@ databases:
     remove_dump: false
     docker:
       enabled: false
+    shell:
+      enabled: true
+      before: |
+        echo "run script before create dump create dump (database)"
+      after: |
+        echo "run script after created dump created dump (database)"
 
   mongo:
     name: "mongo_db_name"
@@ -191,6 +204,7 @@ Apply to all servers and databases, unless redefined locally.
 | `logging`           | Create logging                                        | bool   | option   |
 | `retry_connect`     | attempts reconnect to server (default 5)              | int    | option   |
 | `remove_dump`       | remove dump file after created (default true)         | bool   | option   |
+| `encrypt.enabled`   | Enabled encrypt                                       | bool   | option   |
 | `encrypt.type`      | Type encrypting (only aes)                            | string | option   |
 | `encrypt.password`  | Password for encrypting (only aes)                    | string | option   |
 | `storages`          | Storage list when the dump need to upload             | list   | required |
@@ -281,7 +295,10 @@ A list of databases that need to be backed up.
 | `encrypt.password` | Password for encrypting (only aes)                | string | option   |                                                  |
 | `storages`         | Storage list when the dump need to upload         | list   | required |                                                  |
 | `docker.enabled`   | Enabled create dump from docker container         | bool   | option   |                                                  |
-| `docker.command`   | Docker command for connect to container           | string | option   |                                                  | |
+| `docker.command`   | Docker command for connect to container           | string | option   |                                                  |
+| `shell.enabled`    | Enabled run shell script                          | bool   | option   |                                                  |
+| `shell.before`     | Run hell script in server before create dump      | string | option   |                                                  |
+| `shell.after`      | Run hell script in server after created dump      | string | option   |                                                  |
 
 #### Options
 
@@ -307,6 +324,7 @@ In global  (encrypt for all databases)
 ```yaml
 settings:
   encrypt:
+    enabled: true
     type: "aes"
     password: "123456"
 
@@ -333,6 +351,7 @@ databases:
     server: 'srv-psql'
     format: 'plan'
     encrypt:
+      enabled: true
       type: "aes"
       password: "123456"
 ```
@@ -528,14 +547,36 @@ settings:
   shell:
     enabled: true #(option default value true)
     before: |
-      echo "run script before create dump create dump"
+      echo "run script before create dump create dump (settings)"
     after: |
-      echo "run script after created dump created dump"cker compose --file /var/www/docker-compose.yaml exec -T postgres"
+      echo "run script after created dump created dump (settings)"
 
 storages:
 # several storages
 servers:
 # several servers
+databases:
+# several databases
+```
+Or only for a all database in server
+
+```yaml
+settings:
+# several settings
+servers:
+  srv-psql:
+    title: "Server Postgres"
+    name: "psql"
+    host: "192.168.139.21"
+    user: "root"
+    port: 22
+    shell:
+      enabled: true
+      before: |
+        echo "run script before create dump create dump (server)"
+      after: |
+        echo "run script after created dump created dump (server)"
+        
 databases:
 # several databases
 ```
@@ -564,13 +605,13 @@ databases:
     shell:
       enabled: true #(option default value true)
       before: |
-        echo "run script before create dump create dump"
+        echo "run script before create dump create dump (database)"
       after: |
-        echo "run script after created dump created dump"cker compose --file /var/www/docker-compose.yaml exec -T postgres"
+        echo "run script after created dump created dump (database)"
 
 ```
 
-*This shell configuration can be used in both locations. Priority in the server parameters*
+*This shell configuration can be used in both locations. Priority in the settings -> server -> database parameters*
 
 ### Launch examples
 

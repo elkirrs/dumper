@@ -126,7 +126,7 @@ func (b *BackupServer) Run() error {
 		IsRemove: isRemoveDump,
 	})
 
-	if b.config.Encrypt.Type != "" {
+	if b.config.Encrypt.Type != "" && b.config.Encrypt.Password != "" && *b.config.Encrypt.Enabled {
 		encOpts := encryptDomain.Options{
 			FilePath: b.config.DumpName,
 			Password: b.config.Encrypt.Password,

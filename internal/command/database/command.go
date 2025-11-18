@@ -63,9 +63,9 @@ func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
 		return nil, err
 	}
 
-	if s.Config.Database.Docker.Enabled {
-		docker := docker.NewApp(s.ctx, cmdData, s.Config)
-		docker.Prepare()
+	if *s.Config.Database.Docker.Enabled {
+		dockerApp := docker.NewApp(s.ctx, cmdData, s.Config)
+		dockerApp.Prepare()
 	}
 
 	return cmdData, nil

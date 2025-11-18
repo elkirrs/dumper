@@ -27,28 +27,28 @@ func NewApp(
 }
 
 func (s *Shell) RunScriptBefore() error {
-	if !s.config.Server.Shell.Enabled || s.config.Server.Shell.Before == "" {
+	if !*s.config.Shell.Enabled || s.config.Shell.Before == "" {
 		return nil
 	}
 
 	fmt.Println("Run shell script before start backup")
-	if s.config.Server.Shell.Before != "" {
+	if s.config.Shell.Before != "" {
 		logging.L(s.ctx).Info("Run shell script before start backup")
-		return s.runScript("before", s.config.Server.Shell.Before)
+		return s.runScript("before", s.config.Shell.Before)
 	}
 
 	return nil
 }
 
 func (s *Shell) RunScriptAfter() error {
-	if !s.config.Server.Shell.Enabled || s.config.Server.Shell.After == "" {
+	if !*s.config.Shell.Enabled || s.config.Shell.After == "" {
 		return nil
 	}
 
 	fmt.Println("Run shell script after finished backup")
-	if s.config.Server.Shell.After != "" {
+	if s.config.Shell.After != "" {
 		logging.L(s.ctx).Info("Run shell script after finished backup")
-		return s.runScript("after", s.config.Server.Shell.Before)
+		return s.runScript("after", s.config.Shell.Before)
 	}
 	return nil
 }
