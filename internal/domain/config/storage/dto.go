@@ -2,24 +2,24 @@ package storage
 
 type Storage struct {
 	Type       string
-	Dir        string `json:"dir"`
-	Host       string `json:"host"`
-	Port       string `json:"port"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	PrivateKey string `json:"private_key"`
-	Passphrase string `json:"passphrase"`
+	Dir        string `yaml:"dir"`
+	Host       string `yaml:"host"`
+	Port       string `yaml:"port"`
+	Username   string `yaml:"username"`
+	Password   string `yaml:"password"`
+	PrivateKey string `yaml:"private_key"`
+	Passphrase string `yaml:"passphrase"`
 
-	//TenantID     string `json:"tenant_id"`
-	//ClientID     string `json:"client_id"`
-	//ClientSecret string `json:"client_secret"`
-	//Endpoint     string `json:"endpoint"`
-	//Container    string `json:"container"`
+	TenantID     string `yaml:"tenant_id"`
+	ClientID     string `yaml:"client_id"`
+	ClientSecret string `yaml:"client_secret"`
+	Endpoint     string `yaml:"endpoint"`
+	Container    string `yaml:"container"`
 
-	//Region    string `json:"region"`
-	//Bucket    string `json:"bucket"`
-	//AccessKey string `json:"access_key"`
-	//SecretKey string `json:"secret_key"`
+	//Region    string `yaml:"region"`
+	//Bucket    string `yaml:"bucket"`
+	//AccessKey string `yaml:"access_key"`
+	//SecretKey string `yaml:"secret_key"`
 }
 
 type ListStorages struct {
