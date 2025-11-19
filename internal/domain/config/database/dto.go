@@ -61,14 +61,21 @@ func (d *Database) GetFormat(format string) string {
 	return format
 }
 
-func (d *Database) GetEncrypt(e *encrypt.Encrypt) encrypt.Encrypt {
+func (d *Database) GetEncrypt(encryptGlobal *encrypt.Encrypt) encrypt.Encrypt {
 
-	if d.Encrypt == nil {
-		return *e
+	if d.Encrypt == nil && encryptGlobal == nil {
+		val := false
+		return encrypt.Encrypt{
+			Enabled: &val,
+		}
+	}
+
+	if d.Encrypt == nil && encryptGlobal != nil {
+		return *encryptGlobal
 	}
 
 	if *d.Encrypt.Enabled && d.Encrypt.Password == "" && d.Encrypt.Type == "" {
-		return *e
+		return *encryptGlobal
 	}
 
 	return *d.Encrypt
@@ -94,9 +101,21 @@ func (d *Database) IsArchive(isGlobalArchive bool) bool {
 }
 
 func (d *Database) GetDocker(globalDocker *docker.Docker) docker.Docker {
-	if d.Docker != nil {
-		return *d.Docker
+	if d.Docker == nil && globalDocker == nil {
+		val := false
+		return docker.Docker{
+			Enabled: &val,
+		}
 	}
+
+	if d.Docker == nil && globalDocker != nil {
+		return *globalDocker
+	}
+
+	if *d.Docker.Enabled && d.Docker.Command == "" {
+		return *globalDocker
+	}
+
 	return *globalDocker
 }
 
