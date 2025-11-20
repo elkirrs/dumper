@@ -19,7 +19,7 @@ type Settings struct {
 	DumpFormat          string               `yaml:"format" default:"plain"`
 	DirDump             string               `yaml:"dir_dump" default:"./"`
 	DirArchived         string               `yaml:"dir_archived" default:"./archived"`
-	Logging             *bool                `yaml:"logging" default:"false"`
+	Logging             *bool                `yaml:"logging" default:"true"`
 	RetryConnect        int                  `yaml:"retry_connect" default:"3"`
 	RemoveDump          *bool                `yaml:"remove_dump" default:"true"`
 	Encrypt             *encrypt.Encrypt     `yaml:"encrypt"`

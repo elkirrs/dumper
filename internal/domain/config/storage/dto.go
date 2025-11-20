@@ -15,6 +15,9 @@ type Storage struct {
 	ClientSecret string `yaml:"client_secret"`
 	Endpoint     string `yaml:"endpoint"`
 	Container    string `yaml:"container"`
+	AuthType     string `yaml:"auth_type" default:"SharedKey"`
+	Name         string `yaml:"name"`
+	SharedKey    string `yaml:"shared_key"`
 
 	//Region    string `yaml:"region"`
 	//Bucket    string `yaml:"bucket"`

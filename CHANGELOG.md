@@ -1,8 +1,9 @@
 # Changelog
 All notable changes to this project will be documented here.
 
-## [1.9.2] - 2025-11-19
-- Fix crash app with not set not required options
+## [1.9.2] - 2025-11-20
+- Fix crash app with not set not required options (docker, encrypt)
+- Add support azure storage
 
 ## [1.9.1] - 2025-11-18
 - Fix view message shell script if script is empty
