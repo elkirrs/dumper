@@ -253,6 +253,7 @@ Apply to all servers and databases, unless redefined locally.
     - `local` - download local when the app started
     - `ftp` - upload to ftp server
     - `sftp` - upload to sftp server
+    - `azure` - upload to azure blob storage
 
 ### Servers
 
