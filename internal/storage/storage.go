@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"dumper/internal/domain/storage"
+	"dumper/internal/storage/azure"
 	"dumper/internal/storage/ftp"
 	"dumper/internal/storage/local"
 	"dumper/internal/storage/sftp"
@@ -38,6 +39,8 @@ func (s *Storage) Save() error {
 		handler = sftp.NewApp(s.ctx, s.config)
 	case "ftp":
 		handler = ftp.NewApp(s.ctx, s.config)
+	case "azure":
+		handler = azure.NewApp(s.ctx, s.config)
 	default:
 		return errors.New("unsupported storage type: " + s.config.Type)
 	}

@@ -84,6 +84,13 @@ storages:
     private_key: "/Users/sftpuser/.ssh/id_rsa"
     passphrase: "123456"
 
+  azure:
+    name: "name"
+    shared_key: "shared_key"
+    container: "data/dumps"
+    endpoint: "https://<name_endpoint>.blob.core.windows.net"
+    auth_type: "SharedKey"  
+
 servers:
   first-server:
     name: "test server"
@@ -426,6 +433,21 @@ storages:
     username: "sftpuser"
     private_key: "/Users/sftpuser/.ssh/id_rsa"
     passphrase: "123456" #option set up if key has passphrase
+
+  azure:
+    container: "data/dumps"
+    endpoint: "https://<name_endpoint>.blob.core.windows.net"
+    auth_type: "SharedKey"
+    
+    # for connect shared key auth
+    name: "name"
+    shared_key: "<shared_key>"
+    
+    #for connect azure AD
+    tenant_id: "<tenantId>"
+    client_id: "<clientId>"
+    client_secret: "<clientSecret>"
+
 ```
 
 In global  (storage for all databases)
