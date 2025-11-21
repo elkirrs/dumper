@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented here.
 
-## [1.9.2] - 2025-11-20
+## [1.9.2] - 2025-11-21
 - Fix crash app with not set not required options (docker, encrypt)
 - Add support azure storage
 
