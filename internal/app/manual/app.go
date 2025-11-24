@@ -205,37 +205,12 @@ func (m *Manual) prepareDBConnect() map[string]dbConnect.DBConnect {
 	return connectDBs
 }
 
-func (m *Manual) prepareStorages(list []string) map[string]storage.ListStorages {
-	storages := make(map[string]storage.ListStorages, len(list))
+func (m *Manual) prepareStorages(list []string) map[string]storage.Storage {
+	storages := make(map[string]storage.Storage, len(list))
 	for _, storageType := range list {
 		st := m.cfg.Storages[storageType]
 		st.PrivateKey = st.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey)
-		storages[storageType] = storage.ListStorages{
-			Type:    storageType,
-			Configs: st,
-		}
+		storages[storageType] = st
 	}
-
-	if len(storages) == 0 {
-		for _, storageType := range m.cfg.Settings.Storages {
-			st := m.cfg.Storages[storageType]
-			st.PrivateKey = st.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey)
-			storages[storageType] = storage.ListStorages{
-				Type:    storageType,
-				Configs: st,
-			}
-		}
-	}
-
-	if len(storages) == 0 {
-		storages["local"] = storage.ListStorages{
-			Type: "local",
-			Configs: storage.Storage{
-				Type: "local",
-				Dir:  m.cfg.Settings.DirDump,
-			},
-		}
-	}
-
 	return storages
 }

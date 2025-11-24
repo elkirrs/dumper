@@ -170,7 +170,7 @@ func (b *BackupServer) Run() error {
 	for _, storageItem := range b.config.Storages {
 		countStorage++
 		wg.Add(1)
-		go func(item configStorageDomain.ListStorages) {
+		go func(item configStorageDomain.Storage) {
 			defer wg.Done()
 
 			sem <- struct{}{}
@@ -187,7 +187,7 @@ func (b *BackupServer) Run() error {
 					DumpName: b.config.DumpName,
 					FileSize: totalSize,
 					Conn:     b.conn,
-					Config:   storageItem.Configs,
+					Config:   storageItem,
 				}
 
 				ctx := context.WithValue(b.ctx, "globalProgress", globalProgress)

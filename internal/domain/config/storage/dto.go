@@ -1,28 +1,35 @@
 package storage
 
 type Storage struct {
-	Type       string
-	Dir        string `yaml:"dir"`
-	Host       string `yaml:"host"`
-	Port       string `yaml:"port"`
-	Username   string `yaml:"username"`
-	Password   string `yaml:"password"`
+	// Common
+	Type string `yaml:"type" validate:"required"`
+
+	// Local
+	Dir string `yaml:"dir"`
+
+	// FTP / SFTP / Common remote
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+
+	// SFTP only
 	PrivateKey string `yaml:"private_key"`
 	Passphrase string `yaml:"passphrase"`
 
+	// Azure Common
+	Endpoint  string `yaml:"endpoint"`
+	Container string `yaml:"container"`
+	AuthType  string `yaml:"auth_type" default:"SharedKey"`
+
+	// Azure AD
 	TenantID     string `yaml:"tenant_id"`
 	ClientID     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
-	Endpoint     string `yaml:"endpoint"`
-	Container    string `yaml:"container"`
-	AuthType     string `yaml:"auth_type" default:"SharedKey"`
-	Name         string `yaml:"name"`
-	SharedKey    string `yaml:"shared_key"`
 
-	//Region    string `yaml:"region"`
-	//Bucket    string `yaml:"bucket"`
-	//AccessKey string `yaml:"access_key"`
-	//SecretKey string `yaml:"secret_key"`
+	// Azure SharedKey
+	Name      string `yaml:"name"`
+	SharedKey string `yaml:"shared_key"`
 }
 
 type ListStorages struct {
