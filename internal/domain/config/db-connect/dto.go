@@ -9,5 +9,5 @@ import (
 type DBConnect struct {
 	Database database.Database
 	Server   server.Server
-	Storages map[string]storage.ListStorages
+	Storages map[string]storage.Storage
 }

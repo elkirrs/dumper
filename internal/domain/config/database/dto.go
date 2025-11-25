@@ -9,13 +9,13 @@ import (
 
 type Database struct {
 	Title      string           `yaml:"title,omitempty"`
-	User       string           `yaml:"user"`
-	Password   string           `yaml:"password"`
-	Name       string           `yaml:"name,omitempty"`
+	User       string           `yaml:"user" validate:"required"`
+	Password   string           `yaml:"password" validate:"required"`
+	Name       string           `yaml:"name,omitempty" validate:"required"`
 	Server     string           `yaml:"server" validate:"required"`
 	Key        string           `yaml:"key"`
-	Port       string           `yaml:"port,omitempty"`
-	Driver     string           `yaml:"driver"`
+	Port       string           `yaml:"port,omitempty" validate:"required"`
+	Driver     string           `yaml:"driver" validate:"required"`
 	Format     string           `yaml:"format" validate:"required"`
 	Options    *option.Options  `yaml:"options"`
 	RemoveDump *bool            `yaml:"remove_dump"`
@@ -33,18 +33,18 @@ func (d *Database) GetName() string {
 	return d.User
 }
 
-func (d *Database) GetPort(port string) string {
+func (d *Database) GetPort(port *string) string {
 	if d.Port != "" {
 		return d.Port
 	}
-	return port
+	return *port
 }
 
-func (d *Database) GetDriver(driver string) string {
+func (d *Database) GetDriver(driver *string) string {
 	if d.Driver != "" {
 		return d.Driver
 	}
-	return driver
+	return *driver
 }
 
 func (d *Database) GetRemoveDump(removeDump bool) bool {
@@ -54,11 +54,11 @@ func (d *Database) GetRemoveDump(removeDump bool) bool {
 	return removeDump
 }
 
-func (d *Database) GetFormat(format string) string {
+func (d *Database) GetFormat(format *string) string {
 	if d.Format != "" {
 		return d.Format
 	}
-	return format
+	return *format
 }
 
 func (d *Database) GetEncrypt(encryptGlobal *encrypt.Encrypt) encrypt.Encrypt {
