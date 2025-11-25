@@ -12,7 +12,7 @@ type Settings struct {
 	DirRemote           string               `yaml:"dir_remote" default:"./"`
 	Template            string               `yaml:"template" default:"{%srv%}_{%db%}_{%time%}"`
 	Archive             *bool                `yaml:"archive" default:"true"`
-	Driver              string               `yaml:"driver" validate:"required"`
+	Driver              string               `yaml:"driver"`
 	DBPort              string               `yaml:"db_port,omitempty"`
 	SrvPost             string               `yaml:"server_port,omitempty"`
 	DumpLocation        string               `yaml:"location" default:"server"`

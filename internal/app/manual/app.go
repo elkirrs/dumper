@@ -103,10 +103,10 @@ func (m *Manual) Run() error {
 	connectDto := &connectDomain.Connect{
 		Server:       dbConn.Server.Host,
 		Username:     dbConn.Server.User,
-		Port:         dbConn.Server.GetPort(m.cfg.Settings.SrvPost),
+		Port:         dbConn.Server.GetPort(&m.cfg.Settings.SrvPost),
 		Password:     dbConn.Server.Password,
-		PrivateKey:   dbConn.Server.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey),
-		Passphrase:   dbConn.Server.GetPassphrase(m.cfg.Settings.SSH.Passphrase),
+		PrivateKey:   dbConn.Server.GetPrivateKey(&m.cfg.Settings.SSH.PrivateKey),
+		Passphrase:   dbConn.Server.GetPassphrase(&m.cfg.Settings.SSH.Passphrase),
 		IsPassphrase: dbConn.Server.GetIsPassphrase(*m.cfg.Settings.SSH.IsPassphrase),
 	}
 
@@ -151,10 +151,10 @@ func (m *Manual) prepareRemoteDatabaseList(
 	connectDto := &connectDomain.Connect{
 		Server:       server.Host,
 		Username:     server.User,
-		Port:         server.GetPort(m.cfg.Settings.SrvPost),
-		Password:     server.GetPassword(m.cfg.Settings.SSH.Password),
-		PrivateKey:   server.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey),
-		Passphrase:   server.GetPassphrase(m.cfg.Settings.SSH.Passphrase),
+		Port:         server.GetPort(&m.cfg.Settings.SrvPost),
+		Password:     server.GetPassword(&m.cfg.Settings.SSH.Password),
+		PrivateKey:   server.GetPrivateKey(&m.cfg.Settings.SSH.PrivateKey),
+		Passphrase:   server.GetPassphrase(&m.cfg.Settings.SSH.Passphrase),
 		IsPassphrase: server.GetIsPassphrase(*m.cfg.Settings.SSH.IsPassphrase),
 	}
 
@@ -179,7 +179,7 @@ func (m *Manual) prepareRemoteDatabaseList(
 	)
 
 	var rmt Remote
-	rmt = remote.New(m.ctx, conn, server.ConfigPath)
+	rmt = remote.New(m.ctx, conn, server.ConfigPath, m.cfg)
 
 	logging.L(m.ctx).Info("Trying to load remote config")
 	if err := utils.RunWithCtx(m.ctx, rmt.Load); err != nil {

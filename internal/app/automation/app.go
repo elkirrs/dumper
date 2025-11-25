@@ -88,11 +88,11 @@ func (a *Automation) Run() error {
 				default:
 					connectDto := &connectDomain.Connect{
 						Server:       dbConn.Server.Host,
-						Port:         dbConn.Server.GetPort(a.cfg.Settings.SrvPost),
+						Port:         dbConn.Server.GetPort(&a.cfg.Settings.SrvPost),
 						Username:     dbConn.Server.User,
-						Password:     dbConn.Server.GetPassword(a.cfg.Settings.SSH.Password),
-						PrivateKey:   dbConn.Server.GetPrivateKey(a.cfg.Settings.SSH.PrivateKey),
-						Passphrase:   dbConn.Server.GetPassphrase(a.cfg.Settings.SSH.Passphrase),
+						Password:     dbConn.Server.GetPassword(&a.cfg.Settings.SSH.Password),
+						PrivateKey:   dbConn.Server.GetPrivateKey(&a.cfg.Settings.SSH.PrivateKey),
+						Passphrase:   dbConn.Server.GetPassphrase(&a.cfg.Settings.SSH.Passphrase),
 						IsPassphrase: dbConn.Server.GetIsPassphrase(*a.cfg.Settings.SSH.IsPassphrase),
 					}
 					connectApp := connect.NewApp(a.ctx, connectDto)

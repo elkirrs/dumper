@@ -3,14 +3,14 @@ package remote_config
 import (
 	"context"
 	"dumper/internal/connect"
+	"dumper/internal/domain/config"
 	"dumper/internal/domain/config/database"
 	dbConnect "dumper/internal/domain/config/db-connect"
 	"dumper/internal/domain/config/server"
+	"dumper/internal/validation"
 	"dumper/pkg/logging"
 	"fmt"
 
-	"github.com/creasty/defaults"
-	"github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,6 +19,7 @@ type RCfg struct {
 	conn       *connect.Connect
 	cfgPath    string
 	connectDBs map[string]dbConnect.DBConnect
+	cfg        *config.Config
 }
 
 type Config struct {
@@ -30,11 +31,13 @@ func New(
 	ctx context.Context,
 	conn *connect.Connect,
 	cfgPath string,
+	cfg *config.Config,
 ) *RCfg {
 	return &RCfg{
 		ctx:     ctx,
 		conn:    conn,
 		cfgPath: cfgPath,
+		cfg:     cfg,
 	}
 }
 
@@ -99,17 +102,29 @@ func (r *RCfg) loadFromString(strYml string) error {
 		return err
 	}
 
-	if err := defaults.Set(&cfg); err != nil {
-		logging.L(r.ctx).Error(
-			"Failed to set default params",
-			logging.ErrAttr(err),
-		)
-
-		return err
+	if r.cfg.Servers == nil {
+		r.cfg.Servers = make(map[string]server.Server)
+	}
+	for k, v := range cfg.Servers {
+		newKeySrv := k + "_" + v.GetName()
+		r.cfg.Servers[newKeySrv] = v
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(&cfg); err != nil {
+	if r.cfg.Databases == nil {
+		r.cfg.Databases = make(map[string]database.Database)
+	}
+	for k, v := range cfg.Databases {
+		if srv, exists := r.cfg.Servers[k]; !exists {
+			if _, ok := cfg.Servers[v.Server]; !ok {
+				newKeyDB := k + "_" + v.GetName()
+				v.Server = v.Server + "_" + srv.GetName()
+				r.cfg.Databases[newKeyDB] = v
+			}
+		}
+	}
+
+	validate := validation.New()
+	if err := validate.Handler(r.cfg); err != nil {
 		logging.L(r.ctx).Error(
 			"Failed to validations",
 			logging.ErrAttr(err),

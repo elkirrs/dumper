@@ -8,9 +8,9 @@ type Server struct {
 	User       string       `yaml:"user" validate:"required"`
 	Name       string       `yaml:"name,omitempty"`
 	Port       string       `yaml:"port,omitempty"`
-	PrivateKey string       `yaml:"private_key,omitempty"`
+	PrivateKey string       `yaml:"private_key,omitempty" validate:"xor=Password"`
 	Passphrase string       `yaml:"passphrase,omitempty"`
-	Password   string       `yaml:"password,omitempty"`
+	Password   string       `yaml:"password,omitempty" validate:"xor=PrivateKey"`
 	ConfigPath string       `yaml:"conf_path,omitempty"`
 	Shell      *shell.Shell `yaml:"shell,omitempty"`
 }
@@ -22,11 +22,11 @@ func (s *Server) GetName() string {
 	return s.Host
 }
 
-func (s *Server) GetPort(port string) string {
+func (s *Server) GetPort(port *string) string {
 	if s.Port != "" {
 		return s.Port
 	}
-	return port
+	return *port
 }
 
 func (s *Server) GetTitle() string {
@@ -41,18 +41,18 @@ func (s *Server) GetTitle() string {
 	return s.Host
 }
 
-func (s *Server) GetPrivateKey(pathKey string) string {
+func (s *Server) GetPrivateKey(pathKey *string) string {
 	if s.PrivateKey != "" {
 		return s.PrivateKey
 	}
-	return pathKey
+	return *pathKey
 }
 
-func (s *Server) GetPassphrase(passphrase string) string {
+func (s *Server) GetPassphrase(passphrase *string) string {
 	if s.Passphrase != "" {
 		return s.Passphrase
 	}
-	return passphrase
+	return *passphrase
 }
 
 func (s *Server) GetIsPassphrase(isPassphrase bool) bool {
@@ -63,11 +63,11 @@ func (s *Server) GetIsPassphrase(isPassphrase bool) bool {
 	return isPassphrase
 }
 
-func (s *Server) GetPassword(password string) string {
+func (s *Server) GetPassword(password *string) string {
 	if s.Password != "" {
 		return s.Password
 	}
-	return password
+	return *password
 }
 
 func (s *Server) GetShell(globalShell *shell.Shell) shell.Shell {
