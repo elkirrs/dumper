@@ -8,13 +8,11 @@ import (
 func validateDatabase(v *Validation, cfg *config.Config) error {
 	for name, db := range cfg.Databases {
 
-		if db.Port == "" {
-			db.Port = cfg.Settings.DBPort
-		}
-
-		if db.Name == "" {
-			db.Name = db.User
-		}
+		db.Name = db.GetName()
+		db.Port = db.GetPort(&cfg.Settings.DBPort)
+		db.Driver = db.GetDriver(&cfg.Settings.Driver)
+		db.Format = db.GetFormat(&cfg.Settings.DumpFormat)
+		db.Storages = db.GetStorages(&cfg.Settings.Storages)
 
 		if err := v.validator.Struct(db); err != nil {
 			return fmt.Errorf("database '%s' invalid: %w", name, HumanError(err))

@@ -195,10 +195,11 @@ func (m *Manual) prepareRemoteDatabaseList(
 func (m *Manual) prepareDBConnect() map[string]dbConnect.DBConnect {
 	connectDBs := make(map[string]dbConnect.DBConnect, len(m.cfg.Databases))
 	for idx, database := range m.cfg.Databases {
+		storageList := database.GetStorages(&m.cfg.Settings.Storages)
 		connectDBs[idx] = dbConnect.DBConnect{
 			Server:   m.cfg.Servers[database.Server],
 			Database: database,
-			Storages: m.prepareStorages(database.Storages),
+			Storages: m.prepareStorages(storageList),
 		}
 	}
 

@@ -20,7 +20,7 @@ type Database struct {
 	Options    *option.Options  `yaml:"options"`
 	RemoveDump *bool            `yaml:"remove_dump"`
 	Encrypt    *encrypt.Encrypt `yaml:"encrypt"`
-	Storages   []string         `yaml:"storages"`
+	Storages   []string         `yaml:"storages" validate:"required"`
 	Archive    *bool            `yaml:"archive"`
 	Docker     *docker.Docker   `yaml:"docker"`
 	Shell      *shell.Shell     `yaml:"shell"`
@@ -141,4 +141,11 @@ func (d *Database) GetShell(serverShell *shell.Shell) shell.Shell {
 	}
 
 	return *d.Shell
+}
+
+func (d *Database) GetStorages(globalStorages *[]string) []string {
+	if d.Storages == nil || len(d.Storages) == 0 {
+		return *globalStorages
+	}
+	return d.Storages
 }
