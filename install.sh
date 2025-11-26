@@ -90,9 +90,6 @@ download_and_install() {
     echo "Installed config.yaml to ${dest_cfg}/config.yaml"
   fi
 
-  echo "Installed dumper to ${dest_bin}"
-  echo "Installed config.yaml to ${dest_cfg}/config.yaml"
-
   rm -rf "$tmpdir"
 }
 
