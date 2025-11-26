@@ -21,7 +21,7 @@ VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
   | sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')
 
 if [ -z "$VERSION" ]; then
-  echo "❌ Cannot determine latest version from GitHub"
+  echo "Cannot determine latest version from GitHub"
   exit 1
 fi
 
@@ -78,11 +78,16 @@ download_and_install() {
     fi
   fi
 
-  if [ -w "$dest_cfg" ]; then
-    cp "${tmpdir}/config.yaml" "$dest_cfg/config.yaml"
+  if [ -f "$dest_cfg/config.yaml" ]; then
+    echo "config.yaml already exists — skipping."
   else
-    echo "Installing config.yaml to ${dest_cfg} (using sudo)"
-    sudo cp "${tmpdir}/config.yaml" "$dest_cfg/config.yaml"
+    if [ -w "$dest_cfg" ]; then
+      cp "${tmpdir}/config.yaml" "$dest_cfg/config.yaml"
+    else
+      echo "Installing config.yaml to ${dest_cfg} (using sudo)"
+      sudo cp "${tmpdir}/config.yaml" "$dest_cfg/config.yaml"
+    fi
+    echo "Installed config.yaml to ${dest_cfg}/config.yaml"
   fi
 
   echo "Installed dumper to ${dest_bin}"
