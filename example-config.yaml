@@ -1,36 +1,16 @@
 settings:
-  # Global port for all databases
-  db_port: '5432'
-  # Global port for connecting to the server
-  server_port: '22'
-  # Global Database Selection Driver (psql | mysql | mongo | mssql | redis | mariadb)
-  driver: 'psql'
-  # Connecting to the server via ssh
+  dir_remote: '/root/dump/'
+  logging: true
   ssh:
     private_key: '/User/.ssh/id_rsa'
     passphrase: '123456'
     is_passphrase: true
     password: '123456'
-  # Dir remote dump
-  dir_remote: '/root/dump/'
-  # Dump name template
   template: '{%srv%}_{%db%}_{%datetime%}'
-  # Option to archive old dumps (available only if {%srv%}_{%db%} is present in the dump names)
-  archive: true
-  # server, local-ssh, local-direct
-  location: 'server'
-  # plain, dump, tar
-  format: 'plain'
-  # directory by save dump
-  dir_dump: './dumps'
-  # directory by old dump
-  dir_archived: './old'
-  logging: true
-  retry_connect: 5
   remove_dump: true
-  parallel_download: 1
   storages:
-    - local
+    - local-storage
+    - ftp-storage
   encrypt:
     enabled: false
     type: 'aes'
@@ -46,33 +26,19 @@ settings:
       echo "run script after created dump created dump (global)"
 
 storages:
-  local:
+  local-storage:
+    type: 'local'
     dir: "./dumps"
 
-  ftp:
+  ftp-storage:
+    type: 'ftp'
     dir: "./uploads/dumps"
     host: "192.168.139.108"
     port: 21
     username: "ftpuser"
     password: "123456"
 
-  sftp:
-    dir: "./dumps"
-    host: "192.168.139.108"
-    port: 22
-    username: "sftpuser"
-    private_key: "/Users/sftpuser/.ssh/id_rsa"
-    passphrase: "123456"
-
 servers:
-  srv-conf-remote:
-    title: 'Load remote config'
-    name: 'conf-remote'
-    host: '10.23.55.181'
-    user: 'root'
-    port: 22
-    conf_path: '/var/www/conf.yaml'
-
   srv-psql:
     title: 'Server Postgres'
     name: 'psql'
@@ -96,43 +62,6 @@ servers:
     passphrase: '123456'
     is_passphrase: true
 
-  srv-mongo:
-    title: 'Server Mongo DB'
-    name: 'mongo'
-    host: '54.217.33.10'
-    user: 'root'
-    port: 22
-    password: '123456'
-    shell:
-      enabled: true
-      before: |
-        echo "run script before create dump create dump (server)"
-      after: |
-        echo "run script after created dump created dump (server)"
-
-  srv-redis:
-    title: 'Server Redis'
-    name: 'redis'
-    host: '172.31.88.200'
-    user: 'root'
-    port: 22
-    shell:
-      enabled: false
-
-  srv-sqlite:
-    title: 'Server SQLite3'
-    name: 'sqlite'
-    host: '100.64.12.55'
-    user: 'root'
-    port: 22
-
-  srv-mssql:
-    title: 'Server Microsoft SQL Server'
-    name: 'mssql'
-    host: '198.51.100.42'
-    user: 'root'
-    port: 22
-
 databases:
   # Config PSQL databases
   db-psql:
@@ -149,8 +78,8 @@ databases:
       type: 'aes'
       password: '123456'
     storages:
-      - sftp
-      - local
+      - ftp-storage
+      - local-storage
     docker:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
@@ -172,32 +101,12 @@ databases:
     format: 'dump'
     archive: false
     storages:
-      - ftp
-      - local
+      - ftp-storage
+      - local-storage
     docker:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 
-  db-psql-tar:
-    title: 'My DB PSQL #3'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
-    port: 5432
-    driver: 'psql'
-    server: 'srv-psql'
-    format: 'tar'
-    encrypt:
-      enabled: true
-      type: 'aes'
-      password: '123456'
-    shell:
-      enabled: true
-      before: |
-        echo "run script before create dump create dump"
-      after: |
-        echo "run script after created dump created dump"
-  
   # Config MySQL databases
   db-mysql:
     title: 'My DB MySQL #1'
@@ -209,7 +118,7 @@ databases:
     server: 'srv-mysql'
     format: 'sql'
     storages:
-      - sftp
+      - ftp-storage
     docker:
       enabled: true
       command: "docker compose --file /var/www/docker-compose.yaml exec -T mysql"
@@ -226,132 +135,10 @@ databases:
     server: 'srv-mysql'
     format: 'sql'
     storages:
-      - local
+      - local-storage
     encrypt:
       enabled: true
       type: 'aes'
       password: '123456'
     docker:
       enabled: false
-  
-  # Config Mongo databases
-  db-mongo:
-    title: 'My DB MongoDB #1'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
-    port: 27017
-    driver: 'mongo'
-    server: 'srv-mongo'
-    format: 'bson'
-    options:
-      auth_source: 'admin'
-      ssl: false
-    storages:
-      - ftp
-
-  db-mongo-ssl:
-    title: 'My DB MongoDB #2'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
-    port: 27017
-    driver: 'mongo'
-    server: 'srv-mongo'
-    format: 'bson'
-    options:
-      auth_source: 'admin'
-      ssl: true
-    encrypt:
-      enabled: true
-      type: 'aes'
-      password: '123456'
-
-  db-mongo-without-options:
-    title: 'My DB MongoDB #3'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
-    port: 27017
-    driver: 'mongo'
-    server: 'srv-mongo'
-    format: 'bson'
-    encrypt:
-      enabled: false
-  
-  # Config Redis databases
-  db-redis:
-    title: 'My DB Redis #1'
-    name: 'redis-db'
-    user: 'myuser'
-    password: 'mypassword'
-    port: 6379
-    driver: 'redis'
-    server: 'srv-redis'
-    format: 'fbk'
-    options:
-      mode: 'sync'
-
-  db-redis-save:
-    title: 'My DB Redis #2'
-    name: 'redis-db'
-    user: 'myuser'
-    password: 'mypassword'
-    port: 6379
-    driver: 'redis'
-    server: 'srv-redis'
-    format: 'fbk'
-    options:
-      mode: 'save'
-    encrypt:
-      type: 'aes'
-      password: '123456'
-  
-  # Config SQLite3 databases
-  db-sqlite:
-    title: 'My DB SQLite #1'
-    name: 'mydb'
-    user: ''
-    password: ''
-    port: ''
-    driver: 'sqlite'
-    server: 'srv-sqlite'
-    format: 'sql'
-    options:
-      path: '/root/mydb.db'
-  
-  # Config MSSQL databases
-  db-mssql-bac:
-    title: 'My DB MSSQL #1'
-    name: 'MyDB'
-    user: 'sa'
-    password: 'myPassword1'
-    driver: 'mssql'
-    server: 'srv-mssql'
-    format: 'bac'
-    encrypt:
-      enabled: false
-    docker:
-      enabled: false
-    shell:
-      enabled: false
-
-  db-mssql-bacpac:
-    title: 'My DB MSSQL #2'
-    name: 'MyDB'
-    user: 'sa'
-    password: 'myPassword1'
-    driver: 'mssql'
-    server: 'srv-mssql'
-    format: 'bacpac'
-
-  db-mssql-bacpac-ssl:
-    title: 'My DB MSSQL #3'
-    name: 'MyDB'
-    user: 'sa'
-    password: 'myPassword1'
-    driver: 'mssql'
-    server: 'srv-mssql'
-    format: 'bacpac'
-    options:
-      ssl: true
