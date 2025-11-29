@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"dumper/internal/domain/app"
 	"dumper/pkg/utils"
 	"os"
 	"path/filepath"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestEncryptDecryptAES(t *testing.T) {
-	key := []byte("12345678901234567890123456789012") // 32 byte for AES-256
+	key := []byte("12345678901234567890123456789012")
 	plain := []byte("hello world")
 
 	encrypted := utils.EncryptAES(key, plain)
@@ -23,6 +24,7 @@ func TestEncryptDecryptAES(t *testing.T) {
 
 func TestDecryptAES_InvalidCiphertext(t *testing.T) {
 	key := []byte("12345678901234567890123456789012")
+
 	_, err := utils.DecryptAES(key, []byte("short"))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "ciphertext too short")
@@ -35,15 +37,15 @@ func TestDeriveKey_Consistency(t *testing.T) {
 
 	key1 := utils.DeriveKey(password, appSecret, salt)
 	key2 := utils.DeriveKey(password, appSecret, salt)
+
 	assert.Equal(t, key1, key2)
 }
 
 func TestDeriveAppKey_Consistency(t *testing.T) {
 	appSecret := []byte("secret")
 	deviceID := []byte("device")
-	salt := []byte("salt")
 
-	key := utils.DeriveAppKey(appSecret, deviceID, salt)
+	key := utils.DeriveAppKey(appSecret, deviceID)
 	assert.Len(t, key, 32)
 }
 
@@ -53,48 +55,119 @@ func TestComputeFinalKey_Consistency(t *testing.T) {
 
 	key1 := utils.ComputeFinalKey(passwordKey, deviceKey)
 	key2 := utils.ComputeFinalKey(passwordKey, deviceKey)
+
 	assert.Equal(t, key1, key2)
 }
 
-func TestIsEncrypted(t *testing.T) {
-	header := utils.MagicHeader()
-	data := append(header, []byte("payload")...)
-	assert.True(t, utils.IsEncrypted(data), "data with magic header should be encrypted")
+func TestMagicHeaderAndGetScope(t *testing.T) {
+	tests := []struct {
+		scope   string
+		wantHdr string
+	}{
+		{"app", "ENCADCA"},
+		{"device", "ENCDDCA"},
+		{"both", "ENCFDCA"},
+	}
 
-	data2 := []byte("abcdpayload")
-	assert.False(t, utils.IsEncrypted(data2), "data without magic header should not be encrypted")
+	for _, tt := range tests {
+		hdr := utils.MagicHeader(tt.scope)
+		assert.Equal(t, tt.wantHdr, string(hdr))
+		assert.Equal(t, tt.scope, utils.GetScope(string(hdr)))
+	}
+}
+
+func TestIsEncrypted(t *testing.T) {
+	h := utils.MagicHeader("app")
+	data := append(h, []byte("payload")...)
+
+	assert.True(t, utils.IsEncrypted(data))
+	assert.False(t, utils.IsEncrypted([]byte("not_encrypted_data")))
 }
 
 func TestLooksEncrypted(t *testing.T) {
-	data := make([]byte, 32)
+	d := make([]byte, 32)
 	for i := 0; i < 16; i++ {
-		data[i] = 200 // not ascii
+		d[i] = 200
 	}
-	assert.True(t, utils.LooksEncrypted(data))
+	assert.True(t, utils.LooksEncrypted(d))
 
-	data2 := []byte("this is normal ascii data................")
-	assert.False(t, utils.LooksEncrypted(data2))
+	ascii := []byte("this is ascii data.......................")
+	assert.False(t, utils.LooksEncrypted(ascii))
 }
 
-func TestIsEncryptedFileAndReadEncryptedFile(t *testing.T) {
-	tmpDir := t.TempDir()
-	path := filepath.Join(tmpDir, "file.enc")
+func TestSecretCrypt(t *testing.T) {
+	tests := []struct {
+		name      string
+		scope     string
+		expectApp bool
+		expectDev bool
+	}{
+		{"app only", "app", true, false},
+		{"device only", "device", false, true},
+		{"both", "both", true, true},
+		{"default", "", true, true}, // fallback
+	}
 
-	content := append(utils.MagicHeader(), []byte("secretdata")...)
-	err := os.WriteFile(path, content, 0644)
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flags := &app.Flags{
+				Scope:     tt.scope,
+				AppSecret: "APPSECRET",
+			}
 
-	ok, err := utils.IsEncryptedFile(path)
-	assert.NoError(t, err)
-	assert.True(t, ok)
+			s := utils.SecretCrypt(flags)
 
-	data, err := utils.ReadEncryptedFile(path)
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("secretdata"), data)
+			if tt.expectApp {
+				assert.Equal(t, []byte("APPSECRET"), s.SecretKey)
+			} else {
+				assert.Nil(t, s.SecretKey)
+			}
 
-	path2 := filepath.Join(tmpDir, "file2.enc")
-	_ = os.WriteFile(path2, []byte("noheader"), 0644)
-	_, err = utils.ReadEncryptedFile(path2)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "encrypted signature")
+			if tt.expectDev {
+				assert.NotNil(t, s.DeviceKey)
+				assert.NotEmpty(t, s.DeviceKey)
+			} else {
+				assert.Nil(t, s.DeviceKey)
+			}
+		})
+	}
+}
+
+func TestIsEncryptedFileAndReadEncryptedFile_AllScopes(t *testing.T) {
+	scopes := []string{"app", "device", "both"}
+
+	for _, scope := range scopes {
+		t.Run("scope="+scope, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, scope+".enc")
+
+			header := utils.MagicHeader(scope)
+			body := []byte("SECRET-DATA")
+			content := append(header, body...)
+
+			err := os.WriteFile(path, content, 0644)
+			assert.NoError(t, err)
+
+			ok, err := utils.IsEncryptedFile(path, scope)
+			assert.NoError(t, err)
+			assert.True(t, ok)
+
+			cf, err := utils.ReadEncryptedFile(path)
+			assert.NoError(t, err)
+			assert.Equal(t, body, cf.Data)
+			assert.Equal(t, string(header), cf.Header)
+		})
+	}
+
+	t.Run("invalid file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		path := filepath.Join(tmpDir, "bad.enc")
+
+		err := os.WriteFile(path, []byte("BAD"), 0644)
+		assert.NoError(t, err)
+
+		_, err = utils.ReadEncryptedFile(path)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "encrypted signature")
+	})
 }

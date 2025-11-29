@@ -42,11 +42,7 @@ func (c *Crypt) Run() error {
 	case "config":
 		cryptConfigApp := cryptConfig.NewApp(
 			c.ctx,
-			c.flags.Mode,
-			c.flags.Input,
-			c.flags.Password,
-			c.flags.AppSecret,
-			c.flags.Recovery,
+			c.flags,
 		)
 		err := cryptConfigApp.Run()
 		if err != nil {
@@ -60,16 +56,19 @@ func (c *Crypt) Run() error {
 	return nil
 }
 
-func DecryptInApp(data []byte, appSecret string) ([]byte, error) {
+func DecryptInApp(data []byte, scope, appSecret string) ([]byte, error) {
 	keyLen := int(data[16])
 	offset := 17
 	encKey := data[offset : offset+keyLen]
 	offset += keyLen
 	encConfig := data[offset:]
 
-	salt := data[:16]
-	deviceKey := utils.GetDeviceKey()
-	deriveAppSecret := utils.DeriveAppKey([]byte(appSecret), deviceKey, salt)
+	flags := app.Flags{
+		Scope:     scope,
+		AppSecret: appSecret,
+	}
+	secretCrypt := utils.SecretCrypt(&flags)
+	deriveAppSecret := utils.DeriveAppKey(secretCrypt.SecretKey, secretCrypt.DeviceKey)
 
 	finalKey, err := utils.DecryptAES(deriveAppSecret, encKey)
 	if err != nil {
