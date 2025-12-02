@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"golang.org/x/crypto/ssh"
@@ -32,16 +33,18 @@ func NewApp(
 }
 
 func (s *S3) Save() error {
-	awsCfg, err := config.LoadDefaultConfig(s.ctx,
-		config.WithRegion(s.config.Config.Region),
-		config.WithCredentialsProvider(
-			aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
-				return aws.Credentials{
-					AccessKeyID:     s.config.Config.AccessKey,
-					SecretAccessKey: s.config.Config.SecretKey,
-				}, nil
-			}),
+	cred := aws.NewCredentialsCache(
+		credentials.NewStaticCredentialsProvider(
+			s.config.Config.AccessKey,
+			s.config.Config.SecretKey,
+			"",
 		),
+	)
+
+	awsCfg, err := config.LoadDefaultConfig(
+		s.ctx,
+		config.WithRegion(s.config.Config.Region),
+		config.WithCredentialsProvider(cred),
 		config.WithHTTPClient(&http.Client{}),
 	)
 
