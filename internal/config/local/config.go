@@ -22,12 +22,14 @@ func Load(filename, appSecret string) (*config.Config, error) {
 		return nil, err
 	}
 	if utils.IsEncrypted(data) && utils.LooksEncrypted(data) {
-		data, err = utils.ReadEncryptedFile(filename)
+		cFile, err := utils.ReadEncryptedFile(filename)
+
 		if err != nil {
 			return nil, err
 		}
 
-		data, err = crypt.DecryptInApp(data, appSecret)
+		scope := utils.GetScope(cFile.Header)
+		data, err = crypt.DecryptInApp(cFile.Data, scope, appSecret)
 		if err != nil {
 			return nil, err
 		}

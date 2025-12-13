@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	app2 "dumper/internal/domain/app"
 	"fmt"
 	"io"
 	"os"
@@ -37,15 +38,10 @@ func DeriveKey(password string, appSecret, salt []byte) []byte {
 	return pbkdf2.Key(append([]byte(password), appSecret...), salt, 100000, 32, sha256.New)
 }
 
-func DeriveAppKey(appSecret, deviceID []byte, salt []byte) []byte {
-
-	// the ability to update file only in an environment where there was coding
-	sum := sha256.Sum256(appSecret)
+func DeriveAppKey(secretKey, deviceKey []byte) []byte {
+	combined := append(secretKey, deviceKey...)
+	sum := sha256.Sum256(combined)
 	return sum[:]
-
-	// the ability to read and update file only in an environment where there was coding
-	//combined := append(appSecret, deviceID...)
-	//return pbkdf2.Key(combined, salt, 100000, 32, sha256.New)
 }
 
 func ComputeFinalKey(passwordKey, deviceKey []byte) []byte {
@@ -53,7 +49,14 @@ func ComputeFinalKey(passwordKey, deviceKey []byte) []byte {
 }
 
 func IsEncrypted(data []byte) bool {
-	header := MagicHeader()
+	mHeader := data[:magicHeaderLength]
+	scope := GetScope(string(mHeader))
+	header := MagicHeader(scope)
+
+	if len(header) != magicHeaderLength {
+		return false
+	}
+
 	if len(data) < len(header) {
 		return false
 	}
@@ -72,7 +75,7 @@ func LooksEncrypted(data []byte) bool {
 	return false
 }
 
-func IsEncryptedFile(path string) (bool, error) {
+func IsEncryptedFile(path, scope string) (bool, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return false, err
@@ -81,25 +84,92 @@ func IsEncryptedFile(path string) (bool, error) {
 		_ = f.Close()
 	}(f)
 
-	header := make([]byte, len(MagicHeader()))
+	header := make([]byte, len(MagicHeader(scope)))
+
 	n, err := f.Read(header)
 	if err != nil && err != io.EOF {
 		return false, err
 	}
-	return n == len(MagicHeader()) && string(header) == string(MagicHeader()), nil
+	return len(header) != 0 && n == len(MagicHeader(scope)) && string(header) == string(MagicHeader(scope)), nil
 }
 
-func ReadEncryptedFile(path string) ([]byte, error) {
+type CFile struct {
+	Data   []byte
+	Header string
+}
+
+func ReadEncryptedFile(path string) (CFile, error) {
 	data, err := os.ReadFile(path)
+	mHeader := string(data[:magicHeaderLength])
+	scope := GetScope(mHeader)
+
+	var cFile CFile
 	if err != nil {
-		return nil, err
+		return cFile, err
 	}
-	if len(data) < len(MagicHeader()) || string(data[:len(MagicHeader())]) != string(MagicHeader()) {
-		return nil, fmt.Errorf("the file does not have an encrypted signature")
+	if len(data) < len(MagicHeader(scope)) || string(data[:len(MagicHeader(scope))]) != string(MagicHeader(scope)) {
+		return cFile, fmt.Errorf("the file does not have an encrypted signature")
 	}
-	return data[len(MagicHeader()):], nil
+	cFile.Data = data[magicHeaderLength:]
+	cFile.Header = mHeader
+
+	return cFile, nil
 }
 
-func MagicHeader() []byte {
-	return []byte("ENCFDCA")
+var (
+	magicHeaderLength = 7
+	both              = "ENCFDCA"
+	app               = "ENCADCA"
+	device            = "ENCDDCA"
+)
+
+func MagicHeader(scope string) []byte {
+	magicHeader := ""
+	switch scope {
+	case "app":
+		magicHeader = app
+	case "device":
+		magicHeader = device
+	default:
+		magicHeader = both
+	}
+	return []byte(magicHeader)
+}
+
+func GetScope(magicHeader string) string {
+	switch magicHeader {
+	case app:
+		return "app"
+	case device:
+		return "device"
+	case both:
+		return "both"
+	default:
+		return ""
+	}
+}
+
+type SCrypt struct {
+	SecretKey []byte
+	DeviceKey []byte
+}
+
+func SecretCrypt(flag *app2.Flags) SCrypt {
+	var appSecret []byte
+	var deviceKey []byte
+
+	switch flag.Scope {
+	case "app":
+		appSecret = []byte(flag.AppSecret)
+	case "device":
+		deviceKey = GetDeviceKey()
+	default:
+		appSecret = []byte(flag.AppSecret)
+		deviceKey = GetDeviceKey()
+	}
+
+	return SCrypt{
+		SecretKey: appSecret,
+		DeviceKey: deviceKey,
+	}
 }

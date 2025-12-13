@@ -49,7 +49,7 @@ func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 			ext = "gz"
 			baseCmd = fmt.Sprintf("%s --archive=%s.%s --gzip", baseCmd, data.DumpName, ext)
 		} else {
-			baseCmd = fmt.Sprintf("%s && tar -czf %s.tar.gz %s", baseCmd, data.DumpName, data.Database.Name)
+			baseCmd = fmt.Sprintf("%s --out ./ && tar -czf %s.tar.gz %s", baseCmd, data.DumpName, data.Database.Name)
 			ext = "tar.gz"
 		}
 	} else {

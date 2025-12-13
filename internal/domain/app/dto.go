@@ -12,4 +12,5 @@ type Flags struct {
 	Recovery       string
 	AppSecret      string
 	OpenOnlyEncEnv bool
+	Scope          string
 }

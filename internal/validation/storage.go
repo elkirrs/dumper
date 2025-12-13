@@ -76,6 +76,19 @@ func validateStorages(v *Validation, cfg *config.Config) error {
 				return fmt.Errorf("storage '%s': unknown azure auth_type '%s'", name, s.AuthType)
 			}
 
+		case "s3":
+			s3 := storage.S3{
+				Type:      s.Type,
+				Region:    s.Region,
+				Bucket:    s.Bucket,
+				AccessKey: s.AccessKey,
+				SecretKey: s.SecretKey,
+			}
+
+			if err := validate.Struct(s3); err != nil {
+				return fmt.Errorf("storage '%s' (s3) invalid: %w", name, HumanError(err))
+			}
+
 		default:
 			if s.Type == "" {
 				return fmt.Errorf("storage '%s' missing required field 'type'", name)

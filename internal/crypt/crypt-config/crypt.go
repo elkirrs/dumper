@@ -3,6 +3,7 @@ package crypt_config
 import (
 	"context"
 	"crypto/rand"
+	"dumper/internal/domain/app"
 	"dumper/pkg/utils"
 	"encoding/hex"
 	"fmt"
@@ -14,89 +15,87 @@ import (
 )
 
 type Crypt struct {
-	ctx         context.Context
-	mode        string
-	input       string
-	password    string
-	appSecret   string
-	recoveryKey string
+	ctx   context.Context
+	flags *app.Flags
 }
 
 func NewApp(
 	ctx context.Context,
-	mode string,
-	input string,
-	password string,
-	appSecret string,
-	recoveryKey string,
+	flags *app.Flags,
 ) *Crypt {
 	return &Crypt{
-		ctx:         ctx,
-		input:       input,
-		mode:        mode,
-		password:    password,
-		appSecret:   appSecret,
-		recoveryKey: recoveryKey,
+		ctx:   ctx,
+		flags: flags,
 	}
 }
 
 func (c *Crypt) Run() error {
-	switch c.mode {
+	switch c.flags.Mode {
 	case "encrypt":
-		if c.input == "" {
-			c.input = "config.yaml"
+		if c.flags.Input == "" {
+			c.flags.Input = "config.yaml"
 		}
 
-		if c.password == "" {
+		valid := map[string]bool{
+			"app":    true,
+			"device": true,
+			"both":   true,
+		}
+
+		if !valid[c.flags.Scope] {
+			return fmt.Errorf("available Scope: app | device")
+		}
+
+		if c.flags.Password == "" {
 			fmt.Println("Enter the password :")
 			password, err := term.ReadPassword(int(os.Stdin.Fd()))
 			if err != nil {
 				return fmt.Errorf("input error: %v", err)
 			}
-			c.password = strings.TrimSpace(string(password))
+			c.flags.Password = strings.TrimSpace(string(password))
 		}
 
-		if err := c.encryptConfig(c.input, c.input, c.password); err != nil {
+		if err := c.encryptConfig(c.flags.Input, c.flags.Input, c.flags.Password); err != nil {
 			fmt.Println("Encryption error:", err)
 			return nil
 		}
-		fmt.Println("The configuration is encrypted in", c.input)
+		fmt.Println("The configuration is encrypted in", c.flags.Input)
 
 	case "decrypt":
-		if c.input == "" {
-			c.input = "config.yaml"
+		if c.flags.Input == "" {
+			c.flags.Input = "config.yaml"
 		}
 
-		if c.password == "" {
+		if c.flags.Password == "" {
 			fmt.Println("Enter the password :")
 			password, err := term.ReadPassword(int(os.Stdin.Fd()))
 			if err != nil {
 				return fmt.Errorf("input error: %v", err)
 			}
-			c.password = strings.TrimSpace(string(password))
+			c.flags.Password = strings.TrimSpace(string(password))
 		}
 
-		if err := c.decryptWithPassword(c.input, c.input, c.password); err != nil {
+		if err := c.decryptWithPassword(c.flags.Input, c.flags.Input, c.flags.Password); err != nil {
 			fmt.Println("Error:", err)
 			return nil
 		}
-		fmt.Println("The configuration is decrypted in", c.input)
+		fmt.Println("The configuration is decrypted in", c.flags.Input)
 
 	case "recovery":
-		if c.input == "" {
-			c.input = "config.yaml"
+		if c.flags.Input == "" {
+			c.flags.Input = "config.yaml"
 		}
 
-		if c.recoveryKey == "" {
+		if c.flags.Recovery == "" {
 			fmt.Println("Use: -crypt config -mode recovery -token <recovery key> -input config.yaml")
 			return nil
 		}
 
-		if err := c.recoverConfig(c.input, c.input, c.recoveryKey); err != nil {
+		if err := c.recoverConfig(c.flags.Input, c.flags.Input, c.flags.Recovery); err != nil {
 			fmt.Println("Recovery error:", err)
 			return nil
 		}
-		fmt.Println("The config was restored using the recovery token in", c.input)
+		fmt.Println("The config was restored using the recovery token in", c.flags.Input)
 
 	default:
 		fmt.Println("Available modes: encrypt | decrypt | recovery")
@@ -111,7 +110,7 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 		return err
 	}
 
-	isEnc, err := utils.IsEncryptedFile(input)
+	isEnc, err := utils.IsEncryptedFile(input, c.flags.Scope)
 	if err == nil && isEnc {
 		return fmt.Errorf("the %s file is already encrypted", input)
 	}
@@ -121,17 +120,17 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 		return err
 	}
 
-	appSecret := []byte(c.appSecret)
-	deviceKey := utils.GetDeviceKey()
-	passwordKey := utils.DeriveKey(password, appSecret, salt)
-	finalKey := utils.ComputeFinalKey(passwordKey, deviceKey)
+	secretCrypt := utils.SecretCrypt(c.flags)
+
+	passwordKey := utils.DeriveKey(password, secretCrypt.SecretKey, salt)
+	finalKey := utils.ComputeFinalKey(passwordKey, secretCrypt.DeviceKey)
 
 	encConfig := utils.EncryptAES(finalKey, plain)
 
-	deriveAppSecret := utils.DeriveAppKey(appSecret, deviceKey, salt)
+	deriveAppSecret := utils.DeriveAppKey(secretCrypt.SecretKey, secretCrypt.DeviceKey)
 	encKeyForApp := utils.EncryptAES(deriveAppSecret, finalKey)
 
-	data := append(utils.MagicHeader(), salt...)
+	data := append(utils.MagicHeader(c.flags.Scope), salt...)
 	data = append(data, byte(len(encKeyForApp)))
 	data = append(data, encKeyForApp...)
 	data = append(data, encConfig...)
@@ -143,19 +142,21 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 }
 
 func (c *Crypt) decryptWithPassword(input, output, password string) error {
-	data, err := utils.ReadEncryptedFile(input)
+	cFile, err := utils.ReadEncryptedFile(input)
 	if err != nil {
 		return err
 	}
 
+	data := cFile.Data
 	salt := data[:16]
 	keyLen := int(data[16])
 	offset := 17 + keyLen
 	encConfig := data[offset:]
 
-	passwordKey := utils.DeriveKey(password, []byte(c.appSecret), salt)
-	deviceKey := utils.GetDeviceKey()
-	finalKey := utils.ComputeFinalKey(passwordKey, deviceKey)
+	c.flags.Scope = utils.GetScope(cFile.Header)
+	secretCrypt := utils.SecretCrypt(c.flags)
+	passwordKey := utils.DeriveKey(password, secretCrypt.SecretKey, salt)
+	finalKey := utils.ComputeFinalKey(passwordKey, secretCrypt.DeviceKey)
 
 	plain, err := utils.DecryptAES(finalKey, encConfig)
 	if err != nil {
@@ -169,11 +170,12 @@ func (c *Crypt) recoverConfig(input, output, recoveryToken string) error {
 	if input == "" || recoveryToken == "" {
 		return fmt.Errorf("input and recovery token must be specified")
 	}
-
-	data, err := utils.ReadEncryptedFile(input)
+	cFile, err := utils.ReadEncryptedFile(input)
 	if err != nil {
 		return fmt.Errorf("failed to read encrypted file: %v", err)
 	}
+
+	data := cFile.Data
 
 	if len(data) < 17 {
 		return fmt.Errorf("invalid encrypted file (too short)")

@@ -19,7 +19,7 @@ import (
 var (
 	version = "dev"
 	date    = "unknown"
-	appKey  = "app_key"
+	appKey  = "app_key1"
 	appName = "Dumper"
 )
 var showVersion bool
@@ -49,6 +49,7 @@ func main() {
 	pass := flag.String("password", "", "Password to crypt file (optional)")
 	mode := flag.String("mode", "", "Mode: encrypt | decrypt | recovery")
 	recoveryKey := flag.String("token", "", "Recovery token for recovery")
+	scope := flag.String("scope", "both", "Scope to crypt file: app | device (optional)")
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
@@ -69,6 +70,7 @@ func main() {
 		Mode:       *mode,
 		Recovery:   *recoveryKey,
 		AppSecret:  appKey,
+		Scope:      *scope,
 	}
 
 	if flags.Crypt != "" {
