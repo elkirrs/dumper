@@ -61,7 +61,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					},
 				},
 			},
-			wantCmd:  `mongodump --uri "mongodb://root:qwerty@127.0.0.1:27018/mydb?authSource=admin&ssl=true" && tar -czf dump1.tar.gz mydb`,
+			wantCmd:  `mongodump --uri "mongodb://root:qwerty@127.0.0.1:27018/mydb?authSource=admin&ssl=true" --out ./ && tar -czf dump1.tar.gz mydb`,
 			wantDump: "dump1.tar.gz",
 		},
 		{
