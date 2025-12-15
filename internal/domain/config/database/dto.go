@@ -24,6 +24,7 @@ type Database struct {
 	Archive    *bool            `yaml:"archive"`
 	Docker     *docker.Docker   `yaml:"docker"`
 	Shell      *shell.Shell     `yaml:"shell"`
+	DirRemote  string           `yaml:"dir_remote"`
 }
 
 func (d *Database) GetName() string {
@@ -148,4 +149,11 @@ func (d *Database) GetStorages(globalStorages *[]string) []string {
 		return *globalStorages
 	}
 	return d.Storages
+}
+
+func (d *Database) GetDirRemote(globalDirRemote string) string {
+	if d.DirRemote != "" {
+		return d.DirRemote
+	}
+	return globalDirRemote
 }

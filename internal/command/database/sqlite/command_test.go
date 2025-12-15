@@ -5,6 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
+	"dumper/pkg/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
+	source := utils.GetDBSource("sqlite", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -22,7 +24,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			name: "Standard SQLite dump, local",
 			config: &cmdCfg.Config{
 				Database: cmdCfg.Database{
-					Options: option.Options{Path: "test.db"},
+					Options: option.Options{Path: "test.db", Source: source},
 				},
 				DumpName:     "dump1",
 				Archive:      false,
@@ -38,7 +40,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			name: "SQLite dump with archive, local",
 			config: &cmdCfg.Config{
 				Database: cmdCfg.Database{
-					Options: option.Options{Path: "archive.db"},
+					Options: option.Options{Path: "archive.db", Source: source},
 				},
 				DumpName:     "archive1",
 				Archive:      true,
@@ -55,7 +57,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			name: "SQLite dump to server, no archive",
 			config: &cmdCfg.Config{
 				Database: cmdCfg.Database{
-					Options: option.Options{Path: "server.db"},
+					Options: option.Options{Path: "server.db", Source: source},
 				},
 				DumpName:     "serverDump",
 				Archive:      false,
@@ -71,7 +73,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 			name: "SQLite dump to server with archive",
 			config: &cmdCfg.Config{
 				Database: cmdCfg.Database{
-					Options: option.Options{Path: "serverArchive.db"},
+					Options: option.Options{Path: "serverArchive.db", Source: source},
 				},
 				DumpName:     "serverArchive",
 				Archive:      true,

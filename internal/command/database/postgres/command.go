@@ -22,7 +22,8 @@ func (g PSQLGenerator) Generate(data *commandConfig.Config) (*commandDomain.DBCo
 	}
 
 	baseCmd := fmt.Sprintf(
-		"pg_dump --dbname=postgresql://%s:%s@127.0.0.1:%s/%s --clean --if-exists --no-owner %s",
+		"%s --dbname=postgresql://%s:%s@127.0.0.1:%s/%s --clean --if-exists --no-owner %s",
+		data.Database.Options.Source,
 		data.Database.User,
 		data.Database.Password,
 		data.Database.Port,

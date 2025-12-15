@@ -148,7 +148,8 @@ func (b *Backup) prepareBackupConfig() {
 		Template: b.cfg.Settings.Template,
 	}
 	nameFile := utils.GetTemplateFileName(dataFormat)
-	fullPath := utils.GetFullPath(b.cfg.Settings.DirRemote, nameFile)
+	dirRemote := b.dbConnect.Database.GetDirRemote(b.cfg.Settings.DirRemote)
+	fullPath := utils.GetFullPath(dirRemote, nameFile)
 	shellScript := b.dbConnect.Server.GetShell(b.cfg.Settings.Shell)
 
 	b.cmdConfig = &commandConfig.Config{
@@ -172,7 +173,7 @@ func (b *Backup) prepareBackupConfig() {
 		Archive:             b.dbConnect.Database.IsArchive(*b.cfg.Settings.Archive),
 		DumpDirLocal:        b.cfg.Settings.DirDump,
 		DumpName:            fullPath,
-		DumpDirRemote:       b.cfg.Settings.DirRemote,
+		DumpDirRemote:       dirRemote,
 		RemoveBackup:        *b.cfg.Settings.RemoveDump,
 		Encrypt:             b.dbConnect.Database.GetEncrypt(b.cfg.Settings.Encrypt),
 		MaxParallelDownload: b.cfg.Settings.MaxParallelDownload,

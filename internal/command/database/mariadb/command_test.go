@@ -4,6 +4,8 @@ import (
 	"dumper/internal/command/database/mariadb"
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
+	"dumper/pkg/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +13,7 @@ import (
 )
 
 func TestMariaDbGenerator_Generate(t *testing.T) {
+	source := utils.GetDBSource("mariadb", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -25,6 +28,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 					Password: "123",
 					Port:     "3306",
 					Name:     "testdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "dump",
 				Archive:      false,
@@ -47,6 +51,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 					Password: "123",
 					Port:     "3306",
 					Name:     "testdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "dump",
 				Archive:      true,
@@ -66,6 +71,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 					Password: "123",
 					Port:     "3306",
 					Name:     "testdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "server_dump",
 				Archive:      false,
@@ -85,6 +91,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 					Password: "123",
 					Port:     "3306",
 					Name:     "testdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "server_dump",
 				Archive:      true,
@@ -121,12 +128,15 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 }
 
 func TestMariaDbGenerator_CommandIntegrity(t *testing.T) {
+	source := utils.GetDBSource("mariadb", "")
+
 	cfg := &cmdCfg.Config{
 		Database: cmdCfg.Database{
 			User:     "admin",
 			Password: "secret",
 			Port:     "3307",
 			Name:     "mydb",
+			Options:  option.Options{Source: source},
 		},
 		DumpName:     "backup",
 		Archive:      false,

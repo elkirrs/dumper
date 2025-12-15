@@ -17,14 +17,14 @@ func (g RedisGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 	host := "127.0.0.1"
 
 	baseCmd := fmt.Sprintf(
-		"redis-cli -h %s -p %s -a %s --rdb",
-		host, data.Database.Port, data.Database.Password,
+		"%s -h %s -p %s -a %s --rdb",
+		data.Database.Options.Source, host, data.Database.Port, data.Database.Password,
 	)
 
 	if data.Database.Options.Mode == "save" {
 		saveCmd := fmt.Sprintf(
-			"redis-cli -h %s -p %s -a %s SAVE && ",
-			host, data.Database.Port, data.Database.Password,
+			"%s -h %s -p %s -a %s SAVE && ",
+			data.Database.Options.Source, host, data.Database.Port, data.Database.Password,
 		)
 		baseCmd = saveCmd + baseCmd
 	}

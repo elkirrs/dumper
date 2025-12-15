@@ -4,6 +4,8 @@ import (
 	"dumper/internal/command/database/postgres"
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
+	"dumper/pkg/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +13,7 @@ import (
 )
 
 func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
+	source := utils.GetDBSource("psql", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -26,6 +29,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					Password: "pass",
 					Port:     "5432",
 					Name:     "testdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "plain1",
 				Archive:      false,
@@ -47,6 +51,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					Password: "pass",
 					Port:     "5433",
 					Name:     "archive_db",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "plain_gzip",
 				Archive:      true,
@@ -67,6 +72,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					Password: "pwd123",
 					Port:     "5432",
 					Name:     "customdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "custom1",
 				Archive:      false,
@@ -87,6 +93,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					Password: "pwd",
 					Port:     "5432",
 					Name:     "tardb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "tar1",
 				Archive:      false,
@@ -107,6 +114,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					Password: "pass",
 					Port:     "5432",
 					Name:     "serverdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "server_plain",
 				Archive:      false,
@@ -127,6 +135,7 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					Password: "pass",
 					Port:     "5432",
 					Name:     "serverdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "server_gzip",
 				Archive:      true,

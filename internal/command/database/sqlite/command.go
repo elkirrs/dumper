@@ -14,7 +14,10 @@ func (g SQLiteGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("%s", fileName)
 
-	baseCmd := fmt.Sprintf("sqlite3 %s .dump", data.Database.Options.Path)
+	baseCmd := fmt.Sprintf("%s %s .dump",
+		data.Database.Options.Source,
+		data.Database.Options.Path,
+	)
 
 	if data.Archive {
 		remotePath += ".gz"

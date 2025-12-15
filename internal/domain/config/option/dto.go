@@ -6,4 +6,5 @@ type Options struct {
 	Mode       string `yaml:"mode"`
 	Role       string `yaml:"role"`
 	Path       string `yaml:"path"`
+	Source     string `yaml:"source"`
 }

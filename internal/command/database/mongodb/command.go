@@ -42,7 +42,7 @@ func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 		uri += "?" + params
 	}
 
-	baseCmd := fmt.Sprintf("mongodump --uri \"%s\"", uri)
+	baseCmd := fmt.Sprintf("%s --uri \"%s\"", data.Database.Options.Source, uri)
 
 	if data.Archive {
 		if formatFlag == "--archive" {

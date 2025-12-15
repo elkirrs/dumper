@@ -259,7 +259,7 @@ func (b *BackupServer) FileSize() (int64, error) {
 	var totalSize int64
 
 	if err != nil {
-		return totalSize, fmt.Errorf("failed to get file size: %v", err)
+		return totalSize, fmt.Errorf("failed to get file size. path: %s err: %v", b.config.DumpName, err)
 	}
 	sizeOutput = strings.TrimSpace(sizeOutput)
 
