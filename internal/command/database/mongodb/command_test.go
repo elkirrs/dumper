@@ -1,6 +1,7 @@
 package mongodb_test
 
 import (
+	"dumper/pkg/utils"
 	"testing"
 
 	"dumper/internal/command/database/mongodb"
@@ -13,6 +14,7 @@ import (
 )
 
 func TestMongoGenerator_Generate(t *testing.T) {
+	source := utils.GetDBSource("mongodb", "")
 	sslTrue := true
 
 	tests := []struct {
@@ -37,6 +39,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					Options: option.Options{
 						AuthSource: "admin",
 						SSL:        &sslTrue,
+						Source:     source,
 					},
 				},
 			},
@@ -58,6 +61,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					Options: option.Options{
 						AuthSource: "admin",
 						SSL:        &sslTrue,
+						Source:     source,
 					},
 				},
 			},
@@ -79,6 +83,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					Options: option.Options{
 						AuthSource: "admin",
 						SSL:        &sslTrue,
+						Source:     source,
 					},
 				},
 			},
@@ -100,6 +105,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					Options: option.Options{
 						AuthSource: "",
 						SSL:        &sslTrue,
+						Source:     source,
 					},
 				},
 			},
@@ -121,6 +127,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					Options: option.Options{
 						AuthSource: "adm in",
 						SSL:        &sslTrue,
+						Source:     source,
 					},
 				},
 			},

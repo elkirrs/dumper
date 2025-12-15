@@ -12,7 +12,8 @@ func (g MariaDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBComman
 	ext := "sql"
 
 	baseCmd := fmt.Sprintf(
-		"mariadb-dump -u%s -p%s -h127.0.0.1 -P%s %s",
+		"%s -u%s -p%s -h127.0.0.1 -P%s %s",
+		data.Database.Options.Source,
 		data.Database.User,
 		data.Database.Password,
 		data.Database.Port,

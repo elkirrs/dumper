@@ -5,6 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
+	"dumper/pkg/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,8 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 	trueVal := true
 	falseVal := false
 
+	sourceBac := utils.GetDBSource("mssql", "bac")
+	sourceBacpac := utils.GetDBSource("mssql", "bacpac")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -31,7 +34,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "Passw0rd!",
 					Name:     "MyDB",
-					Options:  option.Options{SSL: &falseVal},
+					Options:  option.Options{SSL: &falseVal, Source: sourceBac},
 				},
 				DumpName:     "backup1",
 				Archive:      false,
@@ -40,7 +43,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			expectedContains: []string{
 				"sqlcmd",
 				"BACKUP DATABASE [MyDB]",
-				"TO DISK='backup1.bak'",
+				"TO DISK=\\\"backup1.bak\\\"",
 			},
 			expectedExt: ".bak",
 		},
@@ -53,7 +56,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "Passw0rd!",
 					Name:     "MyDB",
-					Options:  option.Options{SSL: &falseVal},
+					Options:  option.Options{SSL: &falseVal, Source: sourceBacpac},
 				},
 				DumpName:     "export1",
 				Archive:      false,
@@ -76,7 +79,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "admin",
 					Password: "pwd123",
 					Name:     "ProdDB",
-					Options:  option.Options{SSL: &trueVal},
+					Options:  option.Options{SSL: &trueVal, Source: sourceBacpac},
 				},
 				DumpName:     "exportSSL",
 				Archive:      false,
@@ -84,7 +87,6 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"sqlpackage",
-				"/SourceTrustServerCertificate:True",
 			},
 			expectedExt: ".bacpac",
 		},
@@ -97,16 +99,16 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "Passw0rd!",
 					Name:     "MyDB",
-					Options:  option.Options{SSL: &falseVal},
+					Options:  option.Options{SSL: &falseVal, Source: sourceBac},
 				},
 				DumpName:     "backup2",
 				Archive:      true,
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"powershell Compress-Archive",
-				"backup2.bak",
+				"tar -czf",
 				"backup2.bak.gz",
+				"backup2.bak",
 			},
 			expectedExt: ".bak.gz",
 		},
@@ -119,15 +121,16 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "Passw0rd!",
 					Name:     "MyDB",
-					Options:  option.Options{SSL: &falseVal},
+					Options:  option.Options{SSL: &falseVal, Source: sourceBacpac},
 				},
 				DumpName:     "export2",
 				Archive:      true,
 				DumpLocation: "local",
 			},
 			expectedContains: []string{
-				"powershell Compress-Archive",
+				"tar -czf",
 				"export2.bacpac.gz",
+				"export2.bacpac",
 			},
 			expectedExt: ".bacpac.gz",
 		},
@@ -140,7 +143,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "1234",
 					Name:     "DB1",
-					Options:  option.Options{SSL: &falseVal},
+					Options:  option.Options{SSL: &falseVal, Source: sourceBac},
 				},
 				DumpName:     "dumpServer",
 				Archive:      false,
@@ -148,7 +151,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedContains: []string{
 				"sqlcmd",
-				"TO DISK='dumpServer.bak'",
+				"TO DISK=\\\"dumpServer.bak\\\"",
 			},
 			expectedExt: ".bak",
 		},
@@ -161,7 +164,7 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "pass",
 					Name:     "DBX",
-					Options:  option.Options{SSL: &falseVal},
+					Options:  option.Options{SSL: &falseVal, Source: sourceBac},
 				},
 				DumpName:     "badDump",
 				Archive:      false,

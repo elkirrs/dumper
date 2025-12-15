@@ -5,6 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
+	"dumper/pkg/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
+	source := utils.GetDBSource("redis", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -24,7 +26,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				Database: cmdCfg.Database{
 					Port:     "6379",
 					Password: "pass",
-					Options:  option.Options{Mode: ""},
+					Options:  option.Options{Mode: "", Source: source},
 				},
 				DumpName:     "dump1",
 				Archive:      false,
@@ -43,7 +45,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				Database: cmdCfg.Database{
 					Port:     "6379",
 					Password: "pass",
-					Options:  option.Options{Mode: "save"},
+					Options:  option.Options{Mode: "save", Source: source},
 				},
 				DumpName:     "dump2",
 				Archive:      false,
@@ -62,7 +64,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				Database: cmdCfg.Database{
 					Port:     "6380",
 					Password: "secret",
-					Options:  option.Options{Mode: ""},
+					Options:  option.Options{Mode: "", Source: source},
 				},
 				DumpName:     "archive1",
 				Archive:      true,
@@ -81,7 +83,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				Database: cmdCfg.Database{
 					Port:     "6380",
 					Password: "secret",
-					Options:  option.Options{Mode: "save"},
+					Options:  option.Options{Mode: "save", Source: source},
 				},
 				DumpName:     "archive2",
 				Archive:      true,
@@ -101,7 +103,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				Database: cmdCfg.Database{
 					Port:     "6379",
 					Password: "pass",
-					Options:  option.Options{Mode: ""},
+					Options:  option.Options{Mode: "", Source: source},
 				},
 				DumpName:     "serverDump",
 				Archive:      false,
@@ -119,7 +121,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 				Database: cmdCfg.Database{
 					Port:     "6379",
 					Password: "pass",
-					Options:  option.Options{Mode: "save"},
+					Options:  option.Options{Mode: "save", Source: source},
 				},
 				DumpName:     "serverArchive",
 				Archive:      true,

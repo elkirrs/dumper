@@ -11,8 +11,13 @@ type MySQLGenerator struct{}
 func (g MySQLGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
-	baseCmd := fmt.Sprintf("mysqldump -h 127.0.0.1 -P %s -u %s -p%s --databases %s",
-		data.Database.Port, data.Database.User, data.Database.Password, data.Database.Name)
+	baseCmd := fmt.Sprintf("%s -h 127.0.0.1 -P %s -u %s -p%s --databases %s",
+		data.Database.Options.Source,
+		data.Database.Port,
+		data.Database.User,
+		data.Database.Password,
+		data.Database.Name,
+	)
 
 	if data.Archive {
 		baseCmd += " | gzip"

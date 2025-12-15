@@ -4,6 +4,8 @@ import (
 	"dumper/internal/command/database/mysql"
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
+	"dumper/pkg/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +13,7 @@ import (
 )
 
 func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
+	source := utils.GetDBSource("mysql", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -25,6 +28,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "root",
 					Password: "password",
 					Name:     "testdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "dump1",
 				Archive:      false,
@@ -47,6 +51,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "admin",
 					Password: "1234",
 					Name:     "prod_db",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "backup1",
 				Archive:      true,
@@ -67,6 +72,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "sa",
 					Password: "pw123",
 					Name:     "serverdb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "dump_server",
 				Archive:      false,
@@ -86,6 +92,7 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 					User:     "admin",
 					Password: "pw",
 					Name:     "archivedb",
+					Options:  option.Options{Source: source},
 				},
 				DumpName:     "dump_archive",
 				Archive:      true,

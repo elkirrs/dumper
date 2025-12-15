@@ -23,7 +23,7 @@ func (g MSQLGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, 
 
 	if data.Archive {
 		baseCmd.Command = fmt.Sprintf(
-			"%s && powershell Compress-Archive -Path '%s' -DestinationPath '%s.gz'",
+			"%s && tar -czf %s.gz %s",
 			baseCmd.Command, baseCmd.DumpPath, baseCmd.DumpPath,
 		)
 		baseCmd.DumpPath += ".gz"
@@ -44,8 +44,9 @@ func genFormatBak(
 	remotePath := fmt.Sprintf("%s", fileName)
 
 	baseCmd := fmt.Sprintf(
-		"sqlcmd -S %s -U %s -P %s -Q \"BACKUP DATABASE [%s] TO DISK='%s' WITH FORMAT, INIT\"",
-		data.Server.Host,
+		"%s -S %s -C -U %s -P %s -Q \"BACKUP DATABASE [%s] TO DISK=\\\"%s\\\" WITH FORMAT, INIT\"",
+		data.Database.Options.Source,
+		"localhost",
 		data.Database.User,
 		data.Database.Password,
 		data.Database.Name,
@@ -66,15 +67,16 @@ func genFormatBacpac(
 	remotePath := fmt.Sprintf("%s", fileName)
 
 	baseCmd := fmt.Sprintf(
-		"sqlpackage /Action:Export /SourceServerName:%s /SourceDatabaseName:%s /SourceUser:%s /SourcePassword:%s /TargetFile:%s",
-		data.Server.Host,
+		"%s /Action:Export /SourceServerName:%s /SourceDatabaseName:%s /SourceUser:%s /SourcePassword:%s /TargetFile:%s",
+		data.Database.Options.Source,
+		"localhost",
 		data.Database.Name,
 		data.Database.User,
 		data.Database.Password,
 		remotePath,
 	)
 
-	if *data.Database.Options.SSL {
+	if !*data.Database.Options.SSL {
 		baseCmd += " /SourceTrustServerCertificate:True"
 	}
 
