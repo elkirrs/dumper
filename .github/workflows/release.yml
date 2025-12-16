@@ -1,11 +1,12 @@
 name: Release
 
 on:
-  push:
-    tags: [ 'v*' ]
+  pull_request:
+    types: [closed]
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,16 +16,31 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get branch name
+        id: branch
+        run: |
+          BRANCH_NAME=${GITHUB_HEAD_REF##*/}
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Generate version
+        id: version
+        run: |
+          TAG="${{ steps.branch.outputs.branch }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Run tests
+        run: |
+          make test
+
+      - name: Create git tag
+        run: |
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin refs/tags/${{ steps.version.outputs.tag }}
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.24.x'
-
-      - name: Run Tests
-        run: |
-          make test
-        env:
-          GO111MODULE: on
 
       - name: Generate app key
         id: secret
