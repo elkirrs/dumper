@@ -16,6 +16,11 @@ Opportunities:
 - Backup from docker
 - Shell script after and before backup
 
+### Installation:
+```shell
+    curl -sSL https://elkirrs.github.io/dumper/install.sh | sh 
+```
+
 ### Checking the receipt by the user:
 
 - Mac/Linux:
