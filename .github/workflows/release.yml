@@ -16,26 +16,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get branch name
-        id: branch
-        run: |
-          BRANCH_NAME=${GITHUB_HEAD_REF##*/}
-          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
-      - name: Generate version
-        id: version
-        run: |
-          TAG="${{ steps.branch.outputs.branch }}"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
       - name: Run tests
         run: |
           make test
 
+      - name: Generate version
+        id: version
+        run: |
+          BRANCH_NAME=${GITHUB_HEAD_REF##*/}
+          TAG="${BRANCH_NAME}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
       - name: Create git tag
         run: |
           git tag ${{ steps.version.outputs.tag }}
-          git push origin refs/tags/${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
