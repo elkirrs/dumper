@@ -30,6 +30,12 @@ func NewApp(
 func (l *Local) Save() error {
 	localPath := filepath.Join(l.config.Config.Dir, filepath.Base(l.config.DumpName))
 
+	dir := filepath.Dir(localPath)
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create local directory: %v", err)
+	}
+
 	outFile, err := os.Create(localPath)
 	if err != nil {
 		return fmt.Errorf("failed to create local file: %v", err)
