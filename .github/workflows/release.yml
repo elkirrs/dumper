@@ -1,12 +1,14 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,16 +23,19 @@ jobs:
         run: |
           make test
 
-      - name: Generate version
+      - name: Generate version from PR branch
         id: version
         run: |
-          BRANCH_NAME=${GITHUB_HEAD_REF##*/}
-          TAG="${BRANCH_NAME}"
+          BRANCH_NAME=${GITHUB_HEAD_REF}
+          TAG="${BRANCH_NAME//\//-}"
+          echo "Generated tag: $TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Create git tag
         run: |
-          git tag ${{ steps.version.outputs.tag }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.tag }}"
           git push origin ${{ steps.version.outputs.tag }}
 
       - name: Set up Go
