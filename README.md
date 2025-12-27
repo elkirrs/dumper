@@ -21,6 +21,10 @@ Opportunities:
     curl -sSL https://elkirrs.github.io/dumper/install.sh | sh 
 ```
 
+### Documentation:
+Click to docs page: [Documentation](https://elkirrs.github.io/dumper)
+
+
 ### Checking the receipt by the user:
 
 - Mac/Linux:
