@@ -3,6 +3,7 @@ package mongodb
 import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
 	"fmt"
 	"net/url"
 )
@@ -19,11 +20,10 @@ func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 	}
 
 	uri := fmt.Sprintf(
-		"mongodb://%s:%s@127.0.0.1:%s/%s",
+		"mongodb://%s:%s@127.0.0.1:%s/",
 		url.QueryEscape(data.Database.User),
 		url.QueryEscape(data.Database.Password),
 		data.Database.Port,
-		data.Database.Name,
 	)
 
 	params := ""
@@ -42,7 +42,16 @@ func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 		uri += "?" + params
 	}
 
-	baseCmd := fmt.Sprintf("%s --uri \"%s\"", data.Database.Options.Source, uri)
+	baseCmd := fmt.Sprintf("%s --uri \"%s\" --db %s",
+		data.Database.Options.Source,
+		uri,
+		data.Database.Name,
+	)
+
+	tables := prepareTables(&data.Database.Options)
+	if tables != "" {
+		baseCmd = fmt.Sprintf("%s %s", baseCmd, tables)
+	}
 
 	if data.Archive {
 		if formatFlag == "--archive" {
@@ -57,8 +66,8 @@ func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 			ext = "archive"
 			baseCmd = fmt.Sprintf("%s --archive=%s.%s", baseCmd, data.DumpName, ext)
 		} else {
-			baseCmd = fmt.Sprintf("--out ./ %s && tar -czf %s.tar.gz %s", baseCmd, data.DumpName, data.Database.Name)
 			ext = "tar.gz"
+			baseCmd = fmt.Sprintf("%s --out ./ && tar -czf %s.tar.gz %s", baseCmd, data.DumpName, data.Database.Name)
 		}
 	}
 
@@ -76,4 +85,26 @@ func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 		Command:  baseCmd,
 		DumpPath: remotePath,
 	}, nil
+}
+
+func prepareTables(
+	options *option.Options,
+) string {
+	out := ""
+
+	if options.IncTables != nil {
+		for _, table := range options.IncTables {
+			out += fmt.Sprintf(" %s%s", "--collection ", table)
+			break
+		}
+	}
+
+	if options.IncTables == nil && options.ExcTables != nil {
+		for _, table := range options.ExcTables {
+			out += fmt.Sprintf(" %s%s", "--excludeCollection ", table)
+			break
+		}
+	}
+
+	return out
 }

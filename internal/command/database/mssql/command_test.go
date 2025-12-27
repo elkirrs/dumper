@@ -172,6 +172,35 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name: "Generate .bacpac with include tables",
+			config: &cmdCfg.Config{
+				Server: cmdCfg.Server{Host: "localhost"},
+				Database: cmdCfg.Database{
+					Format:   "bacpac",
+					User:     "sa",
+					Password: "Passw0rd!",
+					Name:     "MyDB",
+					Options: option.Options{
+						SSL:       &falseVal,
+						Source:    sourceBacpac,
+						IncTables: []string{"Users", "Rules"},
+					},
+				},
+				DumpName:     "export1",
+				Archive:      false,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"sqlpackage",
+				"/Action:Export",
+				"/SourceServerName:localhost",
+				"/p:TableData=\"dbo.Users\"",
+				"/p:TableData=\"dbo.Rules\"",
+				"/TargetFile:export1.bacpac",
+			},
+			expectedExt: ".bacpac",
+		},
 	}
 
 	gen := mssql.MSQLGenerator{}

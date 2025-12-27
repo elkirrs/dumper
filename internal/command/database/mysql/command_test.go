@@ -105,6 +105,60 @@ func TestMySQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedExt: "sql.gz",
 		},
+		{
+			name: "Standard MySQL dump with only include tables",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "3306",
+					User:     "root",
+					Password: "password",
+					Name:     "testdb",
+					Options: option.Options{
+						Source:    source,
+						IncTables: []string{"t1", "t2"},
+					},
+				},
+				DumpName:     "testdb",
+				Archive:      false,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"mysqldump",
+				"-h 127.0.0.1",
+				"-u root",
+				"-ppassword",
+				"testdb",
+				"t1 t2",
+			},
+			expectedExt: "sql",
+		},
+		{
+			name: "Standard MySQL dump with exclude tables",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Port:     "3306",
+					User:     "root",
+					Password: "password",
+					Name:     "testdb",
+					Options: option.Options{
+						Source:    source,
+						ExcTables: []string{"t1", "t2"},
+					},
+				},
+				DumpName:     "testdb",
+				Archive:      false,
+				DumpLocation: "local",
+			},
+			expectedContains: []string{
+				"mysqldump",
+				"-h 127.0.0.1",
+				"-u root",
+				"-ppassword",
+				"testdb",
+				"--ignore-table=testdb.t1 --ignore-table=testdb.t2",
+			},
+			expectedExt: "sql",
+		},
 	}
 
 	gen := mysql.MySQLGenerator{}
