@@ -104,6 +104,56 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 			},
 			expectedExt: "sql.gz",
 		},
+		{
+			name: "Dump with only table from list (include tables), dump to server",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "root",
+					Password: "123",
+					Port:     "3306",
+					Name:     "testdb",
+					Options: option.Options{
+						Source:    source,
+						IncTables: []string{"users", "roles"},
+					},
+				},
+				DumpName:     "server_dump",
+				Archive:      false,
+				DumpLocation: "server",
+			},
+			expectedContains: []string{
+				"mariadb-dump",
+				"-uroot -p123 -h127.0.0.1 -P3306 testdb ",
+				"users roles",
+				"> server_dump.sql",
+			},
+			expectedExt: "sql",
+		},
+		{
+			name: "Dump with without table from list (exclude tables), dump to server",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					User:     "root",
+					Password: "123",
+					Port:     "3306",
+					Name:     "testdb",
+					Options: option.Options{
+						Source:    source,
+						ExcTables: []string{"users", "roles"},
+					},
+				},
+				DumpName:     "server_dump",
+				Archive:      false,
+				DumpLocation: "server",
+			},
+			expectedContains: []string{
+				"mariadb-dump",
+				"-uroot -p123 -h127.0.0.1 -P3306 testdb ",
+				"--ignore-table=testdb.users --ignore-table=testdb.roles",
+				"> server_dump.sql",
+			},
+			expectedExt: "sql",
+		},
 	}
 
 	gen := mariadb.MariaDbGenerator{}

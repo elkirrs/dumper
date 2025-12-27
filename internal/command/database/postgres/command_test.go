@@ -147,6 +147,60 @@ func TestPSQLGenerator_Generate_AllScenarios(t *testing.T) {
 			},
 			expectedExt: "sql.gz",
 		},
+		{
+			name: "Plain SQL dump, server (include tables)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "plain",
+					User:     "postgres",
+					Password: "pass",
+					Port:     "5432",
+					Name:     "testdb",
+					Options: option.Options{
+						Source:    source,
+						IncTables: []string{"t1", "t2"},
+					},
+				},
+				DumpName:     "plain1",
+				Archive:      false,
+				DumpLocation: "server",
+			},
+			expectedContains: []string{
+				"pg_dump",
+				"-Fp",
+				"--dbname=postgresql://postgres:pass@127.0.0.1:5432/testdb",
+				"--table=public.t1",
+				"--table=public.t2",
+			},
+			expectedExt: "sql",
+		},
+		{
+			name: "Plain SQL dump, server (exclude tables)",
+			config: &cmdCfg.Config{
+				Database: cmdCfg.Database{
+					Format:   "plain",
+					User:     "postgres",
+					Password: "pass",
+					Port:     "5432",
+					Name:     "testdb",
+					Options: option.Options{
+						Source:    source,
+						ExcTables: []string{"t1", "t2"},
+					},
+				},
+				DumpName:     "plain1",
+				Archive:      false,
+				DumpLocation: "server",
+			},
+			expectedContains: []string{
+				"pg_dump",
+				"-Fp",
+				"--dbname=postgresql://postgres:pass@127.0.0.1:5432/testdb",
+				"--exclude-table=public.t1",
+				"--exclude-table=public.t2",
+			},
+			expectedExt: "sql",
+		},
 	}
 
 	gen := postgres.PSQLGenerator{}

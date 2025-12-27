@@ -3,6 +3,7 @@ package mssql
 import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
 	"fmt"
 )
 
@@ -76,6 +77,12 @@ func genFormatBacpac(
 		remotePath,
 	)
 
+	tables := prepareTables(&data.Database.Options)
+
+	if tables != "" {
+		baseCmd = fmt.Sprintf("%s %s", baseCmd, tables)
+	}
+
 	if !*data.Database.Options.SSL {
 		baseCmd += " /SourceTrustServerCertificate:True"
 	}
@@ -84,4 +91,18 @@ func genFormatBacpac(
 		Command:  baseCmd,
 		DumpPath: remotePath,
 	}
+}
+
+func prepareTables(
+	options *option.Options,
+) string {
+	out := ""
+
+	if options.IncTables != nil {
+		for _, table := range options.IncTables {
+			out += fmt.Sprintf(" /p:TableData=\"dbo.%s\"", table)
+		}
+	}
+
+	return out
 }

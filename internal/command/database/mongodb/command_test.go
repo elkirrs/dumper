@@ -14,7 +14,7 @@ import (
 )
 
 func TestMongoGenerator_Generate(t *testing.T) {
-	source := utils.GetDBSource("mongodb", "")
+	source := utils.GetDBSource("mongo", "")
 	sslTrue := true
 
 	tests := []struct {
@@ -43,7 +43,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					},
 				},
 			},
-			wantCmd:  `mongodump --uri "mongodb://user:pass@127.0.0.1:27017/mydb?authSource=admin&ssl=true" --archive=backup.gz --gzip`,
+			wantCmd:  `mongodump --uri "mongodb://user:pass@127.0.0.1:27017/?authSource=admin&ssl=true" --db mydb --archive=backup.gz --gzip`,
 			wantDump: "backup.gz",
 		},
 		{
@@ -65,17 +65,17 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					},
 				},
 			},
-			wantCmd:  `mongodump --uri "mongodb://root:qwerty@127.0.0.1:27018/mydb?authSource=admin&ssl=true" --out ./ && tar -czf dump1.tar.gz mydb`,
+			wantCmd:  `mongodump --uri "mongodb://root:qwerty@127.0.0.1:27018/?authSource=admin&ssl=true" --db mydb --out ./ && tar -czf dump1.tar.gz mydb`,
 			wantDump: "dump1.tar.gz",
 		},
 		{
-			name: "no archive, format=archive, plain archive output",
+			name: "no archive + archive format",
 			cfg: &cmdCfg.Config{
 				DumpName:     "ddd",
 				Archive:      false,
 				DumpLocation: "server",
 				Database: cmdCfg.Database{
-					Name:     "db",
+					Name:     "mydb",
 					User:     "u",
 					Password: "p",
 					Port:     "27017",
@@ -87,11 +87,11 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					},
 				},
 			},
-			wantCmd:  `mongodump --uri "mongodb://u:p@127.0.0.1:27017/db?authSource=admin&ssl=true" --archive=ddd.archive`,
+			wantCmd:  `mongodump --uri "mongodb://u:p@127.0.0.1:27017/?authSource=admin&ssl=true" --db mydb --archive=ddd.archive`,
 			wantDump: "ddd.archive",
 		},
 		{
-			name: "no archive, format=dir ⇒ tar.gz",
+			name: "no archive + directory format",
 			cfg: &cmdCfg.Config{
 				DumpName:     "test2",
 				Archive:      false,
@@ -109,7 +109,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					},
 				},
 			},
-			wantCmd:  `--out ./ mongodump --uri "mongodb://u:pp@127.0.0.1:27017/mydb?ssl=true" && tar -czf test2.tar.gz mydb`,
+			wantCmd:  `mongodump --uri "mongodb://u:pp@127.0.0.1:27017/?ssl=true" --db mydb --out ./ && tar -czf test2.tar.gz mydb`,
 			wantDump: "test2.tar.gz",
 		},
 		{
@@ -119,7 +119,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 				Archive:      false,
 				DumpLocation: "server",
 				Database: cmdCfg.Database{
-					Name:     "db",
+					Name:     "mydb",
 					User:     "us er",
 					Password: "p@ss",
 					Port:     "27017",
@@ -131,7 +131,53 @@ func TestMongoGenerator_Generate(t *testing.T) {
 					},
 				},
 			},
-			wantCmd:  `mongodump --uri "mongodb://us+er:p%40ss@127.0.0.1:27017/db?authSource=adm+in&ssl=true" --archive=sp.archive`,
+			wantCmd:  `mongodump --uri "mongodb://us+er:p%40ss@127.0.0.1:27017/?authSource=adm+in&ssl=true" --db mydb --archive=sp.archive`,
+			wantDump: "sp.archive",
+		},
+		{
+			name: "include tables in dump",
+			cfg: &cmdCfg.Config{
+				DumpName:     "sp",
+				Archive:      false,
+				DumpLocation: "server",
+				Database: cmdCfg.Database{
+					Name:     "mydb",
+					User:     "user",
+					Password: "pass",
+					Port:     "27017",
+					Format:   "archive",
+					Options: option.Options{
+						AuthSource: "admin",
+						SSL:        &sslTrue,
+						Source:     source,
+						IncTables:  []string{"t1"},
+					},
+				},
+			},
+			wantCmd:  `mongodump --uri "mongodb://user:pass@127.0.0.1:27017/?authSource=admin&ssl=true" --db mydb  --collection t1 --archive=sp.archive`,
+			wantDump: "sp.archive",
+		},
+		{
+			name: "exclude tables in dump",
+			cfg: &cmdCfg.Config{
+				DumpName:     "sp",
+				Archive:      false,
+				DumpLocation: "server",
+				Database: cmdCfg.Database{
+					Name:     "mydb",
+					User:     "user",
+					Password: "pass",
+					Port:     "27017",
+					Format:   "archive",
+					Options: option.Options{
+						AuthSource: "admin",
+						SSL:        &sslTrue,
+						Source:     source,
+						ExcTables:  []string{"t1"},
+					},
+				},
+			},
+			wantCmd:  `mongodump --uri "mongodb://user:pass@127.0.0.1:27017/?authSource=admin&ssl=true" --db mydb  --excludeCollection t1 --archive=sp.archive`,
 			wantDump: "sp.archive",
 		},
 	}

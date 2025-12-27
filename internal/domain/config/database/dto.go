@@ -9,9 +9,9 @@ import (
 
 type Database struct {
 	Title      string           `yaml:"title,omitempty"`
-	User       string           `yaml:"user" validate:"required"`
-	Password   string           `yaml:"password" validate:"required"`
-	Name       string           `yaml:"name,omitempty" validate:"required"`
+	User       string           `yaml:"user"`
+	Password   string           `yaml:"password"`
+	Name       string           `yaml:"name"`
 	Server     string           `yaml:"server" validate:"required"`
 	Key        string           `yaml:"key"`
 	Port       string           `yaml:"port,omitempty" validate:"required"`
@@ -151,9 +151,9 @@ func (d *Database) GetStorages(globalStorages *[]string) []string {
 	return d.Storages
 }
 
-func (d *Database) GetDirRemote(globalDirRemote string) string {
+func (d *Database) GetDirRemote(globalDirRemote *string) string {
 	if d.DirRemote != "" {
 		return d.DirRemote
 	}
-	return globalDirRemote
+	return *globalDirRemote
 }

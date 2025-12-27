@@ -148,7 +148,7 @@ func (b *Backup) prepareBackupConfig() {
 		Template: b.cfg.Settings.Template,
 	}
 	nameFile := utils.GetTemplateFileName(dataFormat)
-	dirRemote := b.dbConnect.Database.GetDirRemote(b.cfg.Settings.DirRemote)
+	dirRemote := b.dbConnect.Database.GetDirRemote(&b.cfg.Settings.DirRemote)
 	fullPath := utils.GetFullPath(dirRemote, nameFile)
 	shellScript := b.dbConnect.Server.GetShell(b.cfg.Settings.Shell)
 

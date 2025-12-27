@@ -3,6 +3,7 @@ package postgres
 import (
 	commandDomain "dumper/internal/domain/command"
 	commandConfig "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
 	"fmt"
 )
 
@@ -21,13 +22,16 @@ func (g PSQLGenerator) Generate(data *commandConfig.Config) (*commandDomain.DBCo
 		ext = "tar"
 	}
 
+	tables := prepareTables(&data.Database.Options)
+
 	baseCmd := fmt.Sprintf(
-		"%s --dbname=postgresql://%s:%s@127.0.0.1:%s/%s --clean --if-exists --no-owner %s",
+		"%s --dbname=postgresql://%s:%s@127.0.0.1:%s/%s %s --clean --if-exists --no-owner %s",
 		data.Database.Options.Source,
 		data.Database.User,
 		data.Database.Password,
 		data.Database.Port,
 		data.Database.Name,
+		tables,
 		formatFlag,
 	)
 
@@ -50,4 +54,24 @@ func (g PSQLGenerator) Generate(data *commandConfig.Config) (*commandDomain.DBCo
 		DumpPath: remotePath,
 	}, nil
 
+}
+
+func prepareTables(
+	options *option.Options,
+) string {
+	out := ""
+
+	if options.IncTables != nil {
+		for _, table := range options.IncTables {
+			out += fmt.Sprintf(" %s%s%s", "--table=", "public.", table)
+		}
+	}
+
+	if options.IncTables == nil && options.ExcTables != nil {
+		for _, table := range options.ExcTables {
+			out += fmt.Sprintf(" %s%s%s", "--exclude-table=", "public.", table)
+		}
+	}
+
+	return out
 }

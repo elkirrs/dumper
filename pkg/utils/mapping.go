@@ -4,7 +4,7 @@ func GetDBSource(driverName, format string) string {
 	switch driverName {
 	case "mariadb":
 		return "mariadb-dump"
-	case "mongodb":
+	case "mongo":
 		return "mongodump"
 	case "mssql":
 		if format == "bacpac" {

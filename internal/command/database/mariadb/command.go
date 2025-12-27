@@ -3,6 +3,7 @@ package mariadb
 import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/internal/domain/config/option"
 	"fmt"
 )
 
@@ -19,6 +20,15 @@ func (g MariaDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBComman
 		data.Database.Port,
 		data.Database.Name,
 	)
+
+	tables := prepareTables(
+		&data.Database.Options,
+		data.Database.Name+".",
+	)
+
+	if tables != "" {
+		baseCmd = fmt.Sprintf("%s %s", baseCmd, tables)
+	}
 
 	if data.Archive {
 		baseCmd += " | gzip"
@@ -39,4 +49,25 @@ func (g MariaDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBComman
 		Command:  baseCmd,
 		DumpPath: remotePath,
 	}, nil
+}
+
+func prepareTables(
+	options *option.Options,
+	prefix string,
+) string {
+	out := ""
+
+	if options.IncTables != nil {
+		for _, table := range options.IncTables {
+			out += fmt.Sprintf(" %s", table)
+		}
+	}
+
+	if options.IncTables == nil && options.ExcTables != nil {
+		for _, table := range options.ExcTables {
+			out += fmt.Sprintf(" %s%s%s", "--ignore-table=", prefix, table)
+		}
+	}
+
+	return out
 }

@@ -17,7 +17,9 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 		db.Driver = db.GetDriver(&cfg.Settings.Driver)
 		db.Format = db.GetFormat(&cfg.Settings.DumpFormat)
 		db.Storages = db.GetStorages(&cfg.Settings.Storages)
-		db.DirRemote = db.GetDirRemote(cfg.Settings.DirRemote)
+		db.DirRemote = db.GetDirRemote(&cfg.Settings.DirRemote)
+		isArchive := db.IsArchive(*cfg.Settings.Archive)
+		db.Archive = &isArchive
 
 		if db.Options == nil {
 			db.Options = &option.Options{}
