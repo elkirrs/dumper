@@ -16,6 +16,24 @@ Opportunities:
 - Backup from docker
 - Shell script after and before backup
 
+## Required Tools
+
+Dumper requires the following database tools to be installed and available on the host where the database dump is being performed:
+
+| Database   | Required Tool    | Installation Example                          |
+|------------|------------------|-----------------------------------------------|
+| PostgreSQL | `pg_dump`        | `apt-get install postgresql-client`           |
+| MySQL      | `mysqldump`      | `apt-get install mysql-client`                |
+| MariaDB    | `mariadb-dump`   | `apt-get install mariadb-client`              |
+| MongoDB    | `mongodump`      | `apt-get install mongodb-database-tools`      |
+| SQLite     | `sqlite3`        | `apt-get install sqlite3`                     |
+| Redis      | `redis-cli`      | `apt-get install redis-tools`                 |
+| MSSQL      | `sqlcmd` or `sqlpackage` | Download from Microsoft                   |
+| Neo4j      | `neo4j-admin`    | Included with Neo4j installation              |
+| DynamoDB   | `aws`            | `pip install awscli` or `apt-get install awscli` |
+
+**Note:** These tools must be installed on the server/host where the database resides, not necessarily where the dumper CLI is running (unless dumping locally).
+
 ### Installation:
 ```shell
     curl -sSL https://elkirrs.github.io/dumper/install.sh | sh 
