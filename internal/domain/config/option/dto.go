@@ -9,4 +9,9 @@ type Options struct {
 	Source     string   `yaml:"source"`
 	IncTables  []string `yaml:"inc_tables"`
 	ExcTables  []string `yaml:"exc_tables"`
+
+	// DynamoDB specific options
+	Region   string `yaml:"region"`   // AWS region
+	Profile  string `yaml:"profile"`  // AWS profile name
+	Endpoint string `yaml:"endpoint"` // Custom endpoint (for local DynamoDB)
 }

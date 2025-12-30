@@ -19,6 +19,10 @@ func GetDBSource(driverName, format string) string {
 		return "redis-cli"
 	case "sqlite":
 		return "sqlite3"
+	case "neo4j":
+		return "neo4j-admin"
+	case "dynamodb":
+		return "aws"
 	default:
 		return ""
 	}

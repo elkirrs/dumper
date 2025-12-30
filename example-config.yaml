@@ -62,6 +62,15 @@ servers:
     passphrase: '123456'
     is_passphrase: true
 
+  srv-neo4j:
+    title: 'Neo4j Server'
+    name: 'neo4j'
+    host: '192.168.1.100'
+    user: 'root'
+    port: 22
+    private_key: '/User/.ssh/id_rsa'
+
+
 databases:
   # Config PSQL databases
   db-psql:
@@ -142,3 +151,45 @@ databases:
       password: '123456'
     docker:
       enabled: false
+  # Config Neo4j Database
+  db-neo4j:
+    title: 'My Neo4j Graph Database'
+    name: 'neo4j'  # database name in Neo4j
+    driver: 'neo4j'
+    server: 'srv-neo4j'
+    format: 'dump'
+    storages:
+      - local-storage
+    docker:
+      enabled: true
+      command: "docker exec -T neo4j"
+    shell:
+      enabled: false
+
+  # Config DynamoDB Database
+  db-dynamodb-prod:
+    title: 'Production DynamoDB Table'
+    name: 'ProductsTable'  # DynamoDB table name
+    driver: 'dynamodb'
+    server: 'srv-aws'
+    format: 'json'
+    storages:
+      - s3-storage
+      - local-storage
+    options:
+      region: 'us-east-1'
+      profile: 'production'  # AWS CLI profile
+    shell:
+      enabled: false
+
+  db-dynamodb-local:
+    title: 'Local DynamoDB Table'
+    name: 'LocalTable'
+    driver: 'dynamodb'
+    server: 'srv-local'
+    format: 'json'
+    storages:
+      - local-storage
+    options:
+      region: 'local'
+      endpoint: 'http://localhost:8000'  # Local DynamoDB endpoint

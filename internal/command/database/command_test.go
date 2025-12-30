@@ -58,6 +58,8 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 		{"MariaDB driver", "mariadb", false, ""},
 		{"Redis driver", "redis", false, ""},
 		{"MSSQL driver", "mssql", false, "bac"}, // supported MSSQL format
+		{"Neo4j driver", "neo4j", false, ""},
+		{"DynamoDB driver", "dynamodb", false, ""},
 		{"Unsupported driver", "unknown", true, ""},
 	}
 
