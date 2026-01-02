@@ -14,7 +14,7 @@ type Database struct {
 	Name       string           `yaml:"name"`
 	Server     string           `yaml:"server" validate:"required"`
 	Key        string           `yaml:"key"`
-	Port       string           `yaml:"port,omitempty" validate:"required"`
+	Port       string           `yaml:"port"`
 	Driver     string           `yaml:"driver" validate:"required"`
 	Format     string           `yaml:"format" validate:"required"`
 	Options    *option.Options  `yaml:"options"`

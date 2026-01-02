@@ -13,7 +13,7 @@ type Settings struct {
 	Template            string               `yaml:"template" default:"{%srv%}_{%db%}_{%time%}"`
 	Archive             *bool                `yaml:"archive" default:"true"`
 	Driver              string               `yaml:"driver"`
-	DBPort              string               `yaml:"db_port,omitempty"`
+	DBPort              string               `yaml:"db_port"`
 	SrvPost             string               `yaml:"server_port,omitempty"`
 	DumpLocation        string               `yaml:"location" default:"server"`
 	DumpFormat          string               `yaml:"format" default:"plain"`

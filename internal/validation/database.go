@@ -21,6 +21,10 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 		isArchive := db.IsArchive(*cfg.Settings.Archive)
 		db.Archive = &isArchive
 
+		if db.Port == "" {
+			db.Port = utils.GetDefaultDBPort(db.Driver)
+		}
+
 		if db.Options == nil {
 			db.Options = &option.Options{}
 			_ = defaults.Set(db.Options)
@@ -31,6 +35,10 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 		}
 
 		cfg.Databases[name] = db
+
+		if ok := utils.IsValidFormatDump(db.Driver, db.Format); !ok {
+			return fmt.Errorf("database '%s' invalid format: %s", name, db.Format)
+		}
 
 		if err := v.validator.Struct(db); err != nil {
 			return fmt.Errorf("database '%s' invalid: %w", name, HumanError(err))
