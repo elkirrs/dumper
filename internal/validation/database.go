@@ -18,6 +18,8 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 		db.Format = db.GetFormat(&cfg.Settings.DumpFormat)
 		db.Storages = db.GetStorages(&cfg.Settings.Storages)
 		db.DirRemote = db.GetDirRemote(&cfg.Settings.DirRemote)
+		removeDump := db.GetRemoveDump(cfg.Settings.RemoveDump)
+		db.RemoveDump = &removeDump
 		isArchive := db.IsArchive(*cfg.Settings.Archive)
 		db.Archive = &isArchive
 

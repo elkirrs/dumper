@@ -48,11 +48,11 @@ func (d *Database) GetDriver(driver *string) string {
 	return *driver
 }
 
-func (d *Database) GetRemoveDump(removeDump bool) bool {
+func (d *Database) GetRemoveDump(removeDumpGlobal *bool) bool {
 	if d.RemoveDump != nil {
 		return *d.RemoveDump
 	}
-	return removeDump
+	return *removeDumpGlobal
 }
 
 func (d *Database) GetFormat(format *string) string {
