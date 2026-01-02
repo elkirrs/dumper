@@ -38,6 +38,13 @@ storages:
     username: "ftpuser"
     password: "123456"
 
+  s3-storage:
+    type: "s3"
+    region: "region"
+    access_key: "key_id"
+    secret_key: "secret_key"
+    bucket: "dumps"
+
 servers:
   srv-psql:
     title: 'Server Postgres'
@@ -65,6 +72,22 @@ servers:
   srv-neo4j:
     title: 'Neo4j Server'
     name: 'neo4j'
+    host: '192.168.1.100'
+    user: 'root'
+    port: 22
+    private_key: '/User/.ssh/id_rsa'
+
+  srv-aws:
+    title: 'Dynamo DB Server'
+    name: 'dynamodb'
+    host: '192.168.1.100'
+    user: 'root'
+    port: 22
+    private_key: '/User/.ssh/id_rsa'
+
+  srv-local:
+    title: 'Local Server'
+    name: 'dynamodb'
     host: '192.168.1.100'
     user: 'root'
     port: 22

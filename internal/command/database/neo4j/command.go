@@ -3,6 +3,7 @@ package neo4j
 import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
+	"dumper/pkg/utils"
 	"fmt"
 )
 
@@ -17,17 +18,26 @@ func (g Neo4jGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 	// Neo4j dump command using neo4j-admin
 	// Format: neo4j-admin database dump <database-name> --to-path=<path>
 	baseCmd := fmt.Sprintf(
-		"%s database dump %s --to-path=.",
+		"%s database dump %s --to-path=%s",
 		data.Database.Options.Source,
 		data.Database.Name,
+		data.DumpDirRemote,
 	)
 
+	// TODO Need add Neo4j Enterprise hot backup
+
 	// Move the dump file to the desired name
-	baseCmd = fmt.Sprintf("%s && mv %s.dump %s", baseCmd, data.Database.Name, fileName)
+	nameTmpDumpFile := fmt.Sprintf("%s.%s", data.Database.Name, ext)
+	pathDumpFile := utils.GetFullPath(data.DumpDirRemote, nameTmpDumpFile)
+	baseCmd = fmt.Sprintf("%s && mv %s %s", baseCmd, pathDumpFile, fileName)
 
 	if data.Archive {
 		remotePath += ".gz"
-		baseCmd = fmt.Sprintf("%s && gzip -c %s > %s && rm %s", baseCmd, fileName, remotePath, fileName)
+		baseCmd = fmt.Sprintf("%s && gzip -c %s > %s", baseCmd, fileName, remotePath)
+
+		if data.RemoveBackup {
+			baseCmd = fmt.Sprintf("%s && rm %s", baseCmd, fileName)
+		}
 	}
 
 	if data.DumpLocation == "server" {
