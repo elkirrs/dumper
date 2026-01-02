@@ -174,7 +174,7 @@ func (b *Backup) prepareBackupConfig() {
 		DumpDirLocal:        b.cfg.Settings.DirDump,
 		DumpName:            fullPath,
 		DumpDirRemote:       dirRemote,
-		RemoveBackup:        *b.cfg.Settings.RemoveDump,
+		RemoveBackup:        b.dbConnect.Database.GetRemoveDump(b.cfg.Settings.RemoveDump),
 		Encrypt:             b.dbConnect.Database.GetEncrypt(b.cfg.Settings.Encrypt),
 		MaxParallelDownload: b.cfg.Settings.MaxParallelDownload,
 		Shell:               b.dbConnect.Database.GetShell(&shellScript),

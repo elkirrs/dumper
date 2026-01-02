@@ -48,7 +48,7 @@ func (s *Shell) RunScriptAfter() error {
 	fmt.Println("Run shell script after finished backup")
 	if s.config.Shell.After != "" {
 		logging.L(s.ctx).Info("Run shell script after finished backup")
-		return s.runScript("after", s.config.Shell.Before)
+		return s.runScript("after", s.config.Shell.After)
 	}
 	return nil
 }

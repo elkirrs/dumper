@@ -2,10 +2,12 @@ package database
 
 import (
 	"context"
+	"dumper/internal/command/database/dynamodb"
 	"dumper/internal/command/database/mariadb"
 	"dumper/internal/command/database/mongodb"
 	"dumper/internal/command/database/mssql"
 	"dumper/internal/command/database/mysql"
+	"dumper/internal/command/database/neo4j"
 	"dumper/internal/command/database/postgres"
 	"dumper/internal/command/database/redis"
 	"dumper/internal/command/database/sqlite"
@@ -53,6 +55,10 @@ func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
 		gen = redis.RedisGenerator{}
 	case "mssql":
 		gen = mssql.MSQLGenerator{}
+	case "neo4j":
+		gen = neo4j.Neo4jGenerator{}
+	case "dynamodb":
+		gen = dynamodb.DynamoDBGenerator{}
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s", s.Config.Database.Driver)
 	}
