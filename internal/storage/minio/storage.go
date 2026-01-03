@@ -1,11 +1,10 @@
-package s3
+package minio
 
 import (
 	"context"
 	"dumper/internal/domain/storage"
 	"dumper/pkg/utils"
 	"fmt"
-	"net/http"
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,7 +15,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type S3 struct {
+type Minio struct {
 	ctx    context.Context
 	config *storage.Config
 }
@@ -24,40 +23,45 @@ type S3 struct {
 func NewApp(
 	ctx context.Context,
 	config *storage.Config,
-) *S3 {
-	return &S3{
+) *Minio {
+	return &Minio{
 		ctx:    ctx,
 		config: config,
 	}
 }
 
-func (s *S3) Save() error {
+func (m *Minio) Save() error {
 	cred := aws.NewCredentialsCache(
 		credentials.NewStaticCredentialsProvider(
-			s.config.Config.AccessKey,
-			s.config.Config.SecretKey,
+			m.config.Config.AccessKey,
+			m.config.Config.SecretKey,
 			"",
 		),
 	)
 
 	awsCfg, err := config.LoadDefaultConfig(
-		s.ctx,
-		config.WithRegion(s.config.Config.Region),
+		m.ctx,
+		config.WithRegion(m.config.Config.Region),
 		config.WithCredentialsProvider(cred),
-		config.WithHTTPClient(&http.Client{}),
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to load AWS config: %v", err)
+		return fmt.Errorf("failed to load MinIO config: %v", err)
 	}
 
-	s3Client := s3.NewFromConfig(awsCfg)
+	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
+		o.UsePathStyle = true
+		o.BaseEndpoint = aws.String(m.config.Config.Endpoint)
+	})
+
 	uploader := manager.NewUploader(s3Client)
 
-	session, err := s.config.Conn.NewSession()
+	session, err := m.config.Conn.NewSession()
+
 	if err != nil {
 		return fmt.Errorf("failed to create SSH session: %v", err)
 	}
+
 	defer func(session *ssh.Session) {
 		_ = session.Close()
 	}(session)
@@ -67,27 +71,31 @@ func (s *S3) Save() error {
 		return fmt.Errorf("failed to get stdout pipe: %v", err)
 	}
 
-	if err := session.Start(fmt.Sprintf("cat %s", s.config.DumpName)); err != nil {
+	if err := session.Start(fmt.Sprintf("cat %s", m.config.DumpName)); err != nil {
 		return fmt.Errorf("failed to start remote command: %v", err)
 	}
 
-	key := filepath.Join(s.config.Config.Dir, filepath.Base(s.config.DumpName))
+	targetPath := filepath.Join(
+		m.config.Config.Dir,
+		filepath.Base(m.config.DumpName),
+	)
 
-	pr := utils.StreamToPipe(s.ctx, stdout, s.config.FileSize)
+	pr := utils.StreamToPipe(m.ctx, stdout, m.config.FileSize)
 
-	_, err = uploader.Upload(s.ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.config.Config.Bucket),
-		Key:    aws.String(key),
+	_, err = uploader.Upload(m.ctx, &s3.PutObjectInput{
+		Bucket: aws.String(m.config.Config.Bucket),
+		Key:    aws.String(targetPath),
 		Body:   pr,
 	})
+
 	if err != nil {
-		return fmt.Errorf("failed to upload to S3: %v", err)
+		return fmt.Errorf("failed to upload to MinIO: %v", err)
 	}
 
 	if err := session.Wait(); err != nil {
 		return fmt.Errorf("remote command failed: %v", err)
 	}
 
-	utils.SafePrintln("[S3] Upload complete: %s", key)
+	utils.SafePrintln("[MinIO] Upload complete: %s", targetPath)
 	return nil
 }

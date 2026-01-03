@@ -84,49 +84,7 @@ func (s *SFTP) Save() error {
 		_ = dstFile.Close()
 	}(dstFile)
 
-	pr, pw := io.Pipe()
-	defer func(pr *io.PipeReader) {
-		_ = pr.Close()
-	}(pr)
-
-	go func() {
-		defer func(pw *io.PipeWriter) {
-			_ = pw.Close()
-		}(pw)
-		buf := make([]byte, 32*1024)
-		var uploaded int64
-
-		for {
-			select {
-			case <-s.ctx.Done():
-				_ = pw.CloseWithError(fmt.Errorf("download cancelled by context"))
-				return
-			default:
-			}
-
-			n, readErr := stdout.Read(buf)
-			if n > 0 {
-				uploaded += int64(n)
-				if gp, ok := s.ctx.Value("globalProgress").(*utils.GlobProgress); ok {
-					gp.Add(int64(n))
-				} else {
-					utils.Progress(uploaded, s.config.FileSize)
-				}
-
-				if _, err := pw.Write(buf[:n]); err != nil {
-					return
-				}
-			}
-
-			if readErr == io.EOF {
-				break
-			}
-			if readErr != nil {
-				_ = pw.CloseWithError(readErr)
-				return
-			}
-		}
-	}()
+	pr := utils.StreamToPipe(s.ctx, stdout, s.config.FileSize)
 
 	if _, err := io.Copy(dstFile, pr); err != nil {
 		return fmt.Errorf("failed to upload to SFTP: %v", err)

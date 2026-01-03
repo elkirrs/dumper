@@ -84,7 +84,8 @@ func (c *Connect) Connect() error {
 		return err
 	}
 
-	fmt.Printf("Trying to connect to %s...\n", c.connect.Server)
+	utils.SafePrintln("Trying to connect to: %s", c.connect.Server)
+
 	logging.L(c.ctx).Info(
 		"Trying to test connection to ",
 		logging.StringAttr("server", c.connect.Server),

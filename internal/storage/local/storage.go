@@ -61,48 +61,7 @@ func (l *Local) Save() error {
 		return fmt.Errorf("failed to start remote command: %v", err)
 	}
 
-	pr, pw := io.Pipe()
-	defer func(pr *io.PipeReader) {
-		_ = pr.Close()
-	}(pr)
-
-	go func() {
-		defer func(pw *io.PipeWriter) {
-			_ = pw.Close()
-		}(pw)
-		buf := make([]byte, 32*1024)
-		var downloaded int64
-
-		for {
-			select {
-			case <-l.ctx.Done():
-				_ = pw.CloseWithError(fmt.Errorf("download cancelled by context"))
-				return
-			default:
-			}
-
-			n, readErr := stdout.Read(buf)
-			if n > 0 {
-				downloaded += int64(n)
-				if gp, ok := l.ctx.Value("globalProgress").(*utils.GlobProgress); ok {
-					gp.Add(int64(n))
-				} else {
-					utils.Progress(downloaded, l.config.FileSize)
-				}
-				if _, err := pw.Write(buf[:n]); err != nil {
-					return
-				}
-			}
-
-			if readErr == io.EOF {
-				break
-			}
-			if readErr != nil {
-				_ = pw.CloseWithError(readErr)
-				return
-			}
-		}
-	}()
+	pr := utils.StreamToPipe(l.ctx, stdout, l.config.FileSize)
 
 	if _, err := io.Copy(outFile, pr); err != nil {
 		return fmt.Errorf("failed to write to local file: %v", err)

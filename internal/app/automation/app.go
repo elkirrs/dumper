@@ -8,6 +8,7 @@ import (
 	"dumper/internal/domain/app"
 	cfg "dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
+	"dumper/internal/domain/config/storage"
 	connectDomain "dumper/internal/domain/connect"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils"
@@ -42,9 +43,11 @@ func (a *Automation) Run() error {
 	countDBs := len(dbList)
 
 	serversDatabases := make(map[string][]dbConnect.DBConnect)
+	var dataDBConnect map[string]dbConnect.DBConnect
+	dataDBConnect = a.prepareDBConnect()
 
 	for _, dbName := range dbList {
-		database, ok := a.cfg.Databases[dbName]
+		dbC, ok := dataDBConnect[dbName]
 		if !ok {
 			fmt.Printf("Database %s not found\n", dbName)
 			logging.L(a.ctx).Warn("Database not found", logging.StringAttr("name", dbName))
@@ -52,18 +55,7 @@ func (a *Automation) Run() error {
 			continue
 		}
 
-		srv, ok := a.cfg.Servers[database.Server]
-		if !ok {
-			fmt.Printf("Server %s not found\n", database.Server)
-			logging.L(a.ctx).Warn("Server not found", logging.StringAttr("name", database.Server))
-			countDBs--
-			continue
-		}
-
-		serversDatabases[database.Server] = append(serversDatabases[database.Server], dbConnect.DBConnect{
-			Server:   srv,
-			Database: database,
-		})
+		serversDatabases[dbC.Database.Server] = append(serversDatabases[dbC.Database.Server], dbC)
 
 		if countDBs == 0 {
 			logging.L(a.ctx).Error("Database and server no key matches check the configuration file")
@@ -141,4 +133,28 @@ func (a *Automation) Run() error {
 	logging.L(a.ctx).Info("All requested database backups are done")
 
 	return nil
+}
+
+func (m *Automation) prepareDBConnect() map[string]dbConnect.DBConnect {
+	connectDBs := make(map[string]dbConnect.DBConnect, len(m.cfg.Databases))
+	for idx, database := range m.cfg.Databases {
+		storageList := database.GetStorages(&m.cfg.Settings.Storages)
+		connectDBs[idx] = dbConnect.DBConnect{
+			Server:   m.cfg.Servers[database.Server],
+			Database: database,
+			Storages: m.prepareStorages(storageList),
+		}
+	}
+
+	return connectDBs
+}
+
+func (m *Automation) prepareStorages(list []string) map[string]storage.Storage {
+	storages := make(map[string]storage.Storage, len(list))
+	for _, storageType := range list {
+		st := m.cfg.Storages[storageType]
+		st.PrivateKey = st.GetPrivateKey(m.cfg.Settings.SSH.PrivateKey)
+		storages[storageType] = st
+	}
+	return storages
 }

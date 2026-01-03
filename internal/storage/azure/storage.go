@@ -5,7 +5,6 @@ import (
 	"dumper/internal/domain/storage"
 	"dumper/pkg/utils"
 	"fmt"
-	"io"
 	"path/filepath"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -68,43 +67,7 @@ func (a *Azure) Save() error {
 		return fmt.Errorf("failed to start remote command: %v", err)
 	}
 
-	pr, pw := io.Pipe()
-	go func() {
-		defer func(pw *io.PipeWriter) {
-			_ = pw.Close()
-		}(pw)
-		buf := make([]byte, 32*1024)
-		var uploaded int64
-
-		for {
-			select {
-			case <-a.ctx.Done():
-				_ = pw.CloseWithError(fmt.Errorf("azure upload cancelled by context"))
-				return
-			default:
-			}
-
-			n, readErr := stdout.Read(buf)
-			if n > 0 {
-				uploaded += int64(n)
-				if gp, ok := a.ctx.Value("globalProgress").(*utils.GlobProgress); ok {
-					gp.Add(int64(n))
-				} else {
-					utils.Progress(uploaded, a.config.FileSize)
-				}
-				if _, err := pw.Write(buf[:n]); err != nil {
-					return
-				}
-			}
-			if readErr == io.EOF {
-				break
-			}
-			if readErr != nil {
-				_ = pw.CloseWithError(readErr)
-				return
-			}
-		}
-	}()
+	pr := utils.StreamToPipe(a.ctx, stdout, a.config.FileSize)
 
 	_, err = blobClient.UploadStream(a.ctx, pr, &azblob.UploadStreamOptions{
 		BlockSize: 32 * 1024,
