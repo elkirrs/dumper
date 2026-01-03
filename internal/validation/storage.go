@@ -89,6 +89,19 @@ func validateStorages(v *Validation, cfg *config.Config) error {
 				return fmt.Errorf("storage '%s' (s3) invalid: %w", name, HumanError(err))
 			}
 
+		case "minio":
+			minio := storage.MinIO{
+				Type:      s.Type,
+				Region:    s.Region,
+				Bucket:    s.Bucket,
+				AccessKey: s.AccessKey,
+				SecretKey: s.SecretKey,
+				Endpoint:  s.Endpoint,
+			}
+
+			if err := validate.Struct(minio); err != nil {
+				return fmt.Errorf("storage '%s' (MinIO) invalid: %w", name, HumanError(err))
+			}
 		default:
 			if s.Type == "" {
 				return fmt.Errorf("storage '%s' missing required field 'type'", name)

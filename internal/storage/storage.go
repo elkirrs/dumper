@@ -6,6 +6,7 @@ import (
 	"dumper/internal/storage/azure"
 	"dumper/internal/storage/ftp"
 	"dumper/internal/storage/local"
+	"dumper/internal/storage/minio"
 	"dumper/internal/storage/s3"
 	"dumper/internal/storage/sftp"
 	"errors"
@@ -44,6 +45,8 @@ func (s *Storage) Save() error {
 		handler = azure.NewApp(s.ctx, s.config)
 	case "s3":
 		handler = s3.NewApp(s.ctx, s.config)
+	case "minio":
+		handler = minio.NewApp(s.ctx, s.config)
 	default:
 		return errors.New("unsupported storage type: " + s.config.Type)
 	}
