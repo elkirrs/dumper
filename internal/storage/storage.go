@@ -3,12 +3,13 @@ package storage
 import (
 	"context"
 	"dumper/internal/domain/storage"
-	"dumper/internal/storage/azure"
-	"dumper/internal/storage/ftp"
-	"dumper/internal/storage/local"
-	"dumper/internal/storage/minio"
-	"dumper/internal/storage/s3"
-	"dumper/internal/storage/sftp"
+	"dumper/internal/storage/type/azure"
+	"dumper/internal/storage/type/cloudflare"
+	"dumper/internal/storage/type/ftp"
+	"dumper/internal/storage/type/local"
+	"dumper/internal/storage/type/minio"
+	"dumper/internal/storage/type/s3"
+	"dumper/internal/storage/type/sftp"
 	"errors"
 )
 
@@ -47,6 +48,8 @@ func (s *Storage) Save() error {
 		handler = s3.NewApp(s.ctx, s.config)
 	case "minio":
 		handler = minio.NewApp(s.ctx, s.config)
+	case "r2":
+		handler = cloudflare.NewApp(s.ctx, s.config)
 	default:
 		return errors.New("unsupported storage type: " + s.config.Type)
 	}

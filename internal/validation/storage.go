@@ -102,6 +102,20 @@ func validateStorages(v *Validation, cfg *config.Config) error {
 			if err := validate.Struct(minio); err != nil {
 				return fmt.Errorf("storage '%s' (MinIO) invalid: %w", name, HumanError(err))
 			}
+
+		case "r2":
+			r2 := storage.Cloudflare{
+				Type:      s.Type,
+				Bucket:    s.Bucket,
+				AccessKey: s.AccessKey,
+				SecretKey: s.SecretKey,
+				Endpoint:  s.Endpoint,
+				AccountID: s.AccountID,
+			}
+
+			if err := validate.Struct(r2); err != nil {
+				return fmt.Errorf("storage '%s' (Cloudflare R2) invalid: %w", name, HumanError(err))
+			}
 		default:
 			if s.Type == "" {
 				return fmt.Errorf("storage '%s' missing required field 'type'", name)
