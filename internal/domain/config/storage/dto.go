@@ -36,6 +36,9 @@ type Storage struct {
 	Bucket    string `yaml:"bucket"`
 	AccessKey string `yaml:"access_key"`
 	SecretKey string `yaml:"secret_key"`
+
+	// Cloudflare
+	AccountID string `yaml:"account_id"`
 }
 
 type ListStorages struct {
