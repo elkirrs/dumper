@@ -4,6 +4,7 @@ import (
 	"context"
 	"dumper/internal/domain/storage"
 	"dumper/internal/storage/type/azure"
+	"dumper/internal/storage/type/backblaze"
 	"dumper/internal/storage/type/cloudflare"
 	"dumper/internal/storage/type/ftp"
 	"dumper/internal/storage/type/local"
@@ -50,6 +51,8 @@ func (s *Storage) Save() error {
 		handler = minio.NewApp(s.ctx, s.config)
 	case "r2":
 		handler = cloudflare.NewApp(s.ctx, s.config)
+	case "b2":
+		handler = backblaze.NewApp(s.ctx, s.config)
 	default:
 		return errors.New("unsupported storage type: " + s.config.Type)
 	}

@@ -36,13 +36,18 @@ var defaultAWS = map[string]DefaultAWS{
 		Provider: "AWS S3",
 	},
 	"r2": {
-		Endpoint: "%s.r2.cloudflarestorage.com",
+		Endpoint: "https://%s.r2.cloudflarestorage.com",
 		Region:   "us-east-1",
 		Provider: "Cloudflare R2",
 	},
 	"minio": {
 		Region:   "us-east-1",
 		Provider: "MinIO",
+	},
+	"b2": {
+		Endpoint: "https://%s.s3.%s.backblazeb2.com",
+		Region:   "us-east-001",
+		Provider: "Backblaze B2",
 	},
 }
 
@@ -163,7 +168,7 @@ func (a *awsClient) endpoint() *string {
 		return aws.String(fmt.Sprintf(cfg.Endpoint, a.Storage.AccountID))
 	}
 
-	return aws.String(fmt.Sprintf(cfg.Endpoint, a.Storage.Region))
+	return aws.String(fmt.Sprintf(cfg.Endpoint, a.Storage.Bucket, a.Storage.Region))
 }
 
 func (a *awsClient) providerName() string {
