@@ -49,6 +49,11 @@ var defaultAWS = map[string]DefaultAWS{
 		Region:   "us-east-001",
 		Provider: "Backblaze B2",
 	},
+	"spaces": {
+		Endpoint: "https://%s.%s.digitaloceanspaces.com",
+		Region:   "fra1",
+		Provider: "DigitalOcean Spaces",
+	},
 }
 
 func NewClient(
@@ -97,13 +102,6 @@ func (a *awsClient) Handler() error {
 				pathStyle = false
 			}
 			o.UsePathStyle = pathStyle
-		})
-	}
-
-	if endpoint := a.endpoint(); endpoint != nil {
-		opts = append(opts, func(o *s3.Options) {
-			o.BaseEndpoint = endpoint
-			o.UsePathStyle = true
 		})
 	}
 

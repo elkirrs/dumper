@@ -130,6 +130,20 @@ func validateStorages(v *Validation, cfg *config.Config) error {
 			if err := validate.Struct(b2); err != nil {
 				return fmt.Errorf("storage '%s' (Backblaze) invalid: %w", name, HumanError(err))
 			}
+
+		case "spaces":
+			b2 := storage.DigitalOcean{
+				Type:      s.Type,
+				Bucket:    s.Bucket,
+				AccessKey: s.AccessKey,
+				SecretKey: s.SecretKey,
+				Endpoint:  s.Endpoint,
+				Region:    s.Region,
+			}
+
+			if err := validate.Struct(b2); err != nil {
+				return fmt.Errorf("storage '%s' (DigitalOcean) invalid: %w", name, HumanError(err))
+			}
 		default:
 			if s.Type == "" {
 				return fmt.Errorf("storage '%s' missing required field 'type'", name)
