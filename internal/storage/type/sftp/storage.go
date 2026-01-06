@@ -5,18 +5,19 @@ import (
 	"dumper/internal/connect"
 	connectDomain "dumper/internal/domain/connect"
 	"dumper/internal/domain/storage"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/console"
+	"dumper/pkg/utils/stream"
 	"fmt"
 	"io"
 	"path/filepath"
 
 	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
 )
 
 type SFTP struct {
-	ctx    context.Context
-	config *storage.Config
+	ctx     context.Context
+	config  *storage.Config
+	backend string
 }
 
 func NewApp(
@@ -24,8 +25,9 @@ func NewApp(
 	config *storage.Config,
 ) *SFTP {
 	return &SFTP{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "SFTP",
 	}
 }
 
@@ -43,57 +45,71 @@ func (s *SFTP) Save() error {
 	tClient := connect.NewApp(s.ctx, connectDto)
 
 	if err := tClient.Connect(); err != nil {
-		return fmt.Errorf("failed to connect target SFTP: %w", err)
+		return &storage.UploadError{
+			Backend: s.backend,
+			Err:     fmt.Errorf("failed to connect target SFTP: %v", err),
+		}
 	}
 
 	targetClient, err := sftp.NewClient(tClient.Client())
 	if err != nil {
-		return fmt.Errorf("failed to create target SFTP client: %v", err)
+		return &storage.UploadError{
+			Backend: s.backend,
+			Err:     fmt.Errorf("failed to create target SFTP client: %v", err),
+		}
 	}
-	defer func(targetClient *sftp.Client) {
-		_ = targetClient.Close()
-	}(targetClient)
+	defer targetClient.Close()
 
-	session, err := s.config.Conn.NewSession()
+	targetPath := stream.TargetPath(s.config.Config.Dir, s.config.DumpName)
+	dir := filepath.Dir(targetPath)
+
+	if err := s.checkDirAccessible(targetClient, dir); err != nil {
+		return &storage.UploadError{
+			Backend: s.backend,
+			Err:     err,
+		}
+	}
+
+	pr, closeSSH, err := stream.SSHStreamer(s.ctx, s.config.Conn, s.config.DumpName, s.config.FileSize)
+
 	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %v", err)
-	}
-	defer func(session *ssh.Session) {
-		_ = session.Close()
-	}(session)
-
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("failed to get stdout pipe: %v", err)
+		return &storage.UploadError{
+			Backend: s.backend,
+			Err:     fmt.Errorf("failed to create SSH session: %v", err),
+		}
 	}
 
-	if err := session.Start(fmt.Sprintf("cat %s", s.config.DumpName)); err != nil {
-		return fmt.Errorf("failed to start remote command: %v", err)
-	}
-
-	targetPath := filepath.Join(s.config.Config.Dir, filepath.Base(s.config.DumpName))
-	if err := targetClient.MkdirAll(filepath.Dir(targetPath)); err != nil {
-		return fmt.Errorf("failed to create remote directory: %v", err)
-	}
+	defer closeSSH()
 
 	dstFile, err := targetClient.Create(targetPath)
 	if err != nil {
-		return fmt.Errorf("failed to create remote file: %v", err)
+		return &storage.UploadError{
+			Backend: s.backend,
+			Err:     fmt.Errorf("failed to create remote file: %w", err),
+		}
 	}
-	defer func(dstFile *sftp.File) {
-		_ = dstFile.Close()
-	}(dstFile)
 
-	pr := utils.StreamToPipe(s.ctx, stdout, s.config.FileSize)
+	defer dstFile.Close()
 
 	if _, err := io.Copy(dstFile, pr); err != nil {
-		return fmt.Errorf("failed to upload to SFTP: %v", err)
+		return &storage.UploadError{
+			Backend: s.backend,
+			Err:     fmt.Errorf("failed to upload to SFTP: %w", err),
+		}
 	}
 
-	if err := session.Wait(); err != nil {
-		return fmt.Errorf("remote command failed: %v", err)
+	console.SafePrintln("[SFTP] Upload complete: %s", targetPath)
+	return nil
+}
+
+func (s *SFTP) checkDirAccessible(client *sftp.Client, dir string) error {
+	if err := client.MkdirAll(dir); err != nil {
+		return fmt.Errorf("SFTP directory %s is not accessible: %w", dir, err)
 	}
 
-	utils.SafePrintln("[SFTP] Upload complete: %s", targetPath)
+	if _, err := client.Stat(dir); err != nil {
+		return fmt.Errorf("no permission to access SFTP directory %s: %w", dir, err)
+	}
+
 	return nil
 }

@@ -5,7 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/mapping"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
-	source := utils.GetDBSource("redis", "")
+	source := mapping.GetDBSource("redis", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config

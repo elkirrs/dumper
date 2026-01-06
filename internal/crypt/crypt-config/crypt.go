@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"dumper/internal/domain/app"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/crypt"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -110,7 +110,7 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 		return err
 	}
 
-	isEnc, err := utils.IsEncryptedFile(input, c.flags.Scope)
+	isEnc, err := crypt.IsEncryptedFile(input, c.flags.Scope)
 	if err == nil && isEnc {
 		return fmt.Errorf("the %s file is already encrypted", input)
 	}
@@ -120,17 +120,17 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 		return err
 	}
 
-	secretCrypt := utils.SecretCrypt(c.flags)
+	secretCrypt := crypt.SecretCrypt(c.flags)
 
-	passwordKey := utils.DeriveKey(password, secretCrypt.SecretKey, salt)
-	finalKey := utils.ComputeFinalKey(passwordKey, secretCrypt.DeviceKey)
+	passwordKey := crypt.DeriveKey(password, secretCrypt.SecretKey, salt)
+	finalKey := crypt.ComputeFinalKey(passwordKey, secretCrypt.DeviceKey)
 
-	encConfig := utils.EncryptAES(finalKey, plain)
+	encConfig := crypt.EncryptAES(finalKey, plain)
 
-	deriveAppSecret := utils.DeriveAppKey(secretCrypt.SecretKey, secretCrypt.DeviceKey)
-	encKeyForApp := utils.EncryptAES(deriveAppSecret, finalKey)
+	deriveAppSecret := crypt.DeriveAppKey(secretCrypt.SecretKey, secretCrypt.DeviceKey)
+	encKeyForApp := crypt.EncryptAES(deriveAppSecret, finalKey)
 
-	data := append(utils.MagicHeader(c.flags.Scope), salt...)
+	data := append(crypt.MagicHeader(c.flags.Scope), salt...)
 	data = append(data, byte(len(encKeyForApp)))
 	data = append(data, encKeyForApp...)
 	data = append(data, encConfig...)
@@ -142,7 +142,7 @@ func (c *Crypt) encryptConfig(input, output, password string) error {
 }
 
 func (c *Crypt) decryptWithPassword(input, output, password string) error {
-	cFile, err := utils.ReadEncryptedFile(input)
+	cFile, err := crypt.ReadEncryptedFile(input)
 	if err != nil {
 		return err
 	}
@@ -153,12 +153,12 @@ func (c *Crypt) decryptWithPassword(input, output, password string) error {
 	offset := 17 + keyLen
 	encConfig := data[offset:]
 
-	c.flags.Scope = utils.GetScope(cFile.Header)
-	secretCrypt := utils.SecretCrypt(c.flags)
-	passwordKey := utils.DeriveKey(password, secretCrypt.SecretKey, salt)
-	finalKey := utils.ComputeFinalKey(passwordKey, secretCrypt.DeviceKey)
+	c.flags.Scope = crypt.GetScope(cFile.Header)
+	secretCrypt := crypt.SecretCrypt(c.flags)
+	passwordKey := crypt.DeriveKey(password, secretCrypt.SecretKey, salt)
+	finalKey := crypt.ComputeFinalKey(passwordKey, secretCrypt.DeviceKey)
 
-	plain, err := utils.DecryptAES(finalKey, encConfig)
+	plain, err := crypt.DecryptAES(finalKey, encConfig)
 	if err != nil {
 		return fmt.Errorf("wrong password or wrong device: %v", err)
 	}
@@ -170,7 +170,7 @@ func (c *Crypt) recoverConfig(input, output, recoveryToken string) error {
 	if input == "" || recoveryToken == "" {
 		return fmt.Errorf("input and recovery token must be specified")
 	}
-	cFile, err := utils.ReadEncryptedFile(input)
+	cFile, err := crypt.ReadEncryptedFile(input)
 	if err != nil {
 		return fmt.Errorf("failed to read encrypted file: %v", err)
 	}
@@ -196,7 +196,7 @@ func (c *Crypt) recoverConfig(input, output, recoveryToken string) error {
 		return fmt.Errorf("invalid recovery token length: expected 32 bytes, got %d", len(finalKey))
 	}
 
-	plain, err := utils.DecryptAES(finalKey, encConfig)
+	plain, err := crypt.DecryptAES(finalKey, encConfig)
 	if err != nil {
 		return fmt.Errorf("decryption failed with recovery token: %v", err)
 	}

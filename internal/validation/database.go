@@ -3,7 +3,7 @@ package validation
 import (
 	"dumper/internal/domain/config"
 	"dumper/internal/domain/config/option"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/mapping"
 	"fmt"
 
 	"github.com/creasty/defaults"
@@ -24,7 +24,7 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 		db.Archive = &isArchive
 
 		if db.Port == "" {
-			db.Port = utils.GetDefaultDBPort(db.Driver)
+			db.Port = mapping.GetDefaultDBPort(db.Driver)
 		}
 
 		if db.Options == nil {
@@ -33,12 +33,12 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 		}
 
 		if db.Options.Source == "" {
-			db.Options.Source = utils.GetDBSource(db.Driver, db.Format)
+			db.Options.Source = mapping.GetDBSource(db.Driver, db.Format)
 		}
 
 		cfg.Databases[name] = db
 
-		if ok := utils.IsValidFormatDump(db.Driver, db.Format); !ok {
+		if ok := mapping.IsValidFormatDump(db.Driver, db.Format); !ok {
 			return fmt.Errorf("database '%s' invalid format: %s", name, db.Format)
 		}
 

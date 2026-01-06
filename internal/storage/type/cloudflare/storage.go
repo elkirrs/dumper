@@ -7,8 +7,9 @@ import (
 )
 
 type Cloudflare struct {
-	ctx    context.Context
-	config *storage.Config
+	ctx     context.Context
+	config  *storage.Config
+	backend string
 }
 
 func NewApp(
@@ -16,8 +17,9 @@ func NewApp(
 	config *storage.Config,
 ) *Cloudflare {
 	return &Cloudflare{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "Cloudflare R2",
 	}
 }
 
@@ -29,6 +31,7 @@ func (c *Cloudflare) Save() error {
 		c.config.Config,
 		c.config.DumpName,
 		c.config.FileSize,
+		c.backend,
 	)
 
 	return awsClient.Handler()

@@ -5,7 +5,7 @@ import (
 	cryptBackup "dumper/internal/crypt/crypt-backup"
 	cryptConfig "dumper/internal/crypt/crypt-config"
 	"dumper/internal/domain/app"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/crypt"
 	"fmt"
 )
 
@@ -67,15 +67,15 @@ func DecryptInApp(data []byte, scope, appSecret string) ([]byte, error) {
 		Scope:     scope,
 		AppSecret: appSecret,
 	}
-	secretCrypt := utils.SecretCrypt(&flags)
-	deriveAppSecret := utils.DeriveAppKey(secretCrypt.SecretKey, secretCrypt.DeviceKey)
+	secretCrypt := crypt.SecretCrypt(&flags)
+	deriveAppSecret := crypt.DeriveAppKey(secretCrypt.SecretKey, secretCrypt.DeviceKey)
 
-	finalKey, err := utils.DecryptAES(deriveAppSecret, encKey)
+	finalKey, err := crypt.DecryptAES(deriveAppSecret, encKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt key: %v", err)
 	}
 
-	plain, err := utils.DecryptAES(finalKey, encConfig)
+	plain, err := crypt.DecryptAES(finalKey, encConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt config: %v", err)
 	}

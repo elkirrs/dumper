@@ -5,7 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/mapping"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,8 +16,8 @@ func TestMSQLGenerator_Generate_AllScenarios(t *testing.T) {
 	trueVal := true
 	falseVal := false
 
-	sourceBac := utils.GetDBSource("mssql", "bac")
-	sourceBacpac := utils.GetDBSource("mssql", "bacpac")
+	sourceBac := mapping.GetDBSource("mssql", "bac")
+	sourceBacpac := mapping.GetDBSource("mssql", "bacpac")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config

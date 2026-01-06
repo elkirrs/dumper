@@ -11,7 +11,7 @@ import (
 	"dumper/internal/domain/config/storage"
 	connectDomain "dumper/internal/domain/connect"
 	"dumper/pkg/logging"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/retry"
 	"errors"
 	"fmt"
 	"strings"
@@ -90,7 +90,7 @@ func (a *Automation) Run() error {
 					connectApp := connect.NewApp(a.ctx, connectDto)
 					backupApp := backup.NewApp(a.ctx, a.cfg, dbConn, connectApp)
 
-					err := utils.WithRetry(
+					err := retry.WithRetry(
 						a.ctx, a.cfg.Settings.RetryConnect,
 						func() error {
 							return backupApp.Run()

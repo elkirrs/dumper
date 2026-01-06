@@ -7,7 +7,7 @@ import (
 	"dumper/internal/crypt"
 	appDomain "dumper/internal/domain/app"
 	"dumper/pkg/logging"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/runner"
 	"errors"
 	"flag"
 	"fmt"
@@ -75,7 +75,7 @@ func main() {
 
 	if flags.Crypt != "" {
 		cryptApp := crypt.NewApp(ctx, &flags)
-		if err := utils.RunWithCtx(ctx, func() error {
+		if err := runner.RunWithCtx(ctx, func() error {
 			return cryptApp.Run()
 		}); err != nil {
 			fmt.Printf("Crypt error: %v\n", err)

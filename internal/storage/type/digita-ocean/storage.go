@@ -7,8 +7,9 @@ import (
 )
 
 type DigitalOcean struct {
-	ctx    context.Context
-	config *storage.Config
+	ctx     context.Context
+	config  *storage.Config
+	backend string
 }
 
 func NewApp(
@@ -16,8 +17,9 @@ func NewApp(
 	config *storage.Config,
 ) *DigitalOcean {
 	return &DigitalOcean{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "DigitalOcean",
 	}
 }
 
@@ -28,6 +30,7 @@ func (d *DigitalOcean) Save() error {
 		d.config.Config,
 		d.config.DumpName,
 		d.config.FileSize,
+		d.backend,
 	)
 
 	return awsClient.Handler()

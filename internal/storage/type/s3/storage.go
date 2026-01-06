@@ -7,8 +7,9 @@ import (
 )
 
 type S3 struct {
-	ctx    context.Context
-	config *storage.Config
+	ctx     context.Context
+	config  *storage.Config
+	backend string
 }
 
 func NewApp(
@@ -16,8 +17,9 @@ func NewApp(
 	config *storage.Config,
 ) *S3 {
 	return &S3{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "S3",
 	}
 }
 
@@ -28,6 +30,7 @@ func (s *S3) Save() error {
 		s.config.Config,
 		s.config.DumpName,
 		s.config.FileSize,
+		s.backend,
 	)
 
 	return awsClient.Handler()

@@ -8,6 +8,7 @@ import (
 	"dumper/internal/storage/type/cloudflare"
 	digitalOcean "dumper/internal/storage/type/digita-ocean"
 	"dumper/internal/storage/type/ftp"
+	"dumper/internal/storage/type/google"
 	"dumper/internal/storage/type/local"
 	"dumper/internal/storage/type/minio"
 	"dumper/internal/storage/type/s3"
@@ -56,6 +57,8 @@ func (s *Storage) Save() error {
 		handler = backblaze.NewApp(s.ctx, s.config)
 	case "spaces":
 		handler = digitalOcean.NewApp(s.ctx, s.config)
+	case "gcs":
+		handler = google.NewApp(s.ctx, s.config)
 	default:
 		return errors.New("unsupported storage type: " + s.config.Type)
 	}

@@ -3,7 +3,7 @@ package neo4j
 import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/template"
 	"fmt"
 )
 
@@ -28,7 +28,7 @@ func (g Neo4jGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 
 	// Move the dump file to the desired name
 	nameTmpDumpFile := fmt.Sprintf("%s.%s", data.Database.Name, ext)
-	pathDumpFile := utils.GetFullPath(data.DumpDirRemote, nameTmpDumpFile)
+	pathDumpFile := template.GetFullPath(data.DumpDirRemote, nameTmpDumpFile)
 	baseCmd = fmt.Sprintf("%s && mv %s %s", baseCmd, pathDumpFile, fileName)
 
 	if data.Archive {

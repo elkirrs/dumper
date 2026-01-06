@@ -7,8 +7,9 @@ import (
 )
 
 type Minio struct {
-	ctx    context.Context
-	config *storage.Config
+	ctx     context.Context
+	config  *storage.Config
+	backend string
 }
 
 func NewApp(
@@ -16,8 +17,9 @@ func NewApp(
 	config *storage.Config,
 ) *Minio {
 	return &Minio{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "MinIO",
 	}
 }
 
@@ -28,6 +30,7 @@ func (m *Minio) Save() error {
 		m.config.Config,
 		m.config.DumpName,
 		m.config.FileSize,
+		m.backend,
 	)
 
 	return awsClient.Handler()

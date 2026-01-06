@@ -39,6 +39,10 @@ type Storage struct {
 
 	// Cloudflare
 	AccountID string `yaml:"account_id"`
+
+	// Google Cloud
+	Credential     string `yaml:"credential"`
+	CredentialFile string `yaml:"credential_file"`
 }
 
 type ListStorages struct {

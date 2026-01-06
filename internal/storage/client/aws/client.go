@@ -3,25 +3,27 @@ package aws
 import (
 	"context"
 	"dumper/internal/connect"
-	"dumper/internal/domain/config/storage"
-	"dumper/pkg/utils"
+	domainConfigStorage "dumper/internal/domain/config/storage"
+	"dumper/internal/domain/storage"
+	"dumper/pkg/utils/console"
+	"dumper/pkg/utils/stream"
+
 	"fmt"
-	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"golang.org/x/crypto/ssh"
 )
 
 type awsClient struct {
 	ctx      context.Context
 	Connect  *connect.Connect
-	Storage  storage.Storage
+	Storage  domainConfigStorage.Storage
 	DumpName string
 	FileSize int64
+	Backend  string
 }
 
 type DefaultAWS struct {
@@ -59,9 +61,10 @@ var defaultAWS = map[string]DefaultAWS{
 func NewClient(
 	ctx context.Context,
 	connect *connect.Connect,
-	storage storage.Storage,
+	storage domainConfigStorage.Storage,
 	dumpName string,
 	fileSize int64,
+	backend string,
 ) *awsClient {
 	return &awsClient{
 		ctx:      ctx,
@@ -69,6 +72,7 @@ func NewClient(
 		Storage:  storage,
 		DumpName: dumpName,
 		FileSize: fileSize,
+		Backend:  backend,
 	}
 }
 
@@ -106,33 +110,31 @@ func (a *awsClient) Handler() error {
 	}
 
 	s3Client := s3.NewFromConfig(awsCfg, opts...)
+
+	_, err = s3Client.HeadBucket(a.ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(a.Storage.Bucket),
+	})
+	if err != nil {
+		return &storage.UploadError{
+			Backend: a.Backend,
+			Err:     fmt.Errorf("[%s] bucket %s is not accessible: %w", providerName, a.Storage.Bucket, err),
+		}
+	}
+
 	uploader := manager.NewUploader(s3Client)
 
-	session, err := a.Connect.NewSession()
+	pr, closeSSH, err := stream.SSHStreamer(a.ctx, a.Connect, a.DumpName, a.FileSize)
 
 	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %v", err)
+		return &storage.UploadError{
+			Backend: a.Backend,
+			Err:     fmt.Errorf("failed to create SSH session: %v", err),
+		}
 	}
 
-	defer func(session *ssh.Session) {
-		_ = session.Close()
-	}(session)
+	defer closeSSH()
 
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("failed to get stdout pipe: %v", err)
-	}
-
-	if err := session.Start(fmt.Sprintf("cat %s", a.DumpName)); err != nil {
-		return fmt.Errorf("failed to start remote command: %v", err)
-	}
-
-	targetPath := filepath.Join(
-		a.Storage.Dir,
-		filepath.Base(a.DumpName),
-	)
-
-	pr := utils.StreamToPipe(a.ctx, stdout, a.FileSize)
+	targetPath := stream.TargetPath(a.Storage.Dir, a.DumpName)
 
 	_, err = uploader.Upload(a.ctx, &s3.PutObjectInput{
 		Bucket: aws.String(a.Storage.Bucket),
@@ -141,14 +143,10 @@ func (a *awsClient) Handler() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to upload to %s: %v", providerName, err)
+		return &storage.UploadError{Backend: a.Backend, Err: err}
 	}
 
-	if err := session.Wait(); err != nil {
-		return fmt.Errorf("remote command failed: %v", err)
-	}
-
-	utils.SafePrintln("[%s] Upload complete: %s", providerName, targetPath)
+	console.SafePrintln("[%s] Upload complete: %s", providerName, targetPath)
 	return nil
 }
 

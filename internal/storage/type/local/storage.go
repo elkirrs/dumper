@@ -3,18 +3,18 @@ package local
 import (
 	"context"
 	storageDomain "dumper/internal/domain/storage"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/console"
+	"dumper/pkg/utils/stream"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-
-	"golang.org/x/crypto/ssh"
 )
 
 type Local struct {
-	ctx    context.Context
-	config *storageDomain.Config
+	ctx     context.Context
+	config  *storageDomain.Config
+	backend string
 }
 
 func NewApp(
@@ -22,55 +22,52 @@ func NewApp(
 	config *storageDomain.Config,
 ) *Local {
 	return &Local{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "Local",
 	}
 }
 
 func (l *Local) Save() error {
-	localPath := filepath.Join(l.config.Config.Dir, filepath.Base(l.config.DumpName))
+	localPath := stream.TargetPath(l.config.Config.Dir, l.config.DumpName)
 
 	dir := filepath.Dir(localPath)
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		return fmt.Errorf("failed to create local directory: %v", err)
+		return &storageDomain.UploadError{
+			Backend: l.backend,
+			Err:     fmt.Errorf("failed to create local directory: %v", err),
+		}
 	}
 
 	outFile, err := os.Create(localPath)
 	if err != nil {
-		return fmt.Errorf("failed to create local file: %v", err)
+		return &storageDomain.UploadError{
+			Backend: l.backend,
+			Err:     fmt.Errorf("failed to create local file: %v", err),
+		}
 	}
-	defer func(outFile *os.File) {
-		_ = outFile.Close()
-	}(outFile)
+	defer outFile.Close()
 
-	session, err := l.config.Conn.NewSession()
+	pr, closeSSH, err := stream.SSHStreamer(l.ctx, l.config.Conn, l.config.DumpName, l.config.FileSize)
+
 	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %v", err)
-	}
-	defer func(session *ssh.Session) {
-		_ = session.Close()
-	}(session)
-
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("failed to get stdout pipe: %v", err)
+		return &storageDomain.UploadError{
+			Backend: l.backend,
+			Err:     fmt.Errorf("failed to create SSH session: %v", err),
+		}
 	}
 
-	if err := session.Start(fmt.Sprintf("cat %s", l.config.DumpName)); err != nil {
-		return fmt.Errorf("failed to start remote command: %v", err)
-	}
-
-	pr := utils.StreamToPipe(l.ctx, stdout, l.config.FileSize)
+	defer closeSSH()
 
 	if _, err := io.Copy(outFile, pr); err != nil {
-		return fmt.Errorf("failed to write to local file: %v", err)
+		outFile.Close()
+		return &storageDomain.UploadError{
+			Backend: l.backend,
+			Err:     fmt.Errorf("failed to write to local file: %v", err),
+		}
 	}
 
-	if err := session.Wait(); err != nil {
-		return fmt.Errorf("remote command failed: %v", err)
-	}
-
-	utils.SafePrintln("[Local] Upload complete: %s", localPath)
+	console.SafePrintln("[Local] Upload complete: %s", localPath)
 	return nil
 }
