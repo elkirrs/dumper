@@ -67,7 +67,7 @@ func (a *Azure) Save() error {
 		return fmt.Errorf("failed to start remote command: %v", err)
 	}
 
-	pr := stream.StreamToPipe(a.ctx, stdout, a.config.FileSize)
+	pr := stream.PipeReader(a.ctx, stdout, a.config.FileSize)
 
 	_, err = blobClient.UploadStream(a.ctx, pr, &azblob.UploadStreamOptions{
 		BlockSize: 32 * 1024,

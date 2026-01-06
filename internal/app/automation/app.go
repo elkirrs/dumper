@@ -36,21 +36,21 @@ func NewApp(
 	}
 }
 
-func (a *Automation) Run() error {
-	logging.L(a.ctx).Info("Prepare data for create dumps")
+func (m *Automation) Run() error {
+	logging.L(m.ctx).Info("Prepare data for create dumps")
 
-	dbList := strings.Split(a.env.DbNameList, ",")
+	dbList := strings.Split(m.env.DbNameList, ",")
 	countDBs := len(dbList)
 
 	serversDatabases := make(map[string][]dbConnect.DBConnect)
 	var dataDBConnect map[string]dbConnect.DBConnect
-	dataDBConnect = a.prepareDBConnect()
+	dataDBConnect = m.prepareDBConnect()
 
 	for _, dbName := range dbList {
 		dbC, ok := dataDBConnect[dbName]
 		if !ok {
 			fmt.Printf("Database %s not found\n", dbName)
-			logging.L(a.ctx).Warn("Database not found", logging.StringAttr("name", dbName))
+			logging.L(m.ctx).Warn("Database not found", logging.StringAttr("name", dbName))
 			countDBs--
 			continue
 		}
@@ -58,7 +58,7 @@ func (a *Automation) Run() error {
 		serversDatabases[dbC.Database.Server] = append(serversDatabases[dbC.Database.Server], dbC)
 
 		if countDBs == 0 {
-			logging.L(a.ctx).Error("Database and server no key matches check the configuration file")
+			logging.L(m.ctx).Error("Database and server no key matches check the configuration file")
 			return errors.New("database and server no key matches check the configuration file")
 		}
 	}
@@ -73,25 +73,25 @@ func (a *Automation) Run() error {
 			defer wg.Done()
 			for _, dbConn := range connectDBs {
 				select {
-				case <-a.ctx.Done():
-					logging.L(a.ctx).Info("Backup cancelled by context")
+				case <-m.ctx.Done():
+					logging.L(m.ctx).Info("Backup cancelled by context")
 					errCh <- fmt.Errorf("backup cancelled for database %s", dbConn.Database.Name)
 					return
 				default:
 					connectDto := &connectDomain.Connect{
 						Server:       dbConn.Server.Host,
-						Port:         dbConn.Server.GetPort(&a.cfg.Settings.SrvPost),
+						Port:         dbConn.Server.GetPort(&m.cfg.Settings.SrvPost),
 						Username:     dbConn.Server.User,
-						Password:     dbConn.Server.GetPassword(&a.cfg.Settings.SSH.Password),
-						PrivateKey:   dbConn.Server.GetPrivateKey(&a.cfg.Settings.SSH.PrivateKey),
-						Passphrase:   dbConn.Server.GetPassphrase(&a.cfg.Settings.SSH.Passphrase),
-						IsPassphrase: dbConn.Server.GetIsPassphrase(*a.cfg.Settings.SSH.IsPassphrase),
+						Password:     dbConn.Server.GetPassword(&m.cfg.Settings.SSH.Password),
+						PrivateKey:   dbConn.Server.GetPrivateKey(&m.cfg.Settings.SSH.PrivateKey),
+						Passphrase:   dbConn.Server.GetPassphrase(&m.cfg.Settings.SSH.Passphrase),
+						IsPassphrase: dbConn.Server.GetIsPassphrase(*m.cfg.Settings.SSH.IsPassphrase),
 					}
-					connectApp := connect.NewApp(a.ctx, connectDto)
-					backupApp := backup.NewApp(a.ctx, a.cfg, dbConn, connectApp)
+					connectApp := connect.NewApp(m.ctx, connectDto)
+					backupApp := backup.NewApp(m.ctx, m.cfg, dbConn, connectApp)
 
 					err := retry.WithRetry(
-						a.ctx, a.cfg.Settings.RetryConnect,
+						m.ctx, m.cfg.Settings.RetryConnect,
 						func() error {
 							return backupApp.Run()
 						},
@@ -102,7 +102,7 @@ func (a *Automation) Run() error {
 						func(attempt int, err error) {
 							var connErr *connecterror.ConnectError
 							_ = errors.As(err, &connErr)
-							logging.L(a.ctx).Warn(
+							logging.L(m.ctx).Warn(
 								"Connection error, retrying",
 								logging.StringAttr("db", dbConn.Database.Name),
 								logging.StringAttr("addr", connErr.Addr),
@@ -130,7 +130,7 @@ func (a *Automation) Run() error {
 		}
 	}
 
-	logging.L(a.ctx).Info("All requested database backups are done")
+	logging.L(m.ctx).Info("All requested database backups are done")
 
 	return nil
 }

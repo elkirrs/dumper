@@ -58,7 +58,9 @@ func (s *SFTP) Save() error {
 			Err:     fmt.Errorf("failed to create target SFTP client: %v", err),
 		}
 	}
-	defer targetClient.Close()
+	defer func(targetClient *sftp.Client) {
+		_ = targetClient.Close()
+	}(targetClient)
 
 	targetPath := stream.TargetPath(s.config.Config.Dir, s.config.DumpName)
 	dir := filepath.Dir(targetPath)
@@ -79,7 +81,9 @@ func (s *SFTP) Save() error {
 		}
 	}
 
-	defer closeSSH()
+	defer func() {
+		_ = closeSSH()
+	}()
 
 	dstFile, err := targetClient.Create(targetPath)
 	if err != nil {
@@ -89,7 +93,9 @@ func (s *SFTP) Save() error {
 		}
 	}
 
-	defer dstFile.Close()
+	defer func(dstFile *sftp.File) {
+		_ = dstFile.Close()
+	}(dstFile)
 
 	if _, err := io.Copy(dstFile, pr); err != nil {
 		return &storage.UploadError{

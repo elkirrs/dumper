@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func StreamToPipe(
+func PipeReader(
 	ctx context.Context,
 	stdout io.Reader,
 	fileSize int64,
@@ -17,7 +17,9 @@ func StreamToPipe(
 	pr, pw := io.Pipe()
 
 	go func() {
-		defer pw.Close()
+		defer func(pw *io.PipeWriter) {
+			_ = pw.Close()
+		}(pw)
 
 		buf := make([]byte, 32*1024)
 		var uploaded int64
@@ -70,16 +72,16 @@ func SSHStreamer(
 
 	stdout, err := session.StdoutPipe()
 	if err != nil {
-		session.Close()
+		_ = session.Close()
 		return nil, nil, fmt.Errorf("failed to get stdout pipe: %w", err)
 	}
 
 	if err := session.Start(fmt.Sprintf("cat %s", dumpName)); err != nil {
-		session.Close()
+		_ = session.Close()
 		return nil, nil, fmt.Errorf("failed to start remote command: %w", err)
 	}
 
-	pr := StreamToPipe(ctx, stdout, fileSize)
+	pr := PipeReader(ctx, stdout, fileSize)
 
 	closeFunc := func() error {
 		_ = session.Wait()
