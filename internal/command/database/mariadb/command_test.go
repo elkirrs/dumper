@@ -5,7 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/mapping"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestMariaDbGenerator_Generate(t *testing.T) {
-	source := utils.GetDBSource("mariadb", "")
+	source := mapping.GetDBSource("mariadb", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -178,7 +178,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 }
 
 func TestMariaDbGenerator_CommandIntegrity(t *testing.T) {
-	source := utils.GetDBSource("mariadb", "")
+	source := mapping.GetDBSource("mariadb", "")
 
 	cfg := &cmdCfg.Config{
 		Database: cmdCfg.Database{

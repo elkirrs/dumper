@@ -15,7 +15,8 @@ import (
 	_select "dumper/internal/select"
 	t "dumper/internal/temr"
 	"dumper/pkg/logging"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/retry"
+	"dumper/pkg/utils/runner"
 	"errors"
 	"fmt"
 )
@@ -55,7 +56,7 @@ func (m *Manual) Run() error {
 		term.SetList(serverKeys)
 		term.SetTitle("Select server ")
 
-		if err = utils.RunWithCtx(m.ctx, func() error { term.Run(); return nil }); err != nil {
+		if err = runner.RunWithCtx(m.ctx, func() error { term.Run(); return nil }); err != nil {
 			return err
 		}
 
@@ -90,7 +91,7 @@ func (m *Manual) Run() error {
 	term.SetList(dbKeys)
 	term.SetTitle("Select database ")
 
-	if err = utils.RunWithCtx(m.ctx, func() error { term.Run(); return nil }); err != nil {
+	if err = runner.RunWithCtx(m.ctx, func() error { term.Run(); return nil }); err != nil {
 		return err
 	}
 
@@ -114,7 +115,7 @@ func (m *Manual) Run() error {
 
 	backupApp := backup.NewApp(m.ctx, m.cfg, dbConn, connectApp)
 
-	err = utils.WithRetry(
+	err = retry.WithRetry(
 		m.ctx, m.cfg.Settings.RetryConnect,
 		func() error {
 			return backupApp.Run()
@@ -160,7 +161,7 @@ func (m *Manual) prepareRemoteDatabaseList(
 
 	conn := connect.NewApp(m.ctx, connectDto)
 
-	if err := utils.RunWithCtx(m.ctx, conn.Connect); err != nil {
+	if err := runner.RunWithCtx(m.ctx, conn.Connect); err != nil {
 		logging.L(m.ctx).Error(
 			"Error connecting to server",
 			logging.StringAttr("server", server.Host),
@@ -182,7 +183,7 @@ func (m *Manual) prepareRemoteDatabaseList(
 	rmt = remote.New(m.ctx, conn, server.ConfigPath, m.cfg)
 
 	logging.L(m.ctx).Info("Trying to load remote config")
-	if err := utils.RunWithCtx(m.ctx, rmt.Load); err != nil {
+	if err := runner.RunWithCtx(m.ctx, rmt.Load); err != nil {
 		logging.L(m.ctx).Error("Error load remote config")
 		return nil, &connecterror.ConnectError{Addr: server.Host, Err: err}
 	}

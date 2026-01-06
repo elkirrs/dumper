@@ -9,7 +9,7 @@ import (
 	"dumper/internal/domain/config/shell"
 	sshConfig "dumper/internal/domain/config/ssh-config"
 	"dumper/internal/validation"
-	"dumper/pkg/utils"
+	crypt2 "dumper/pkg/utils/crypt"
 	"os"
 
 	"github.com/creasty/defaults"
@@ -21,14 +21,14 @@ func Load(filename, appSecret string) (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if utils.IsEncrypted(data) && utils.LooksEncrypted(data) {
-		cFile, err := utils.ReadEncryptedFile(filename)
+	if crypt2.IsEncrypted(data) && crypt2.LooksEncrypted(data) {
+		cFile, err := crypt2.ReadEncryptedFile(filename)
 
 		if err != nil {
 			return nil, err
 		}
 
-		scope := utils.GetScope(cFile.Header)
+		scope := crypt2.GetScope(cFile.Header)
 		data, err = crypt.DecryptInApp(cFile.Data, scope, appSecret)
 		if err != nil {
 			return nil, err

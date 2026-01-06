@@ -2,7 +2,7 @@ package aes
 
 import (
 	"dumper/internal/domain/encrypt"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/suffix"
 	"fmt"
 )
 
@@ -19,7 +19,7 @@ func (g AESGenerator) Generate(opts *encrypt.Options) *encrypt.DataCrypt {
 		out.Name = encPath
 
 	case "decrypt":
-		decPath := utils.RemoveSuffix(opts.FilePath, ".enc")
+		decPath := suffix.RemoveSuffix(opts.FilePath, ".enc")
 		out.CMD = decryptFile(opts.FilePath, decPath, opts.Password)
 		out.Name = decPath
 	}

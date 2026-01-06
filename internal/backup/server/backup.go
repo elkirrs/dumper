@@ -11,7 +11,9 @@ import (
 	storageDomain "dumper/internal/domain/storage"
 	"dumper/internal/storage"
 	"dumper/pkg/logging"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/format"
+	"dumper/pkg/utils/progress"
+	"dumper/pkg/utils/spiner"
 	"fmt"
 	"strings"
 	"sync"
@@ -80,7 +82,7 @@ func (b *BackupServer) Run() error {
 			return err
 		}
 
-		fmt.Printf("\rFile dump size: %s [%d bytes]\n", utils.FormatBytes(totalSize), totalSize)
+		fmt.Printf("\rFile dump size: %s [%d bytes]\n", format.FormatBytes(totalSize), totalSize)
 
 	} else {
 		stop := make(chan struct{})
@@ -89,7 +91,7 @@ func (b *BackupServer) Run() error {
 		logging.L(b.ctx).Info("File dump name", logging.StringAttr("name", b.config.DumpName))
 		fmt.Println("File dump name:", b.config.DumpName)
 
-		go utils.Spinner(stop)
+		go spiner.Spinner(stop)
 
 		if msg, err := b.conn.RunCommand(b.config.Command); err != nil {
 			logging.L(b.ctx).Error(
@@ -110,7 +112,7 @@ func (b *BackupServer) Run() error {
 		}
 
 		fmt.Printf("\rDump created successfully in %.2f sec\n", elapsed.Seconds())
-		fmt.Printf("\rFile dump size: %s [%d bytes]\n", utils.FormatBytes(totalSize), totalSize)
+		fmt.Printf("\rFile dump size: %s [%d bytes]\n", format.FormatBytes(totalSize), totalSize)
 
 		dumpCreateTimeSec := fmt.Sprintf("%.2f sec", elapsed.Seconds())
 		logging.L(b.ctx).Info(
@@ -165,7 +167,7 @@ func (b *BackupServer) Run() error {
 	var totalAll int64
 
 	totalAll = totalSize * int64(len(b.config.Storages))
-	globalProgress := utils.GlobalProgress(totalAll)
+	globalProgress := progress.GlobalProgress(totalAll)
 
 	for _, storageItem := range b.config.Storages {
 		countStorage++
@@ -216,7 +218,7 @@ func (b *BackupServer) Run() error {
 	wg.Wait()
 	close(errCh)
 
-	utils.Progress(totalAll, totalAll)
+	progress.Progress(totalAll, totalAll)
 
 	for err := range errCh {
 		countStorage--

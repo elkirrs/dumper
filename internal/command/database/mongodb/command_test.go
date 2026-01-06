@@ -1,7 +1,7 @@
 package mongodb_test
 
 import (
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/mapping"
 	"testing"
 
 	"dumper/internal/command/database/mongodb"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestMongoGenerator_Generate(t *testing.T) {
-	source := utils.GetDBSource("mongo", "")
+	source := mapping.GetDBSource("mongo", "")
 	sslTrue := true
 
 	tests := []struct {

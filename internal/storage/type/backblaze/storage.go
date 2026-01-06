@@ -7,8 +7,9 @@ import (
 )
 
 type Backblaze struct {
-	ctx    context.Context
-	config *storage.Config
+	ctx     context.Context
+	config  *storage.Config
+	backend string
 }
 
 func NewApp(
@@ -16,8 +17,9 @@ func NewApp(
 	config *storage.Config,
 ) *Backblaze {
 	return &Backblaze{
-		ctx:    ctx,
-		config: config,
+		ctx:     ctx,
+		config:  config,
+		backend: "Backblaze B2",
 	}
 }
 
@@ -28,6 +30,7 @@ func (b *Backblaze) Save() error {
 		b.config.Config,
 		b.config.DumpName,
 		b.config.FileSize,
+		b.backend,
 	)
 
 	return awsClient.Handler()

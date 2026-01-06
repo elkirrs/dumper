@@ -5,7 +5,8 @@ import (
 	"context"
 	connectDomain "dumper/internal/domain/connect"
 	"dumper/pkg/logging"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/console"
+	"dumper/pkg/utils/mask"
 	"fmt"
 	"os"
 	"strings"
@@ -84,7 +85,7 @@ func (c *Connect) Connect() error {
 		return err
 	}
 
-	utils.SafePrintln("Trying to connect to: %s", c.connect.Server)
+	console.SafePrintln("Trying to connect to: %s", c.connect.Server)
 
 	logging.L(c.ctx).Info(
 		"Trying to test connection to ",
@@ -147,7 +148,7 @@ func (c *Connect) RunCommand(cmd string) (string, error) {
 	if err != nil {
 		return output + errorOutput, fmt.Errorf(
 			"command failed: %v\nstderr: %s",
-			err, utils.Mask(errorOutput),
+			err, mask.Mask(errorOutput),
 		)
 	}
 

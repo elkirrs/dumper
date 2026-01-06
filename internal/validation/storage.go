@@ -130,6 +130,46 @@ func validateStorages(v *Validation, cfg *config.Config) error {
 			if err := validate.Struct(b2); err != nil {
 				return fmt.Errorf("storage '%s' (Backblaze) invalid: %w", name, HumanError(err))
 			}
+
+		case "spaces":
+			spaces := storage.DigitalOcean{
+				Type:      s.Type,
+				Bucket:    s.Bucket,
+				AccessKey: s.AccessKey,
+				SecretKey: s.SecretKey,
+				Endpoint:  s.Endpoint,
+				Region:    s.Region,
+			}
+
+			if err := validate.Struct(spaces); err != nil {
+				return fmt.Errorf("storage '%s' (DigitalOcean) invalid: %w", name, HumanError(err))
+			}
+
+		case "gcs":
+			google := storage.GoogleCloud{
+				Type:           s.Type,
+				Bucket:         s.Bucket,
+				Credential:     s.Credential,
+				CredentialFile: s.CredentialFile,
+			}
+
+			if err := validate.Struct(google); err != nil {
+				return fmt.Errorf("storage '%s' (Google Cloud Storage) invalid: %w", name, HumanError(err))
+			}
+
+		case "yandex":
+			yandex := storage.YandexCloud{
+				Type:      s.Type,
+				Bucket:    s.Bucket,
+				AccessKey: s.AccessKey,
+				SecretKey: s.SecretKey,
+				Endpoint:  s.Endpoint,
+				Region:    s.Region,
+			}
+
+			if err := validate.Struct(yandex); err != nil {
+				return fmt.Errorf("storage '%s' (Yandex Cloud) invalid: %w", name, HumanError(err))
+			}
 		default:
 			if s.Type == "" {
 				return fmt.Errorf("storage '%s' missing required field 'type'", name)

@@ -5,7 +5,7 @@ import (
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/mapping"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestDynamoDBGenerator_Generate_AllScenarios(t *testing.T) {
-	source := utils.GetDBSource("dynamodb", "")
+	source := mapping.GetDBSource("dynamodb", "")
 	tests := []struct {
 		name             string
 		config           *cmdCfg.Config
@@ -182,7 +182,7 @@ func TestDynamoDBGenerator_Generate_AllScenarios(t *testing.T) {
 }
 
 func TestDynamoDBGenerator_CommandIntegrity(t *testing.T) {
-	source := utils.GetDBSource("dynamodb", "")
+	source := mapping.GetDBSource("dynamodb", "")
 
 	cfg := &cmdCfg.Config{
 		Database: cmdCfg.Database{

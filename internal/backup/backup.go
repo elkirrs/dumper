@@ -13,7 +13,9 @@ import (
 	dbConnect "dumper/internal/domain/config/db-connect"
 	"dumper/internal/shell"
 	"dumper/pkg/logging"
-	"dumper/pkg/utils"
+	"dumper/pkg/utils/archved"
+	"dumper/pkg/utils/runner"
+	"dumper/pkg/utils/template"
 	"fmt"
 )
 
@@ -58,7 +60,7 @@ func (b *Backup) Run() error {
 
 	logging.L(b.ctx).Info("Prepare connection")
 
-	if err := utils.RunWithCtx(b.ctx, b.conn.Connect); err != nil {
+	if err := runner.RunWithCtx(b.ctx, b.conn.Connect); err != nil {
 		logging.L(b.ctx).Error(
 			"Error connecting to server",
 			logging.StringAttr("server", b.dbConnect.Server.Host),
@@ -73,14 +75,14 @@ func (b *Backup) Run() error {
 	logging.L(b.ctx).Info("The connection is established")
 
 	shellApp := shell.NewApp(b.ctx, b.cmdConfig, b.conn)
-	if err := utils.RunWithCtx(b.ctx, shellApp.RunScriptBefore); err != nil {
+	if err := runner.RunWithCtx(b.ctx, shellApp.RunScriptBefore); err != nil {
 		logging.L(b.ctx).Error("Error run shell script before start backup")
 		return err
 	}
 
 	logging.L(b.ctx).Info("Preparing for backup creation")
 
-	if err := utils.RunWithCtx(b.ctx, b.backup); err != nil {
+	if err := runner.RunWithCtx(b.ctx, b.backup); err != nil {
 		logging.L(b.ctx).Error("Error creating backup database")
 		return err
 	}
@@ -93,8 +95,8 @@ func (b *Backup) Run() error {
 			b.dbConnect.Database.GetName(),
 		)
 
-		if err := utils.RunWithCtx(b.ctx, func() error {
-			return utils.ArchivedLocalFile(dbNamePrefix, b.cmdConfig.DumpName, b.cfg.Settings.DirDump, b.cfg.Settings.DirArchived)
+		if err := runner.RunWithCtx(b.ctx, func() error {
+			return archved.ArchivedLocalFile(dbNamePrefix, b.cmdConfig.DumpName, b.cfg.Settings.DirDump, b.cfg.Settings.DirArchived)
 		}); err != nil {
 			logging.L(b.ctx).Error("Error archiving old backups")
 			return err
@@ -103,7 +105,7 @@ func (b *Backup) Run() error {
 		logging.L(b.ctx).Info("Archived old backups", logging.StringAttr("path", b.cfg.Settings.DirArchived))
 	}
 
-	if err := utils.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
+	if err := runner.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
 		logging.L(b.ctx).Error("Error run shell script after finished backup")
 		return err
 	}
@@ -142,14 +144,14 @@ func (b *Backup) backupLocalDirect() error {
 func (b *Backup) prepareBackupConfig() {
 	logging.L(b.ctx).Info("Prepare command config")
 
-	dataFormat := utils.TemplateData{
+	dataFormat := template.TemplateData{
 		Server:   b.dbConnect.Server.GetName(),
 		Database: b.dbConnect.Database.GetName(),
 		Template: b.cfg.Settings.Template,
 	}
-	nameFile := utils.GetTemplateFileName(dataFormat)
+	nameFile := template.GetTemplateFileName(dataFormat)
 	dirRemote := b.dbConnect.Database.GetDirRemote(&b.cfg.Settings.DirRemote)
-	fullPath := utils.GetFullPath(dirRemote, nameFile)
+	fullPath := template.GetFullPath(dirRemote, nameFile)
 	shellScript := b.dbConnect.Server.GetShell(b.cfg.Settings.Shell)
 
 	b.cmdConfig = &commandConfig.Config{
