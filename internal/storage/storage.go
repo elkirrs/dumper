@@ -13,6 +13,7 @@ import (
 	"dumper/internal/storage/type/minio"
 	"dumper/internal/storage/type/s3"
 	"dumper/internal/storage/type/sftp"
+	"dumper/internal/storage/type/yandex"
 	"errors"
 )
 
@@ -59,6 +60,8 @@ func (s *Storage) Save() error {
 		handler = digitalOcean.NewApp(s.ctx, s.config)
 	case "gcs":
 		handler = google.NewApp(s.ctx, s.config)
+	case "yandex":
+		handler = yandex.NewApp(s.ctx, s.config)
 	default:
 		return errors.New("unsupported storage type: " + s.config.Type)
 	}

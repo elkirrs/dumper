@@ -17,7 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type awsClient struct {
+type Client struct {
 	ctx      context.Context
 	Connect  *connect.Connect
 	Storage  domainConfigStorage.Storage
@@ -56,6 +56,11 @@ var defaultAWS = map[string]DefaultAWS{
 		Region:   "fra1",
 		Provider: "DigitalOcean Spaces",
 	},
+	"yandex": {
+		Endpoint: "https://storage.yandexcloud.net",
+		Region:   "ru-central1",
+		Provider: "Yandex Cloud",
+	},
 }
 
 func NewClient(
@@ -65,8 +70,8 @@ func NewClient(
 	dumpName string,
 	fileSize int64,
 	backend string,
-) *awsClient {
-	return &awsClient{
+) *Client {
+	return &Client{
 		ctx:      ctx,
 		Connect:  connect,
 		Storage:  storage,
@@ -76,7 +81,7 @@ func NewClient(
 	}
 }
 
-func (a *awsClient) Handler() error {
+func (a *Client) Handler() error {
 	cred := aws.NewCredentialsCache(
 		credentials.NewStaticCredentialsProvider(
 			a.Storage.AccessKey,
@@ -150,7 +155,7 @@ func (a *awsClient) Handler() error {
 	return nil
 }
 
-func (a *awsClient) endpoint() *string {
+func (a *Client) endpoint() *string {
 	if a.Storage.Endpoint != "" {
 		return aws.String(a.Storage.Endpoint)
 	}
@@ -164,10 +169,14 @@ func (a *awsClient) endpoint() *string {
 		return aws.String(fmt.Sprintf(cfg.Endpoint, a.Storage.AccountID))
 	}
 
+	if a.Storage.Type == "yandex" {
+		return aws.String(cfg.Endpoint)
+	}
+
 	return aws.String(fmt.Sprintf(cfg.Endpoint, a.Storage.Bucket, a.Storage.Region))
 }
 
-func (a *awsClient) providerName() string {
+func (a *Client) providerName() string {
 	if cfg, ok := defaultAWS[a.Storage.Type]; ok {
 		return cfg.Provider
 	}
