@@ -154,7 +154,7 @@ func validateStorages(v *Validation, cfg *config.Config) error {
 			}
 
 			if err := validate.Struct(google); err != nil {
-				return fmt.Errorf("storage '%s' (Google Cloude Storage) invalid: %w", name, HumanError(err))
+				return fmt.Errorf("storage '%s' (Google Cloud Storage) invalid: %w", name, HumanError(err))
 			}
 
 		case "yandex":
