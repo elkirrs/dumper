@@ -18,6 +18,9 @@ type Database struct {
 	Options  option.Options
 	Archive  bool
 	Docker   docker.Docker
+
+	// influxDB
+	Token string
 }
 
 type Server struct {
@@ -37,6 +40,7 @@ type Config struct {
 	DumpName            string
 	DumpDirRemote       string
 	DumpDirLocal        string
+	DumpNameTemplate    string
 	Encrypt             encrypt.Encrypt
 	MaxParallelDownload int
 	Shell               shell.Shell

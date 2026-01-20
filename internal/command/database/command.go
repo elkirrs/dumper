@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"dumper/internal/command/database/dynamodb"
+	"dumper/internal/command/database/influxdb"
 	"dumper/internal/command/database/mariadb"
 	"dumper/internal/command/database/mongodb"
 	"dumper/internal/command/database/mssql"
@@ -59,6 +60,8 @@ func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
 		gen = neo4j.Neo4jGenerator{}
 	case "dynamodb":
 		gen = dynamodb.DynamoDBGenerator{}
+	case "influxdb":
+		gen = influxdb.InfluxDB2Generator{}
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s", s.Config.Database.Driver)
 	}

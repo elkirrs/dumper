@@ -60,6 +60,7 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 		{"MSSQL driver", "mssql", false, "bac"}, // supported MSSQL format
 		{"Neo4j driver", "neo4j", false, ""},
 		{"DynamoDB driver", "dynamodb", false, ""},
+		{"InfluxDB driver", "influxdb", false, ""},
 		{"Unsupported driver", "unknown", true, ""},
 	}
 

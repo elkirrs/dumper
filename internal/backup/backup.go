@@ -164,6 +164,7 @@ func (b *Backup) prepareBackupConfig() {
 			Driver:   b.dbConnect.Database.GetDriver(&b.cfg.Settings.Driver),
 			Options:  b.dbConnect.Database.GetOptions(),
 			Docker:   b.dbConnect.Database.GetDocker(b.cfg.Settings.Docker),
+			Token:    b.dbConnect.Database.Token,
 		},
 		Server: commandConfig.Server{
 			Host: b.dbConnect.Server.Host,
@@ -175,6 +176,7 @@ func (b *Backup) prepareBackupConfig() {
 		Archive:             b.dbConnect.Database.IsArchive(*b.cfg.Settings.Archive),
 		DumpDirLocal:        b.cfg.Settings.DirDump,
 		DumpName:            fullPath,
+		DumpNameTemplate:    nameFile,
 		DumpDirRemote:       dirRemote,
 		RemoveBackup:        b.dbConnect.Database.GetRemoveDump(b.cfg.Settings.RemoveDump),
 		Encrypt:             b.dbConnect.Database.GetEncrypt(b.cfg.Settings.Encrypt),

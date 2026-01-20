@@ -8,23 +8,24 @@ import (
 )
 
 type Database struct {
-	Title      string           `yaml:"title,omitempty"`
-	User       string           `yaml:"user"`
-	Password   string           `yaml:"password"`
-	Name       string           `yaml:"name"`
-	Server     string           `yaml:"server" validate:"required"`
-	Key        string           `yaml:"key"`
-	Port       string           `yaml:"port"`
-	Driver     string           `yaml:"driver" validate:"required"`
-	Format     string           `yaml:"format" validate:"required"`
-	Options    *option.Options  `yaml:"options"`
-	RemoveDump *bool            `yaml:"remove_dump"`
-	Encrypt    *encrypt.Encrypt `yaml:"encrypt"`
-	Storages   []string         `yaml:"storages" validate:"required"`
-	Archive    *bool            `yaml:"archive"`
-	Docker     *docker.Docker   `yaml:"docker"`
-	Shell      *shell.Shell     `yaml:"shell"`
-	DirRemote  string           `yaml:"dir_remote"`
+	Title      string           `yaml:"title,omitempty" json:"title,omitempty"`
+	User       string           `yaml:"user" json:"user,omitempty"`
+	Password   string           `yaml:"password" json:"password,omitempty"`
+	Name       string           `yaml:"name" json:"name,omitempty"`
+	Server     string           `yaml:"server" validate:"required" json:"server,omitempty"`
+	Key        string           `yaml:"key" json:"key,omitempty"`
+	Port       string           `yaml:"port" json:"port,omitempty"`
+	Driver     string           `yaml:"driver" validate:"required" json:"driver,omitempty"`
+	Format     string           `yaml:"format" validate:"required" json:"format,omitempty"`
+	Options    *option.Options  `yaml:"options" json:"options,omitempty"`
+	RemoveDump *bool            `yaml:"remove_dump" json:"removeDump,omitempty"`
+	Encrypt    *encrypt.Encrypt `yaml:"encrypt" json:"encrypt,omitempty"`
+	Storages   []string         `yaml:"storages" validate:"required" json:"storages,omitempty"`
+	Archive    *bool            `yaml:"archive" json:"archive,omitempty"`
+	Docker     *docker.Docker   `yaml:"docker" json:"docker,omitempty"`
+	Shell      *shell.Shell     `yaml:"shell" json:"shell,omitempty"`
+	DirRemote  string           `yaml:"dir_remote" json:"dirRemote,omitempty"`
+	Token      string           `yaml:"token" json:"token,omitempty"`
 }
 
 func (d *Database) GetName() string {
@@ -145,7 +146,7 @@ func (d *Database) GetShell(serverShell *shell.Shell) shell.Shell {
 }
 
 func (d *Database) GetStorages(globalStorages *[]string) []string {
-	if d.Storages == nil || len(d.Storages) == 0 {
+	if len(d.Storages) == 0 {
 		return *globalStorages
 	}
 	return d.Storages

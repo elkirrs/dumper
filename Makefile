@@ -8,7 +8,7 @@ test:
 
 # Run build binary app
 build:
-	go build -o dumper ./cmd/main.go
+	go build -ldflags="-s -w" -trimpath -o dumper ./cmd/main.go
 
 # Run the app in dev mode
 run:
