@@ -28,5 +28,6 @@ type Options struct {
 	NodeId         string `yaml:"node_id"`
 	DataDir        string `yaml:"data_dir"`
 
-	Version string `yaml:"version"`
+	Version    string `yaml:"version"`
+	BackupMode string `yaml:"backup_mode"`
 }

@@ -118,7 +118,7 @@ func (d *Database) GetDocker(globalDocker *docker.Docker) docker.Docker {
 		return *globalDocker
 	}
 
-	return *globalDocker
+	return *d.Docker
 }
 
 func (d *Database) GetOptions() option.Options {

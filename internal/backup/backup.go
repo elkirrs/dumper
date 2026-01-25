@@ -88,6 +88,13 @@ func (b *Backup) Run() error {
 	}
 	logging.L(b.ctx).Info("Backup was successfully created and downloaded")
 
+	if err := runner.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
+		logging.L(b.ctx).Error("Error run shell script after finished backup")
+		return err
+	}
+
+	//TODO transfer the backup download functional here
+
 	if b.cfg.Settings.DirArchived != "" {
 		logging.L(b.ctx).Info("Search for old backups")
 		dbNamePrefix := fmt.Sprintf("%s_%s",
@@ -103,11 +110,6 @@ func (b *Backup) Run() error {
 		}
 
 		logging.L(b.ctx).Info("Archived old backups", logging.StringAttr("path", b.cfg.Settings.DirArchived))
-	}
-
-	if err := runner.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
-		logging.L(b.ctx).Error("Error run shell script after finished backup")
-		return err
 	}
 
 	return nil
