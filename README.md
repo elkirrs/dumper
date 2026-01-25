@@ -12,13 +12,13 @@ Opportunities:
 - Custom dump name templates.
 - Archiving old dumps.
 - Encrypting and Decrypting backup and config file
-- Support different storages **SFTP**, **Azure** and etc.
+- Support different storages **SFTP**, **Azure**, **S3** and etc.
 - Backup from docker
 - Shell script after and before backup
 
 ### Installation:
 ```shell
-    curl -sSL https://elkirrs.github.io/dumper/install.sh | sh 
+curl -sSL https://elkirrs.github.io/dumper/install.sh | sh 
 ```
 
 ### Documentation:
@@ -30,14 +30,14 @@ Click to docs page: [Documentation](https://elkirrs.github.io/dumper)
 - Mac/Linux:
 
 ```
-    shasum -a 256 dumper_linux_amd64.tar.gz
-    cat checksums.txt | grep dumper_linux_amd64.tar.gz
+shasum -a 256 dumper_linux_amd64.tar.gz
+cat checksums.txt | grep dumper_linux_amd64.tar.gz
 ```
 
 - Windows (PowerShell):
 
 ```
-    Get-FileHash .\dumper_windows_amd64.zip -Algorithm SHA256
+Get-FileHash .\dumper_windows_amd64.zip -Algorithm SHA256
 ```
 
 ## Support the Project

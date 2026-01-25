@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"dumper/internal/command/database/db2"
 	"dumper/internal/command/database/dynamodb"
+	"dumper/internal/command/database/influxdb"
 	"dumper/internal/command/database/mariadb"
 	"dumper/internal/command/database/mongodb"
 	"dumper/internal/command/database/mssql"
@@ -36,34 +38,29 @@ type Generator interface {
 	Generate(*commandConfig.Config) (*commandDomain.DBCommand, error)
 }
 
+var dataBaseGeneratorList = map[string]Generator{
+	"psql":     postgres.PSQLGenerator{},
+	"mysql":    mysql.MySQLGenerator{},
+	"mongo":    mongodb.MongoGenerator{},
+	"sqlite":   sqlite.SQLiteGenerator{},
+	"mariadb":  mariadb.MariaDbGenerator{},
+	"redis":    redis.RedisGenerator{},
+	"mssql":    mssql.MSQLGenerator{},
+	"neo4j":    neo4j.Neo4jGenerator{},
+	"dynamodb": dynamodb.DynamoDBGenerator{},
+	"influxdb": influxdb.InfluxDB2Generator{},
+	"db2":      db2.DB2Generator{},
+}
+
 func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
 
-	var gen Generator
+	generator, ok := dataBaseGeneratorList[s.Config.Database.Driver]
 
-	switch s.Config.Database.Driver {
-	case "psql":
-		gen = postgres.PSQLGenerator{}
-	case "mysql":
-		gen = mysql.MySQLGenerator{}
-	case "mongo":
-		gen = mongodb.MongoGenerator{}
-	case "sqlite":
-		gen = sqlite.SQLiteGenerator{}
-	case "mariadb":
-		gen = mariadb.MariaDbGenerator{}
-	case "redis":
-		gen = redis.RedisGenerator{}
-	case "mssql":
-		gen = mssql.MSQLGenerator{}
-	case "neo4j":
-		gen = neo4j.Neo4jGenerator{}
-	case "dynamodb":
-		gen = dynamodb.DynamoDBGenerator{}
-	default:
+	if !ok {
 		return nil, fmt.Errorf("unsupported database driver: %s", s.Config.Database.Driver)
 	}
 
-	cmdData, err := gen.Generate(s.Config)
+	cmdData, err := generator.Generate(s.Config)
 
 	if err != nil {
 		return nil, err

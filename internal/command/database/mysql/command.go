@@ -37,9 +37,11 @@ func (g MySQLGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand,
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)
 	remotePath := fmt.Sprintf("%s", fileName)
 
+	baseCmd = fmt.Sprintf("%s > %s", baseCmd, remotePath)
+
 	if data.DumpLocation == "server" {
 		return &commandDomain.DBCommand{
-			Command:  fmt.Sprintf("%s > %s", baseCmd, remotePath),
+			Command:  baseCmd,
 			DumpPath: remotePath,
 		}, nil
 	}

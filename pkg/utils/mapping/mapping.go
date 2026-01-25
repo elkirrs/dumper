@@ -54,6 +54,16 @@ var dbDrivers = map[string]DriverInfo{
 		DefaultPort:    "",
 		Formats:        map[string]struct{}{"json": {}},
 	},
+	"influxdb": {
+		DefaultCommand: "influx",
+		DefaultPort:    "8086",
+		Formats:        map[string]struct{}{"tar": {}},
+	},
+	"db2": {
+		DefaultCommand: "db2",
+		DefaultPort:    "50000",
+		Formats:        map[string]struct{}{"0.db2": {}},
+	},
 }
 
 func IsValidFormatDump(driverName, format string) bool {

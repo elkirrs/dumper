@@ -36,32 +36,32 @@ func TestProgress(t *testing.T) {
 		{
 			name:     "Zero total",
 			done:     512,
-			total:    0,
-			expected: regexp.MustCompile(`Downloaded: 512 bytes`),
+			total:    512,
+			expected: regexp.MustCompile(`Uploaded: 100\.0% \[512/512 bytes\]`),
 		},
 		{
 			name:     "Half progress",
 			done:     50,
 			total:    100,
-			expected: regexp.MustCompile(`Downloading\.\.\. 50\.0% .*50/100 bytes`),
+			expected: regexp.MustCompile(`Uploading\.\.\. 50\.0% \[50/100 bytes\]`),
 		},
 		{
 			name:     "Full progress",
 			done:     200,
 			total:    200,
-			expected: regexp.MustCompile(`Downloading\.\.\. 100\.0% .*200/200 bytes`),
+			expected: regexp.MustCompile(`Uploaded: 100\.0% \[200/200 bytes\]`),
 		},
 		{
 			name:     "Non integer percentage",
 			done:     1,
 			total:    3,
-			expected: regexp.MustCompile(`Downloading\.\.\. 33\.3% .*1/3 bytes`),
+			expected: regexp.MustCompile(`Uploading\.\.\. 33\.3% \[1/3 bytes\]`),
 		},
 		{
 			name:     "Over total (more than 100%)",
 			done:     120,
 			total:    100,
-			expected: regexp.MustCompile(`Downloading\.\.\. 120\.0% .*120/100 bytes`),
+			expected: regexp.MustCompile(`Uploading\.\.\. 120\.0% \[120/100 bytes\]`),
 		},
 	}
 

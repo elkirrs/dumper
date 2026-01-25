@@ -12,6 +12,7 @@ import (
 	"dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
 	"dumper/internal/shell"
+	"dumper/internal/upload"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils/archved"
 	"dumper/pkg/utils/runner"
@@ -88,6 +89,17 @@ func (b *Backup) Run() error {
 	}
 	logging.L(b.ctx).Info("Backup was successfully created and downloaded")
 
+	if err := runner.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
+		logging.L(b.ctx).Error("Error run shell script after finished backup")
+		return err
+	}
+
+	uploadApp := upload.New(b.ctx, b.conn, b.cmdConfig)
+	if err := runner.RunWithCtx(b.ctx, uploadApp.Uploading); err != nil {
+		logging.L(b.ctx).Error("Error upload backup file")
+		return err
+	}
+
 	if b.cfg.Settings.DirArchived != "" {
 		logging.L(b.ctx).Info("Search for old backups")
 		dbNamePrefix := fmt.Sprintf("%s_%s",
@@ -103,11 +115,6 @@ func (b *Backup) Run() error {
 		}
 
 		logging.L(b.ctx).Info("Archived old backups", logging.StringAttr("path", b.cfg.Settings.DirArchived))
-	}
-
-	if err := runner.RunWithCtx(b.ctx, shellApp.RunScriptAfter); err != nil {
-		logging.L(b.ctx).Error("Error run shell script after finished backup")
-		return err
 	}
 
 	return nil
@@ -164,6 +171,7 @@ func (b *Backup) prepareBackupConfig() {
 			Driver:   b.dbConnect.Database.GetDriver(&b.cfg.Settings.Driver),
 			Options:  b.dbConnect.Database.GetOptions(),
 			Docker:   b.dbConnect.Database.GetDocker(b.cfg.Settings.Docker),
+			Token:    b.dbConnect.Database.Token,
 		},
 		Server: commandConfig.Server{
 			Host: b.dbConnect.Server.Host,
@@ -175,6 +183,7 @@ func (b *Backup) prepareBackupConfig() {
 		Archive:             b.dbConnect.Database.IsArchive(*b.cfg.Settings.Archive),
 		DumpDirLocal:        b.cfg.Settings.DirDump,
 		DumpName:            fullPath,
+		DumpNameTemplate:    nameFile,
 		DumpDirRemote:       dirRemote,
 		RemoveBackup:        b.dbConnect.Database.GetRemoveDump(b.cfg.Settings.RemoveDump),
 		Encrypt:             b.dbConnect.Database.GetEncrypt(b.cfg.Settings.Encrypt),
