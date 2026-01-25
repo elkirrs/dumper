@@ -12,6 +12,7 @@ import (
 	"dumper/internal/domain/config"
 	dbConnect "dumper/internal/domain/config/db-connect"
 	"dumper/internal/shell"
+	"dumper/internal/upload"
 	"dumper/pkg/logging"
 	"dumper/pkg/utils/archved"
 	"dumper/pkg/utils/runner"
@@ -93,7 +94,11 @@ func (b *Backup) Run() error {
 		return err
 	}
 
-	//TODO transfer the backup download functional here
+	uploadApp := upload.New(b.ctx, b.conn, b.cmdConfig)
+	if err := runner.RunWithCtx(b.ctx, uploadApp.Uploading); err != nil {
+		logging.L(b.ctx).Error("Error upload backup file")
+		return err
+	}
 
 	if b.cfg.Settings.DirArchived != "" {
 		logging.L(b.ctx).Info("Search for old backups")

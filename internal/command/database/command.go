@@ -66,14 +66,10 @@ func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
 		return nil, err
 	}
 
-	fmt.Println(*s.Config.Database.Docker.Enabled)
 	if *s.Config.Database.Docker.Enabled {
 		dockerApp := docker.NewApp(s.ctx, cmdData, s.Config)
 		dockerApp.Prepare()
 	}
-
-	fmt.Println(cmdData.Command)
-	// os.Exit(0)
 
 	return cmdData, nil
 }

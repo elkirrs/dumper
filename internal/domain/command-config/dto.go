@@ -1,6 +1,7 @@
 package command_config
 
 import (
+	"dumper/internal/domain/backup"
 	"dumper/internal/domain/config/docker"
 	"dumper/internal/domain/config/encrypt"
 	"dumper/internal/domain/config/option"
@@ -44,4 +45,6 @@ type Config struct {
 	Encrypt             encrypt.Encrypt
 	MaxParallelDownload int
 	Shell               shell.Shell
+	FileRemoveList      []backup.FileRemoveList
+	FileSize            int64
 }

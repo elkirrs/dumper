@@ -6,12 +6,12 @@ import (
 )
 
 func Progress(done, total int64) {
-	if total == 0 {
-		fmt.Printf("\rDownloaded: %d bytes", done)
+	if total == done {
+		fmt.Printf("\rUploaded: %.1f%% [%d/%d bytes]\n", 100.0, done, done)
 		return
 	}
 	percent := float64(done) / float64(total) * 100
-	fmt.Printf("\rDownloading... %.1f%% [%d/%d bytes]\n", percent, done, total)
+	fmt.Printf("\rUploading... %.1f%% [%d/%d bytes]\n", percent, done, total)
 }
 
 type GlobProgress struct {
@@ -31,5 +31,5 @@ func (p *GlobProgress) Add(n int64) {
 func (p *GlobProgress) Print() {
 	done := atomic.LoadInt64(&p.completed)
 	percent := float64(done) / float64(p.total) * 100
-	fmt.Printf("\rDownloading... %.2f%% [%d/%d bytes]", percent, done, p.total)
+	fmt.Printf("\rUploading... %.2f%% [%d/%d bytes]", percent, done, p.total)
 }
