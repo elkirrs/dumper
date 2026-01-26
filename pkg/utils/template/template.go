@@ -43,7 +43,6 @@ func GetTemplateFileName(data TemplateData) string {
 	return strings.ReplaceAll(result, " ", "_")
 }
 
-func GetFullPath(dir string, file string) string {
-	fullPath := fmt.Sprintf("%s/%s", dir, file)
-	return filepath.Clean(fullPath)
+func GetFullPath(parts ...string) string {
+	return filepath.Clean(filepath.Join(parts...))
 }

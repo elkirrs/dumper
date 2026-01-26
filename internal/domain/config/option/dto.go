@@ -30,4 +30,9 @@ type Options struct {
 
 	Version    string `yaml:"version"`
 	BackupMode string `yaml:"backup_mode"`
+
+	//Firebird
+	SkipIssue     bool `yaml:"skip_issue" default:"false"`
+	FastAndStable bool `yaml:"fast_and_stable" default:"false"`
+	SkipGarbage   bool `yaml:"skip_garbage" default:"false"`
 }

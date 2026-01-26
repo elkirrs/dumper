@@ -4,6 +4,7 @@ import (
 	"context"
 	"dumper/internal/command/database/db2"
 	"dumper/internal/command/database/dynamodb"
+	"dumper/internal/command/database/firebird"
 	"dumper/internal/command/database/influxdb"
 	"dumper/internal/command/database/mariadb"
 	"dumper/internal/command/database/mongodb"
@@ -50,6 +51,7 @@ var dataBaseGeneratorList = map[string]Generator{
 	"dynamodb": dynamodb.DynamoDBGenerator{},
 	"influxdb": influxdb.InfluxDB2Generator{},
 	"db2":      db2.DB2Generator{},
+	"firebird": firebird.FirebirdDbGenerator{},
 }
 
 func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {

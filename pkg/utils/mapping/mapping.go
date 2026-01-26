@@ -64,6 +64,11 @@ var dbDrivers = map[string]DriverInfo{
 		DefaultPort:    "50000",
 		Formats:        map[string]struct{}{"0.db2": {}},
 	},
+	"firebird": {
+		DefaultCommand: "gbak",
+		DefaultPort:    "3050",
+		Formats:        map[string]struct{}{"fbk": {}},
+	},
 }
 
 func IsValidFormatDump(driverName, format string) bool {
