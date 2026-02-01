@@ -182,7 +182,7 @@ func TestMongoGenerator_Generate(t *testing.T) {
 		},
 	}
 
-	gen := mongodb.MongoGenerator{}
+	gen := mongodb.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -69,6 +69,11 @@ var dbDrivers = map[string]DriverInfo{
 		DefaultPort:    "3050",
 		Formats:        map[string]struct{}{"fbk": {}},
 	},
+	"cassandra": {
+		DefaultCommand: "nodetool",
+		DefaultPort:    "9042",
+		Formats:        map[string]struct{}{"tar": {}},
+	},
 }
 
 func IsValidFormatDump(driverName, format string) bool {

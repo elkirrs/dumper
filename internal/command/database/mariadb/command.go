@@ -7,9 +7,9 @@ import (
 	"fmt"
 )
 
-type MariaDbGenerator struct{}
+type Generator struct{}
 
-func (g MariaDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
 	baseCmd := fmt.Sprintf(

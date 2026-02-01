@@ -99,7 +99,7 @@ func TestDB2Generator_Generate_Variations(t *testing.T) {
 		},
 	}
 
-	gen := db2.DB2Generator{}
+	gen := db2.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestDB2Generator_CommandIntegrity(t *testing.T) {
 		DumpNameTemplate: "integrity",
 	}
 
-	gen := db2.DB2Generator{}
+	gen := db2.Generator{}
 	cmd, err := gen.Generate(cfg)
 
 	require.NoError(t, err)

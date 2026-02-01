@@ -235,7 +235,7 @@ func TestInfluxDB2Generator_Generate_Variations(t *testing.T) {
 		},
 	}
 
-	gen := influxdb.InfluxDB2Generator{}
+	gen := influxdb.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -274,7 +274,7 @@ func TestInfluxDB2Generator_CommandIntegrity_2x(t *testing.T) {
 		DumpNameTemplate: "integrity",
 	}
 
-	gen := influxdb.InfluxDB2Generator{}
+	gen := influxdb.Generator{}
 	cmd, err := gen.Generate(cfg)
 
 	require.NoError(t, err)

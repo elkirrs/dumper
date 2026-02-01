@@ -63,6 +63,7 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 		{"InfluxDB driver", "influxdb", false, ""},
 		{"IBM Db2 driver", "db2", false, ""},
 		{"Firebird driver", "firebird", false, ""},
+		{"Cassandra driver", "cassandra", false, ""},
 		{"Unsupported driver", "unknown", true, ""},
 	}
 

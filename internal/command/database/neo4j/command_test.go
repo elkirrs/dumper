@@ -100,7 +100,7 @@ func TestNeo4jGenerator_Generate_AllScenarios(t *testing.T) {
 		},
 	}
 
-	gen := neo4j.Neo4jGenerator{}
+	gen := neo4j.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestNeo4jGenerator_CommandIntegrity(t *testing.T) {
 		DumpLocation: "local",
 	}
 
-	gen := neo4j.Neo4jGenerator{}
+	gen := neo4j.Generator{}
 	cmd, err := gen.Generate(cfg)
 	require.NoError(t, err)
 	require.NotNil(t, cmd)

@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-type RedisGenerator struct{}
+type Generator struct{}
 
-func (g RedisGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "rdb"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)

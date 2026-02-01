@@ -7,14 +7,14 @@ import (
 	"fmt"
 )
 
-type InfluxDB2Generator struct{}
+type Generator struct{}
 
 type GenCommand struct {
 	BaseCommand string
 	ArchivePath string
 }
 
-func (i InfluxDB2Generator) Generate(
+func (g Generator) Generate(
 	data *cmdCfg.Config,
 ) (*commandDomain.DBCommand, error) {
 

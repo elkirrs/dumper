@@ -7,9 +7,9 @@ import (
 	"fmt"
 )
 
-type FirebirdDbGenerator struct{}
+type Generator struct{}
 
-func (f FirebirdDbGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "fbk"
 
 	backupPath := fmt.Sprintf("%s.%s", data.DumpName, ext)

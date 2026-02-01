@@ -135,7 +135,7 @@ func TestFirebirdDbGenerator_Generate_Variations(t *testing.T) {
 		},
 	}
 
-	gen := firebird.FirebirdDbGenerator{}
+	gen := firebird.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,7 +157,7 @@ func TestFirebirdDbGenerator_Generate_Variations(t *testing.T) {
 }
 
 func TestFirebirdDbGenerator_EdgeCases(t *testing.T) {
-	gen := firebird.FirebirdDbGenerator{}
+	gen := firebird.Generator{}
 
 	tests := []struct {
 		name           string

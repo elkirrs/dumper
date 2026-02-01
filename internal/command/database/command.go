@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"dumper/internal/command/database/cassandra"
 	"dumper/internal/command/database/db2"
 	"dumper/internal/command/database/dynamodb"
 	"dumper/internal/command/database/firebird"
@@ -40,18 +41,19 @@ type Generator interface {
 }
 
 var dataBaseGeneratorList = map[string]Generator{
-	"psql":     postgres.PSQLGenerator{},
-	"mysql":    mysql.MySQLGenerator{},
-	"mongo":    mongodb.MongoGenerator{},
-	"sqlite":   sqlite.SQLiteGenerator{},
-	"mariadb":  mariadb.MariaDbGenerator{},
-	"redis":    redis.RedisGenerator{},
-	"mssql":    mssql.MSQLGenerator{},
-	"neo4j":    neo4j.Neo4jGenerator{},
-	"dynamodb": dynamodb.DynamoDBGenerator{},
-	"influxdb": influxdb.InfluxDB2Generator{},
-	"db2":      db2.DB2Generator{},
-	"firebird": firebird.FirebirdDbGenerator{},
+	"psql":      postgres.Generator{},
+	"mysql":     mysql.Generator{},
+	"mongo":     mongodb.Generator{},
+	"sqlite":    sqlite.Generator{},
+	"mariadb":   mariadb.Generator{},
+	"redis":     redis.Generator{},
+	"mssql":     mssql.Generator{},
+	"neo4j":     neo4j.Generator{},
+	"dynamodb":  dynamodb.Generator{},
+	"influxdb":  influxdb.Generator{},
+	"db2":       db2.Generator{},
+	"firebird":  firebird.Generator{},
+	"cassandra": cassandra.Generator{},
 }
 
 func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {

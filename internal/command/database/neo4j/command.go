@@ -7,9 +7,9 @@ import (
 	"fmt"
 )
 
-type Neo4jGenerator struct{}
+type Generator struct{}
 
-func (g Neo4jGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "dump"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)

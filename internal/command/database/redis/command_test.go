@@ -137,7 +137,7 @@ func TestRedisGenerator_Generate_AllScenarios(t *testing.T) {
 		},
 	}
 
-	gen := redis.RedisGenerator{}
+	gen := redis.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
