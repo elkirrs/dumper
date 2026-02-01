@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-type SQLiteGenerator struct{}
+type Generator struct{}
 
-func (g SQLiteGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)

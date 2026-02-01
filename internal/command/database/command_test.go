@@ -61,6 +61,9 @@ func TestSettings_GetCommand_AllDrivers(t *testing.T) {
 		{"Neo4j driver", "neo4j", false, ""},
 		{"DynamoDB driver", "dynamodb", false, ""},
 		{"InfluxDB driver", "influxdb", false, ""},
+		{"IBM Db2 driver", "db2", false, ""},
+		{"Firebird driver", "firebird", false, ""},
+		{"Cassandra driver", "cassandra", false, ""},
 		{"Unsupported driver", "unknown", true, ""},
 	}
 

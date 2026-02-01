@@ -7,9 +7,9 @@ import (
 	"fmt"
 )
 
-type MSQLGenerator struct{}
+type Generator struct{}
 
-func (g MSQLGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 
 	var baseCmd *commandDomain.DBCommand
 

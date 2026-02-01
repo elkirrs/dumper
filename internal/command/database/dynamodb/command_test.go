@@ -160,7 +160,7 @@ func TestDynamoDBGenerator_Generate_AllScenarios(t *testing.T) {
 		},
 	}
 
-	gen := dynamodb.DynamoDBGenerator{}
+	gen := dynamodb.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -197,7 +197,7 @@ func TestDynamoDBGenerator_CommandIntegrity(t *testing.T) {
 		DumpLocation: "local",
 	}
 
-	gen := dynamodb.DynamoDBGenerator{}
+	gen := dynamodb.Generator{}
 	cmd, err := gen.Generate(cfg)
 	require.NoError(t, err)
 	require.NotNil(t, cmd)

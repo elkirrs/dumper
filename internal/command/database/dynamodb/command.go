@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-type DynamoDBGenerator struct{}
+type Generator struct{}
 
-func (g DynamoDBGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "json"
 
 	fileName := fmt.Sprintf("%s.%s", data.DumpName, ext)

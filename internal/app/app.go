@@ -5,6 +5,7 @@ import (
 	"dumper/internal/app/automation"
 	"dumper/internal/app/manual"
 	_ "dumper/internal/command/database/dynamodb"
+	_ "dumper/internal/command/database/firebird"
 	_ "dumper/internal/command/database/mariadb"
 	_ "dumper/internal/command/database/mongodb"
 	_ "dumper/internal/command/database/mssql"

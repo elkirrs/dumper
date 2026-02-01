@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-type DB2Generator struct{}
+type Generator struct{}
 
-func (g DB2Generator) Generate(data *commandConfig.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *commandConfig.Config) (*commandDomain.DBCommand, error) {
 
 	backupPath := fmt.Sprintf("%s", data.DumpName)
 	dirToCreateDump := data.DumpName

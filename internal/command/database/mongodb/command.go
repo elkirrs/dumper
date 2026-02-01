@@ -8,9 +8,9 @@ import (
 	"net/url"
 )
 
-type MongoGenerator struct{}
+type Generator struct{}
 
-func (g MongoGenerator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := ""
 	formatFlag := ""
 

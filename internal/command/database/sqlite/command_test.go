@@ -88,7 +88,7 @@ func TestSQLiteGenerator_Generate_AllScenarios(t *testing.T) {
 		},
 	}
 
-	gen := sqlite.SQLiteGenerator{}
+	gen := sqlite.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,218 +1,758 @@
 settings:
-  dir_remote: '/root/dump/'
-  logging: true
+  db_port: "5432"
+  server_port: "22"
+  driver: "psql"
   ssh:
-    private_key: '/User/.ssh/id_rsa'
-    passphrase: '123456'
+    private_key: "/Users/NameUser/.ssh/id_rsa"
+    passphrase: "123456"
     is_passphrase: true
-    password: '123456'
-  template: '{%srv%}_{%db%}_{%datetime%}'
+  dir_remote: '/root/dump/'
+  template: "{%srv%}_{%db%}_{%date%}"
+  archive: false
+  location: "server"
+  format: "plain"
+  dir_dump: "./dumps"
+  dir_archived: "./old"
+  logging: true
+  retry_connect: 2
   remove_dump: true
+  parallel_download: 3
   storages:
-    - local-storage
-    - ftp-storage
+    - local
   encrypt:
     enabled: false
-    type: 'aes'
-    password: '123456'
+    type: "aes"
+    password: "123456"
   docker:
     enabled: false
     command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
   shell:
     enabled: false
     before: |
-      echo "run script before create dump create dump (global)"
+      echo "run script before create dump (global)"
     after: |
-      echo "run script after created dump created dump (global)"
+      echo "run script after created dump (global)"
+
 
 storages:
-  local-storage:
-    type: 'local'
+  local:
     dir: "./dumps"
+    type: "local"
 
-  ftp-storage:
+  azure:
+    type: 'azure'
+    name: "name"
+    shared_key: "shared_key"
+    container: "data/dumps"
+    endpoint: "https://<name_endpoint>.blob.core.windows.net"
+    auth_type: "SharedKey"
+
+  ftp:
     type: 'ftp'
-    dir: "./uploads/dumps"
+    dir: "./upload/dumps/1"
     host: "192.168.139.108"
     port: 21
     username: "ftpuser"
     password: "123456"
 
-  s3-storage:
-    type: "s3"
-    region: "region"
-    access_key: "key_id"
-    secret_key: "secret_key"
-    bucket: "dumps"
+  sftp1:
+    type: 'sftp'
+    dir: "./dumps"
+    host: "192.168.139.108"
+    port: 22
+    username: "root"
+    private_key: "/Users/UserName/.ssh/id_rsa"
+    passphrase: "123456"
+
+  sftp2:
+    type: 'sftp'
+    dir: "./dumps/tmp"
+    host: "192.168.139.108"
+    port: 22
+    username: "root"
+    private_key: "/Users/UserName/.ssh/id_rsa"
+    passphrase: "123456"
+
+  awss3:
+    type: 's3'
+    dir: "dumps"
+    region: 'us-east-1'
+    bucket: 'my-dump-bucket'
+    access_key: 'example'
+    secret_key: 'example'
+
+  minio-storage:
+    type: 'minio'
+    dir: "dumps"
+    region: 'us-west-2'
+    bucket: 'storage'
+    access_key: 'example'
+    secret_key: 'example'
+    endpoint: 'http://172.0.13.2:9000'
+
+  cloudflare-storage:
+    type: "r2"
+    dir: "dumps"
+    access_key: "sadfasfd"
+    secret_key: "sdfasd"
+    bucket: 'storage'
+    endpoint: ' '
+    account_id: "dsafasdf"
+
+  backblaze-storage:
+    type: "b2"
+    dir: "dumps"
+    region: "eu-central-003"
+    bucket: "dumper-test"
+    access_key: "example"
+    secret_key: "example"
+    endpoint: "https://dumper-test.s3.eu-central-003.backblazeb2.com"
+
+  gcs-storage:
+    type: "gcs"
+    dir: "dumps"
+    bucket: "test-bucket"
+    credentials: ""
+    credentials_file: ""
+
+  yandex-storage:
+    type: "yandex"
+    dir: "dumps"
+    region: "ru-central1"
+    bucket: "dumper"
+    access_key: "example"
+    secret_key: "example"
+    endpoint: "https://storage.yandexcloud.net"
 
 servers:
-  srv-psql:
-    title: 'Server Postgres'
-    name: 'psql'
-    host: '172.16.204.99'
-    user: 'root'
+  srv-mssql:
+    title: "Microsoft SQL server"
+    name: "mssql"
+    host: "192.168.139.234"
+    user: "root"
     port: 22
-    shell:
-      enabled: true
-      before: |
-        echo "run script before create dump create dump (server)"
-      after: |
-        echo "run script after created dump created dump (server)"
+
+  srv-psql-docker:
+    title: "Server Postgres with Docker"
+    name: "psql"
+    host: "192.168.139.21"
+    user: "root"
+    port: 22
+
+  srv-psql:
+    title: "Server Postgres"
+    name: "psql"
+    host: "192.168.139.195"
+    user: "root"
+    port: 22
 
   srv-mysql:
-    title: 'Server MySQL'
-    name: 'mysql'
-    host: '203.0.113.77'
-    user: 'root'
+    title: "Server MySQL"
+    name: "mysql"
+    host: "192.168.139.195"
+    user: "root"
     port: 22
-    private_key: '/User/.ssh/id_rsa'
-    passphrase: '123456'
-    is_passphrase: true
+
+  srv-mongo:
+    title: "Server Mongo DB"
+    name: "mongo"
+    host: "192.168.139.195"
+    user: "root"
+    port: 22
+
+  srv-redis:
+    title: "Server Redis"
+    name: "redis"
+    host: "192.168.139.195"
+    user: "root"
+    port: 22
+
+  srv-sqlite:
+    title: "Server SQLite3"
+    name: "sqlite"
+    host: "192.168.139.195"
+    user: "root"
+    port: 22
 
   srv-neo4j:
-    title: 'Neo4j Server'
-    name: 'neo4j'
-    host: '192.168.1.100'
-    user: 'root'
+    title: "Server Neo4j"
+    name: "neo4j"
+    host: "192.168.139.195"
+    user: "neo4j"
     port: 22
-    private_key: '/User/.ssh/id_rsa'
 
-  srv-aws:
-    title: 'Dynamo DB Server'
-    name: 'dynamodb'
-    host: '192.168.1.100'
-    user: 'root'
+  srv-conf-remote:
+    title: "Load remote config"
+    name: "conf-remote"
+    host: "192.168.139.108"
+    user: "root"
     port: 22
-    private_key: '/User/.ssh/id_rsa'
+    conf_path: "/var/www/conf.yaml"
 
-  srv-local:
-    title: 'Local Server'
-    name: 'dynamodb'
-    host: '192.168.1.100'
-    user: 'root'
+  srv-dynamo:
+    title: "Server Dynamo DB"
+    name: "dynamo"
+    host: "192.168.139.195"
+    user: "root"
     port: 22
-    private_key: '/User/.ssh/id_rsa'
 
+  srv-influx:
+    title: "Server Influx DB"
+    name: "influx"
+    host: "192.168.139.234"
+    user: "root"
+    port: 22
+
+  srv-db2:
+    title: "Server IBM DB2"
+    name: "db2"
+    host: "192.168.139.101"
+    user: "root"
+    port: 22
+
+  srv-firebird:
+    title: "Server Firebird"
+    name: "firebird"
+    host: "192.168.139.195"
+    user: "root"
+    port: 22
+  
+  srv-cassandra:
+    title: "Server Cassandra"
+    name: "cassandra"
+    host: "192.168.139.195"
+    user: "root"
+    port: 22
 
 databases:
-  # Config PSQL databases
-  db-psql:
-    title: 'My DB PSQL #1'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
+  db-psql-plain-docker:
+    title: "PostgreSQL [plain](docker)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
     port: 5432
-    driver: 'psql'
-    server: 'srv-psql'
-    format: 'plain'
-    encrypt:
-      enabled: true
-      type: 'aes'
-      password: '123456'
-    storages:
-      - ftp-storage
-      - local-storage
-    docker:
-      enabled: true
-      command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
-    shell:
-      enabled: true
-      before: |
-        echo "run script before create dump create dump"
-      after: |
-        echo "run script after created dump created dump"
+    driver: "psql"
+    server: "srv-psql-docker"
+    format: "plain"
 
-  db-psql-custom:
-    title: 'My DB PSQL #2'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
+  db-psql-plain-docker-archive:
+    title: "PostgreSQL [plain](docker + archive)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
     port: 5432
-    driver: 'psql'
-    server: 'srv-psql'
-    format: 'dump'
+    driver: "psql"
+    server: "srv-psql-docker"
+    format: "plain"
+    archive: true
+
+  db-psql-plain-archive:
+    title: "PostgreSQL [plain](archive)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+    archive: true
+
+  db-psql-plain-default:
+    title: "PostgreSQL [plain](default)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+
+  db-psql-custom-default:
+    title: "PostgreSQL [custom](default)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "dump"
+
+  db-psql-tar-default:
+    title: "PostgreSQL [tar](default)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "tar"
+
+  db-psql-plain-include-table:
+    title: "PostgreSQL [plain](include table)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+    archive: true
+    options:
+      inc_tables:
+        - filler_data_1
+        - filler_data_2
+
+  db-psql-plain-exclude-table:
+    title: "PostgreSQL [plain](exclude table)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 5432
+    driver: "psql"
+    server: "srv-psql"
+    format: "plain"
+    archive: true
+    options:
+      exc_tables:
+        - filler_data_1
+        - filler_data_2
+
+  db-redis-rdb-sync:
+    title: "PostgreSQL [rdb](sync)"
+    name: "redis-db"
+    user: "myuser"
+    password: "mypassword"
+    port: 6379
+    driver: "redis"
+    server: "srv-redis"
+    format: "rdb"
+    options:
+      mode: "sync"
+
+  db-redis-rdb-save:
+    title: "PostgreSQL [rdb](save)"
+    name: "redis-db"
+    user: "myuser"
+    password: "mypassword"
+    port: 6379
+    driver: "redis"
+    server: "srv-redis"
+    format: "rdb"
+    options:
+      mode: "save"
+
+  db-mongo-archive-default:
+    title: "MongoDB [archive](default)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "archive"
+    archive: true
+    options:
+      auth_source: "admin"
+      ssl: false
+
+  db-mongo-bson-default:
+    title: "MongoDB [bson](default)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "bson"
+    options:
+      auth_source: "admin"
+      ssl: false
+
+  db-mongo-bson-ssl:
+    title: "MongoDB [bson](with ssl)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "bson"
+    options:
+      auth_source: "admin"
+      ssl: true
+
+  db-mongo-bson-without-options:
+    title: "MongoDB [bson](without options)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "bson"
+
+  db-mongo-archive-without-options:
+    title: "MongoDB [archive](without options)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "archive"
+
+  db-mongo-bson-include-tables:
+    title: "MongoDB [bson](include tables)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "bson"
+    options:
+      auth_source: "admin"
+      ssl: false
+      inc_tables:
+        - filler_data_3
+
+  db-mongo-archive-include-tables:
+    title: "MongoDB [archive](include tables)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "archive"
+    options:
+      auth_source: "admin"
+      ssl: false
+      inc_tables:
+        - filler_data_3
+
+  db-mongo-bson-exclude-tables:
+    title: "MongoDB [bson](exclude tables)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "bson"
+    options:
+      auth_source: "admin"
+      ssl: false
+      exc_tables:
+        - filler_data_4
+
+  db-mongo-archive-exclude-tables:
+    title: "MongoDB [archive](exclude tables)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 27017
+    driver: "mongo"
+    server: "srv-mongo"
+    format: "archive"
+    options:
+      auth_source: "admin"
+      ssl: false
+      exc_tables:
+        - filler_data_4
+
+  db-mysql-sql-default:
+    title: "Mysql [sql](default)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 3306
+    driver: "mysql"
+    server: "srv-mysql"
+    format: "sql"
     archive: false
-    storages:
-      - ftp-storage
-      - local-storage
-    docker:
-      enabled: true
-      command: "docker compose --file /var/www/docker-compose.yaml exec -T postgres"
 
-  # Config MySQL databases
-  db-mysql:
-    title: 'My DB MySQL #1'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
+  db-mysql-sql-archive:
+    title: "Mysql [sql](archive)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
     port: 3306
-    driver: 'mysql'
-    server: 'srv-mysql'
-    format: 'sql'
-    storages:
-      - ftp-storage
-    docker:
-      enabled: true
-      command: "docker compose --file /var/www/docker-compose.yaml exec -T mysql"
-    shell:
-      enabled: false
+    driver: "mysql"
+    server: "srv-mysql"
+    format: "sql"
+    archive: true
 
-  db-mysql-s:
-    title: 'My DB MySQL #2'
-    name: 'mydb'
-    user: 'myuser'
-    password: 'mypassword'
+  db-mysql-sql-include-tables:
+    title: "Mysql [sql](include tables)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
     port: 3306
-    driver: 'mysql'
-    server: 'srv-mysql'
-    format: 'sql'
-    storages:
-      - local-storage
-    encrypt:
-      enabled: true
-      type: 'aes'
-      password: '123456'
-    docker:
-      enabled: false
-  # Config Neo4j Database
-  db-neo4j:
-    title: 'My Neo4j Graph Database'
-    name: 'neo4j'  # database name in Neo4j
-    driver: 'neo4j'
+    driver: "mysql"
+    server: "srv-mysql"
+    format: "sql"
+    archive: false
+    options:
+      inc_tables:
+        - filler_data_1
+        - filler_data_2
+        - filler_data_3
+
+  db-mysql-sql-exclude-tables:
+    title: "Mysql [sql](exclude tables)"
+    name: "mydb"
+    user: "myuser"
+    password: "mypassword"
+    port: 3306
+    driver: "mysql"
+    server: "srv-mysql"
+    format: "sql"
+    archive: false
+    options:
+      exc_tables:
+        - filler_data_1
+
+  db-mssql-bac-default:
+    title: "MSSQL [bac](default)"
+    name: "mydb"
+    user: "su"
+    password: "qweASD123"
+    driver: "mssql"
+    server: "srv-mssql"
+    format: "bac"
+    archive: false
+    dir_remote: "/var/opt/mssql/"
+    options:
+      source: "/opt/mssql-tools18/bin/sqlcmd"
+
+  db-mssql-bacpac-default:
+    title: "MSSQL [bacpac](default)"
+    name: "mydb"
+    user: "su"
+    password: "qweASD123"
+    driver: "mssql"
+    server: "srv-mssql"
+    format: "bacpac"
+    archive: false
+    dir_remote: "/var/opt/mssql/"
+    options:
+      source: "/opt/sqlpackage/sqlpackage"
+
+  db-mssql-bac-archive:
+    title: "MSSQL [bac](archive)"
+    name: "mydb"
+    user: "su"
+    password: "qweASD123"
+    driver: "mssql"
+    server: "srv-mssql"
+    format: "bac"
+    archive: true
+    dir_remote: "/var/opt/mssql/"
+    options:
+      source: "/opt/mssql-tools18/bin/sqlcmd"
+
+  db-mssql-bacpac-archive:
+    title: "MSSQL [bacpac](archive)"
+    name: "mydb"
+    user: "su"
+    password: "qweASD123"
+    driver: "mssql"
+    server: "srv-mssql"
+    format: "bacpac"
+    archive: true
+    dir_remote: "/var/opt/mssql/"
+    options:
+      source: "/opt/sqlpackage/sqlpackage"
+
+  db-mssql-bacpac-include-tables:
+    title: "MSSQL [bacpac](include tables)"
+    name: "mydb"
+    user: "su"
+    password: "qweASD123"
+    driver: "mssql"
+    server: "srv-mssql"
+    format: "bacpac"
+    archive: true
+    dir_remote: "/var/opt/mssql/"
+    options:
+      source: "/opt/sqlpackage/sqlpackage"
+      inc_tables:
+        - filler_data_1
+        - filler_data_2
+
+  db-neo4j-dump-default:
+    title: "Neo4j [dump](default)"
+    name: "neo4j"
+    driver: "neo4j"
     server: 'srv-neo4j'
     format: 'dump'
-    storages:
-      - local-storage
+    remove_dump: false
+    dir_remote: "/var/lib/neo4j/dumps"
+    shell:
+      enable: true
+      before: 'sudo systemctl stop neo4j'
+      after: 'sudo systemctl start neo4j'
+
+  db-neo4j-dump-archive:
+    title: "Neo4j [dump](archive)"
+    name: "neo4j"
+    driver: "neo4j"
+    server: 'srv-neo4j'
+    format: 'dump'
+    archive: true
+    dir_remote: "/var/lib/neo4j/dumps"
+    shell:
+      enable: true
+      before: 'sudo systemctl stop neo4j'
+      after: 'sudo systemctl start neo4j'
+
+  db-dynamo-json-default:
+    title: "DynamoDB [json](default)"
+    name: "Users"
+    driver: "dynamodb"
+    server: "srv-dynamo"
+    format: "json"
+    remove_dump: false
+    options:
+      region: 'us-west-2'
+      endpoint: 'http://localhost:8000'
+
+  db-dynamo-json-archive:
+    title: "DynamoDB [json](archive)"
+    name: "Users"
+    driver: "dynamodb"
+    server: "srv-dynamo"
+    format: "json"
+    archive: true
+    options:
+      region: 'us-west-2'
+      endpoint: 'http://localhost:8000'
+
+  db-influx-tar-default-v2:
+    title: 'InfluxDB [tar](default v2.x)'
+    name: 'influx'
+    driver: 'influxdb'
+    server: 'srv-influx'
+    format: 'tar'
+    port: "8086"
+    token: 'o6faS6-npmPtRtt25vqokMYUfclNiGkb1hCIuHtVP2OS-iNzMPVYi3nBK1E0TxLRIytBQoVOV-Y0os3AlEccfg=='
+    options: 
+      version: "2.x"
+      org: 'dumper'
+      bucket: 'dumper'
+
+  db-influx-tar-default-v3:
+    title: 'InfluxDB [tar](default v3.x)'
+    name: 'influx'
+    driver: 'influxdb'
+    server: 'srv-influx'
+    format: 'tar'
+    options: 
+      version: "3.x"
+      data_dir: "/var/lib/influxdb/data"
+      node_id: "node0"
+  
+
+  db-db2-0.db2-default:
+    title: "IBM DB2 [0.db2](default)"
+    name: "appdb"
+    password: "StrongPassw0rd!"
+    port: "50000"
+    driver: "db2"
+    server: "srv-db2"
+    format: "0.db2"
+    dir_remote: "/database/backup/"
     docker:
       enabled: true
-      command: "docker exec -T neo4j"
-    shell:
-      enabled: false
+      command: 'docker exec --user db2inst1 db2 bash -c "source /database/config/db2inst1/sqllib/db2profile && {%cmd%}"'
+  
 
-  # Config DynamoDB Database
-  db-dynamodb-prod:
-    title: 'Production DynamoDB Table'
-    name: 'ProductsTable'  # DynamoDB table name
-    driver: 'dynamodb'
-    server: 'srv-aws'
-    format: 'json'
-    storages:
-      - s3-storage
-      - local-storage
+  db-db2-0.db2-online:
+    title: "IBM DB2 [0.db2](Mode online)"
+    name: "appdb"
+    password: "StrongPassw0rd!"
+    port: "50000"
+    driver: "db2"
+    server: "srv-db2"
+    format: "0.db2"
+    dir_remote: "/database/backup/"
+    docker:
+      enabled: true
+      command: 'docker exec --user db2inst1 db2 bash -c "source /database/config/db2inst1/sqllib/db2profile && {%cmd%}"'
     options:
-      region: 'us-east-1'
-      profile: 'production'  # AWS CLI profile
-    shell:
-      enabled: false
+      backup_mode: "online"
 
-  db-dynamodb-local:
-    title: 'Local DynamoDB Table'
-    name: 'LocalTable'
-    driver: 'dynamodb'
-    server: 'srv-local'
-    format: 'json'
-    storages:
-      - local-storage
-    options:
-      region: 'local'
-      endpoint: 'http://localhost:8000'  # Local DynamoDB endpoint
+
+  db-firebird-fbk-default:
+    title: "Firebird [fbk](Default)"
+    name: "firebird"
+    user: "SYSDBA"
+    password: "password"
+    port: 3050
+    driver: "firebird"
+    format: "fbk"
+    server: "srv-firebird"
+    dir_remote: "/backups"
+    options: 
+      path: "/var/lib/firebird/3.0/data/test100mb.fdb"
+
+
+  db-firebird-fbk-archive:
+    title: "Firebird [fbk](Archive)"
+    name: "fdb"
+    user: "SYSDBA"
+    password: "password"
+    port: 3050
+    driver: "firebird"
+    format: "fbk"
+    server: "srv-firebird"
+    archive: true
+    dir_remote: "/backups"
+    options: 
+      path: "/var/lib/firebird/3.0/data/test100mb.fdb"
+
+
+  db-firebird-fbk-options:
+    title: "Firebird [fbk](Options)"
+    name: "fdb"
+    user: "SYSDBA"
+    password: "password"
+    port: 3050
+    driver: "firebird"
+    format: "fbk"
+    server: "srv-firebird"
+    archive: true
+    dir_remote: "/backups"
+    options: 
+      path: "/var/lib/firebird/3.0/data/test100mb.fdb"
+      skip_issue: true
+      fast_and_stable: true
+      skip_garbage: true
+  
+  
+  db-cassandra-default:
+    title: "Cassandra [tar](Default)"
+    name: "testks"
+    driver: "cassandra"
+    format: "tar"
+    server: "srv-cassandra"
+    dir_remote: "/opt/cassandra/data/data"
+    remove_dump: true
+    options: 
+      source: "/opt/cassandra/bin/nodetool"
+
+
+  db-cassandra-inc-tables:
+    title: "Cassandra [tar](Include tables)"
+    name: "testks"
+    driver: "cassandra"
+    format: "tar"
+    server: "srv-cassandra"
+    dir_remote: "/opt/cassandra/data/data"
+    remove_dump: true
+    options: 
+      source: "/opt/cassandra/bin/nodetool"
+      inc_tables: 
+        - events
+        - events1

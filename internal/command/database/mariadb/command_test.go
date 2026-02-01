@@ -156,7 +156,7 @@ func TestMariaDbGenerator_Generate(t *testing.T) {
 		},
 	}
 
-	gen := mariadb.MariaDbGenerator{}
+	gen := mariadb.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -193,7 +193,7 @@ func TestMariaDbGenerator_CommandIntegrity(t *testing.T) {
 		DumpLocation: "local",
 	}
 
-	gen := mariadb.MariaDbGenerator{}
+	gen := mariadb.Generator{}
 	cmd, err := gen.Generate(cfg)
 	require.NoError(t, err)
 	require.NotNil(t, cmd)

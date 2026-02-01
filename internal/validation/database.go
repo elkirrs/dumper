@@ -31,8 +31,9 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 
 		if db.Options == nil {
 			db.Options = &option.Options{}
-			_ = defaults.Set(db.Options)
 		}
+
+		_ = defaults.Set(db.Options)
 
 		if db.Options.Source == "" {
 			db.Options.Source = mapping.GetDBSource(db.Driver, db.Format)
