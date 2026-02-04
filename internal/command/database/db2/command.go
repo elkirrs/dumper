@@ -8,7 +8,7 @@ import (
 
 type Generator struct{}
 
-func (g Generator) Generate(data *commandConfig.Config) (*commandDomain.DBCommand, error) {
+func (g *Generator) Generate(data *commandConfig.Config) (*commandDomain.DBCommand, error) {
 
 	backupPath := fmt.Sprintf("%s", data.DumpName)
 	dirToCreateDump := data.DumpName

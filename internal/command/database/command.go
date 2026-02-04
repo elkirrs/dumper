@@ -41,19 +41,19 @@ type Generator interface {
 }
 
 var dataBaseGeneratorList = map[string]Generator{
-	"psql":      postgres.Generator{},
-	"mysql":     mysql.Generator{},
-	"mongo":     mongodb.Generator{},
-	"sqlite":    sqlite.Generator{},
-	"mariadb":   mariadb.Generator{},
-	"redis":     redis.Generator{},
-	"mssql":     mssql.Generator{},
-	"neo4j":     neo4j.Generator{},
-	"dynamodb":  dynamodb.Generator{},
-	"influxdb":  influxdb.Generator{},
-	"db2":       db2.Generator{},
-	"firebird":  firebird.Generator{},
-	"cassandra": cassandra.Generator{},
+	"psql":      &postgres.Generator{},
+	"mysql":     &mysql.Generator{},
+	"mongo":     &mongodb.Generator{},
+	"sqlite":    &sqlite.Generator{},
+	"mariadb":   &mariadb.Generator{},
+	"redis":     &redis.Generator{},
+	"mssql":     &mssql.Generator{},
+	"neo4j":     &neo4j.Generator{},
+	"dynamodb":  &dynamodb.Generator{},
+	"influxdb":  &influxdb.Generator{},
+	"db2":       &db2.Generator{},
+	"firebird":  &firebird.Generator{},
+	"cassandra": &cassandra.Generator{},
 }
 
 func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {

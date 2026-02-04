@@ -10,7 +10,7 @@ import (
 
 type Generator struct{}
 
-func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g *Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := ""
 	formatFlag := ""
 
