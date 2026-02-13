@@ -98,9 +98,7 @@ func main() {
 
 	logger := runLog(&flags, *config.Settings.Logging)
 
-	defer func(logger *logging.Logs) {
-		_ = logger.Close()
-	}(logger)
+	defer logger.Close()
 
 	ctx = logging.ContextWithLogger(ctx, logger.Logger)
 

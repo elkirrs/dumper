@@ -113,9 +113,7 @@ func (c *Connect) RunCommand(cmd string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func(session *ssh.Session) {
-		_ = session.Close()
-	}(session)
+	defer session.Close()
 
 	var stdout, stderr bytes.Buffer
 	session.Stdout = &stdout

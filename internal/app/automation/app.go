@@ -67,11 +67,10 @@ func (m *Automation) Run() error {
 	errCh := make(chan error, len(dbList))
 
 	for _, dbInfoList := range serversDatabases {
-		dbListCopy := dbInfoList
 		wg.Add(1)
-		go func(connectDBs []dbConnect.DBConnect) {
+		go func() {
 			defer wg.Done()
-			for _, dbConn := range connectDBs {
+			for _, dbConn := range dbInfoList {
 				select {
 				case <-m.ctx.Done():
 					logging.L(m.ctx).Info("Backup cancelled by context")
@@ -118,7 +117,7 @@ func (m *Automation) Run() error {
 					}
 				}
 			}
-		}(dbListCopy)
+		}()
 	}
 
 	wg.Wait()

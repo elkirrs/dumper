@@ -137,9 +137,7 @@ func (a *Client) Handler() error {
 		}
 	}
 
-	defer func() {
-		_ = closeSSH()
-	}()
+	defer closeSSH()
 
 	targetPath := stream.TargetPath(a.Storage.Dir, a.DumpName)
 

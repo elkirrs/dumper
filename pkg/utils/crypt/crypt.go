@@ -81,9 +81,7 @@ func IsEncryptedFile(path, scope string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
+	defer f.Close()
 
 	header := make([]byte, len(MagicHeader(scope)))
 

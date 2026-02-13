@@ -170,9 +170,7 @@ func (m *Manual) prepareRemoteDatabaseList(
 		return nil, &connecterror.ConnectError{Addr: server.Host, Err: err}
 	}
 
-	defer func(conn *connect.Connect) {
-		_ = conn.Close()
-	}(conn)
+	defer conn.Close()
 
 	logging.L(m.ctx).Info(
 		"The connection is established",
