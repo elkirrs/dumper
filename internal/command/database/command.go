@@ -12,6 +12,7 @@ import (
 	"dumper/internal/command/database/mssql"
 	"dumper/internal/command/database/mysql"
 	"dumper/internal/command/database/neo4j"
+	"dumper/internal/command/database/opensearch"
 	"dumper/internal/command/database/postgres"
 	"dumper/internal/command/database/redis"
 	"dumper/internal/command/database/sqlite"
@@ -41,19 +42,20 @@ type Generator interface {
 }
 
 var dataBaseGeneratorList = map[string]Generator{
-	"psql":      &postgres.Generator{},
-	"mysql":     &mysql.Generator{},
-	"mongo":     &mongodb.Generator{},
-	"sqlite":    &sqlite.Generator{},
-	"mariadb":   &mariadb.Generator{},
-	"redis":     &redis.Generator{},
-	"mssql":     &mssql.Generator{},
-	"neo4j":     &neo4j.Generator{},
-	"dynamodb":  &dynamodb.Generator{},
-	"influxdb":  &influxdb.Generator{},
-	"db2":       &db2.Generator{},
-	"firebird":  &firebird.Generator{},
-	"cassandra": &cassandra.Generator{},
+	"psql":       &postgres.Generator{},
+	"mysql":      &mysql.Generator{},
+	"mongo":      &mongodb.Generator{},
+	"sqlite":     &sqlite.Generator{},
+	"mariadb":    &mariadb.Generator{},
+	"redis":      &redis.Generator{},
+	"mssql":      &mssql.Generator{},
+	"neo4j":      &neo4j.Generator{},
+	"dynamodb":   &dynamodb.Generator{},
+	"influxdb":   &influxdb.Generator{},
+	"db2":        &db2.Generator{},
+	"firebird":   &firebird.Generator{},
+	"cassandra":  &cassandra.Generator{},
+	"opensearch": &opensearch.Generator{},
 }
 
 func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {

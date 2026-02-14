@@ -133,10 +133,11 @@ func (c *Connect) RunCommand(cmd string) (string, error) {
 	_ = checkSession.Close()
 
 	var fullCmd string
+	escapedCmd := escapeForBash(cmd)
 	if strings.Contains(checkOut.String(), "OK") {
-		fullCmd = fmt.Sprintf(`bash -c 'set -o pipefail; %s'`, cmd)
+		fullCmd = fmt.Sprintf(`bash -c 'set -o pipefail; %s'`, escapedCmd)
 	} else {
-		fullCmd = fmt.Sprintf(`sh -c '%s; exit ${PIPESTATUS[0]:-0}'`, cmd)
+		fullCmd = fmt.Sprintf(`sh -c '%s; exit ${PIPESTATUS[0]:-0}'`, escapedCmd)
 	}
 
 	err = session.Run(fullCmd)
@@ -185,4 +186,9 @@ func (c *Connect) Close() error {
 		return err
 	}
 	return nil
+}
+
+func escapeForBash(cmd string) string {
+	escaped := strings.ReplaceAll(cmd, `'`, `'\''`)
+	return escaped
 }

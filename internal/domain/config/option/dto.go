@@ -35,4 +35,6 @@ type Options struct {
 	SkipIssue     bool `yaml:"skip_issue" default:"false"`
 	FastAndStable bool `yaml:"fast_and_stable" default:"false"`
 	SkipGarbage   bool `yaml:"skip_garbage" default:"false"`
+
+	PathCertificate string `yaml:"path_crt"`
 }
