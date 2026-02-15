@@ -9,7 +9,7 @@ import (
 
 type Generator struct{}
 
-func (g Generator) Generate(data *commandConfig.Config) (*commandDomain.DBCommand, error) {
+func (g *Generator) Generate(data *commandConfig.Config) (*commandDomain.DBCommand, error) {
 	formatFlag := "-Fp" // plain SQL
 	ext := "sql"
 

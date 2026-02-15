@@ -9,7 +9,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"golang.org/x/crypto/ssh"
 )
 
 type Azure struct {
@@ -54,9 +53,7 @@ func (a *Azure) Save() error {
 	if err != nil {
 		return fmt.Errorf("failed to create SSH session: %v", err)
 	}
-	defer func(session *ssh.Session) {
-		_ = session.Close()
-	}(session)
+	defer session.Close()
 
 	stdout, err := session.StdoutPipe()
 	if err != nil {

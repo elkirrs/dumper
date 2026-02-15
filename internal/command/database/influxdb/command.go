@@ -14,7 +14,7 @@ type GenCommand struct {
 	ArchivePath string
 }
 
-func (g Generator) Generate(
+func (g *Generator) Generate(
 	data *cmdCfg.Config,
 ) (*commandDomain.DBCommand, error) {
 

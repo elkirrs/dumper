@@ -39,10 +39,14 @@ func validateDatabase(v *Validation, cfg *config.Config) error {
 			db.Options.Source = mapping.GetDBSource(db.Driver, db.Format)
 		}
 
+		if db.Options.SnapPath == "" {
+			db.Options.SnapPath = db.DirRemote
+		}
+
 		cfg.Databases[name] = db
 
 		if ok := mapping.IsValidFormatDump(db.Driver, db.Format); !ok {
-			return fmt.Errorf("database '%s' invalid format: %s", name, db.Format)
+			return fmt.Errorf("database '%s' invalid driver: '%s' or invalid format: '%s'", name, db.Driver, db.Format)
 		}
 
 		if err := v.validator.Struct(db); err != nil {

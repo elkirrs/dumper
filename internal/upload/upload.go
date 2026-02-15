@@ -4,7 +4,6 @@ import (
 	"context"
 	"dumper/internal/connect"
 	commandConfig "dumper/internal/domain/command-config"
-	configStorageDomain "dumper/internal/domain/config/storage"
 	storageDomain "dumper/internal/domain/storage"
 	"dumper/internal/storage"
 	"dumper/pkg/logging"
@@ -52,7 +51,7 @@ func (u *Upload) Uploading() error {
 	for _, storageItem := range u.config.Storages {
 		countStorage++
 		wg.Add(1)
-		go func(item configStorageDomain.Storage) {
+		go func() {
 			defer wg.Done()
 
 			sem <- struct{}{}
@@ -93,7 +92,7 @@ func (u *Upload) Uploading() error {
 				)
 				totalDone += totalSize
 			}
-		}(storageItem)
+		}()
 	}
 
 	wg.Wait()

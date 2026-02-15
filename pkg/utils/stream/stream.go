@@ -17,9 +17,7 @@ func PipeReader(
 	pr, pw := io.Pipe()
 
 	go func() {
-		defer func(pw *io.PipeWriter) {
-			_ = pw.Close()
-		}(pw)
+		defer pw.Close()
 
 		buf := make([]byte, 32*1024)
 		var uploaded int64

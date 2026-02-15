@@ -9,7 +9,7 @@ import (
 
 type Generator struct{}
 
-func (g Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
+func (g *Generator) Generate(data *cmdCfg.Config) (*commandDomain.DBCommand, error) {
 	ext := "sql"
 
 	baseCmd := fmt.Sprintf("%s -h 127.0.0.1 -P %s -u %s -p%s",
