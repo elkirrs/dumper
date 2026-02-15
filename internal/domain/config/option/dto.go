@@ -36,5 +36,13 @@ type Options struct {
 	FastAndStable bool `yaml:"fast_and_stable" default:"false"`
 	SkipGarbage   bool `yaml:"skip_garbage" default:"false"`
 
-	PathCertificate string `yaml:"path_crt"`
+	// OpenSearch and ElasticSearch
+	CACertPath         string   `yaml:"ca_crt_path"`
+	KeyPath            string   `yaml:"key_path"`
+	CertPath           string   `yaml:"cert_path"`
+	KeyPass            string   `yaml:"key_pass"`
+	SnapPath           string   `yaml:"snap_path"`
+	Indices            []string `yaml:"indices"`
+	IgnoreUnavailable  *bool    `yaml:"ignore_unavailable" default:"false"`
+	IncludeGlobalState *bool    `yaml:"include_global_state" default:"false"`
 }

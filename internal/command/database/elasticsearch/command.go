@@ -1,4 +1,4 @@
-package opensearch
+package elasticsearch
 
 import (
 	commandDomain "dumper/internal/domain/command"

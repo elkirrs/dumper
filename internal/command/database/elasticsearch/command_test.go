@@ -1,7 +1,7 @@
-package opensearch_test
+package elasticsearch_test
 
 import (
-	"dumper/internal/command/database/opensearch"
+	"dumper/internal/command/database/elasticsearch"
 	commandDomain "dumper/internal/domain/command"
 	cmdCfg "dumper/internal/domain/command-config"
 	"dumper/internal/domain/config/option"
@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOpenSearchGenerator_Generate_Variations(t *testing.T) {
+func TestElasticSearchGenerator_Generate_Variations(t *testing.T) {
 	trueVal := true
 	falseVal := false
 	tests := []struct {
@@ -153,7 +153,7 @@ func TestOpenSearchGenerator_Generate_Variations(t *testing.T) {
 		},
 	}
 
-	gen := opensearch.Generator{}
+	gen := elasticsearch.Generator{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestOpenSearchGenerator_Generate_Variations(t *testing.T) {
 	}
 }
 
-func TestOpenSearchGenerator_CommandIntegrity(t *testing.T) {
+func TestElasticSearchGenerator_CommandIntegrity(t *testing.T) {
 
 	cfg := &cmdCfg.Config{
 		Database: cmdCfg.Database{
@@ -190,7 +190,7 @@ func TestOpenSearchGenerator_CommandIntegrity(t *testing.T) {
 		DumpNameTemplate: "repo_prod",
 	}
 
-	gen := opensearch.Generator{}
+	gen := elasticsearch.Generator{}
 
 	cmd, err := gen.Generate(cfg)
 

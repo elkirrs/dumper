@@ -79,6 +79,11 @@ var dbDrivers = map[string]DriverInfo{
 		DefaultPort:    "9200",
 		Formats:        map[string]struct{}{"tar": {}},
 	},
+	"elastic": {
+		DefaultCommand: "curl",
+		DefaultPort:    "9200",
+		Formats:        map[string]struct{}{"tar": {}},
+	},
 }
 
 func IsValidFormatDump(driverName, format string) bool {

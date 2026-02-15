@@ -5,6 +5,7 @@ import (
 	"dumper/internal/command/database/cassandra"
 	"dumper/internal/command/database/db2"
 	"dumper/internal/command/database/dynamodb"
+	"dumper/internal/command/database/elasticsearch"
 	"dumper/internal/command/database/firebird"
 	"dumper/internal/command/database/influxdb"
 	"dumper/internal/command/database/mariadb"
@@ -56,6 +57,7 @@ var dataBaseGeneratorList = map[string]Generator{
 	"firebird":   &firebird.Generator{},
 	"cassandra":  &cassandra.Generator{},
 	"opensearch": &opensearch.Generator{},
+	"elastic":    &elasticsearch.Generator{},
 }
 
 func (s *Settings) GetCommand() (*commandDomain.DBCommand, error) {
